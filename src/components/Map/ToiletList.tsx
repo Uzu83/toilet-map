@@ -22,6 +22,7 @@ export function ToiletList() {
   const select = useMapStore((s) => s.select);
   const setView = useMapStore((s) => s.setView);
   const toggleFavorite = useMapStore((s) => s.toggleFavorite);
+  const loading = useMapStore((s) => s.loading);
 
   const origin = userPos ?? HAKATA_STATION;
 
@@ -46,7 +47,22 @@ export function ToiletList() {
     <div className="relative h-full w-full overflow-hidden bg-zinc-50 dark:bg-zinc-950">
       <FilterBar visibleCount={items.length} />
       <div className="h-full overflow-y-auto pb-24 pt-16">
-        {items.length === 0 ? (
+        {items.length === 0 && loading ? (
+          <ul className="mx-auto max-w-2xl divide-y divide-zinc-200/70 px-2 dark:divide-zinc-800">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <li
+                key={i}
+                className="flex animate-pulse items-center gap-3 px-2 py-3"
+              >
+                <div className="h-9 w-9 shrink-0 rounded-full bg-zinc-200 dark:bg-zinc-800" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-3 w-1/2 rounded bg-zinc-200 dark:bg-zinc-800" />
+                  <div className="h-2 w-1/3 rounded bg-zinc-200 dark:bg-zinc-800" />
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : items.length === 0 ? (
           <div className="mx-auto mt-10 max-w-sm rounded-2xl bg-white p-6 text-center shadow ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10">
             <MapPin className="mx-auto mb-2 h-6 w-6 text-zinc-400" />
             <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">

@@ -25,6 +25,37 @@ import type { Toilet } from "@/types/toilet";
 
 // 博多駅(福岡市シード対象に合わせたフォールバック)
 const HAKATA_STATION: [number, number] = [33.5904, 130.4204];
+const VIEW_KEY = "toilet-map.view";
+
+type SavedView = { lat: number; lng: number; zoom: number };
+
+function readSavedView(): SavedView | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = localStorage.getItem(VIEW_KEY);
+    if (!raw) return null;
+    const v = JSON.parse(raw) as SavedView;
+    if (
+      typeof v.lat === "number" &&
+      typeof v.lng === "number" &&
+      typeof v.zoom === "number"
+    ) {
+      return v;
+    }
+  } catch {
+    // ignore
+  }
+  return null;
+}
+
+function persistView(v: SavedView) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(VIEW_KEY, JSON.stringify(v));
+  } catch {
+    // ignore
+  }
+}
 
 function debounce<T extends (...args: never[]) => void>(fn: T, ms: number) {
   let h: ReturnType<typeof setTimeout> | null = null;
@@ -40,8 +71,16 @@ function BoundsWatcher({ onChange }: { onChange: (b: L.LatLngBounds) => void }) 
     onChange(map.getBounds());
   }, [map, onChange]);
   useMapEvents({
-    moveend: () => onChange(map.getBounds()),
-    zoomend: () => onChange(map.getBounds()),
+    moveend: () => {
+      onChange(map.getBounds());
+      const c = map.getCenter();
+      persistView({ lat: c.lat, lng: c.lng, zoom: map.getZoom() });
+    },
+    zoomend: () => {
+      onChange(map.getBounds());
+      const c = map.getCenter();
+      persistView({ lat: c.lat, lng: c.lng, zoom: map.getZoom() });
+    },
   });
   return null;
 }
@@ -86,7 +125,11 @@ export default function ToiletMap() {
   const [error, setError] = useState<string | null>(null);
   const [hasFetched, setHasFetched] = useState(false);
 
-  const initialCenter: [number, number] = useMemo(() => HAKATA_STATION, []);
+  const initial = useMemo(() => {
+    const saved = readSavedView();
+    if (saved) return { center: [saved.lat, saved.lng] as [number, number], zoom: saved.zoom };
+    return { center: HAKATA_STATION, zoom: 15 };
+  }, []);
 
   const refetch = useRef(
     debounce(async (bounds: L.LatLngBounds) => {
@@ -121,8 +164,8 @@ export default function ToiletMap() {
   return (
     <div className="relative h-full w-full">
       <MapContainer
-        center={initialCenter}
-        zoom={15}
+        center={initial.center}
+        zoom={initial.zoom}
         scrollWheelZoom
         zoomControl={false}
         className="h-full w-full"

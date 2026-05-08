@@ -40,9 +40,21 @@ body {
   width: 100%;
   background: #e5e7eb;
 }
+
+/* ダークモード時の OSM タイル: 反転+色相回転で明度反転 */
 @media (prefers-color-scheme: dark) {
   .leaflet-container {
     background: #1f2937;
+  }
+  .leaflet-tile-pane {
+    filter: invert(1) hue-rotate(180deg) brightness(0.95) contrast(0.85) saturate(0.7);
+  }
+  /* 上記フィルタはピンとクラスタも反転してしまうので元に戻す */
+  .leaflet-marker-pane,
+  .leaflet-shadow-pane,
+  .leaflet-popup-pane,
+  .leaflet-tooltip-pane {
+    filter: invert(1) hue-rotate(180deg);
   }
 }
 

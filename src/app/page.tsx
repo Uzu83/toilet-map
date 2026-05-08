@@ -2,6 +2,7 @@ import Link from "next/link";
 import ClientToiletMap from "@/components/Map/ClientToiletMap";
 import { OnboardingCard } from "@/components/OnboardingCard";
 import { BottomTabBar } from "@/components/BottomTabBar";
+import { InstallPrompt } from "@/components/InstallPrompt";
 
 export default function HomePage() {
   return (
@@ -27,6 +28,7 @@ export default function HomePage() {
       </main>
       <BottomTabBar />
       <OnboardingCard />
+      <InstallPrompt />
     </div>
   );
 }
