@@ -12,6 +12,7 @@ type ReviewBody = {
   accessLevel?: unknown;
   hasWashlet?: unknown;
   comment?: unknown;
+  notAToilet?: unknown;
 };
 
 export async function POST(request: NextRequest) {
@@ -23,8 +24,15 @@ export async function POST(request: NextRequest) {
   }
 
   const toiletId = typeof body.toiletId === "string" ? body.toiletId : null;
-  const rating = typeof body.rating === "number" ? body.rating : null;
-  const accessLevel = typeof body.accessLevel === "string" ? body.accessLevel : null;
+  const notAToilet = body.notAToilet === true;
+  // 「ここトイレない」報告は rating/accessLevel をデフォルト埋めで受け付ける
+  const rating = typeof body.rating === "number" ? body.rating : notAToilet ? 1 : null;
+  const accessLevel =
+    typeof body.accessLevel === "string"
+      ? body.accessLevel
+      : notAToilet
+      ? "permission"
+      : null;
   const hasWashlet =
     typeof body.hasWashlet === "boolean" ? body.hasWashlet : null;
   const comment =
@@ -60,6 +68,7 @@ export async function POST(request: NextRequest) {
       has_washlet: hasWashlet,
       comment,
       ip_hash: ipHash,
+      not_a_toilet: notAToilet,
     });
     if (error) {
       console.error("[api/reviews] insert error", error);

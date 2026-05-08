@@ -1,10 +1,12 @@
 // OSM (OpenStreetMap) のトイレデータを Supabase に投入するシードスクリプト
 //
 // 使い方(ローカル CLI):
-//   npm run seed                          # デフォルト = 福岡市
+//   npm run seed                          # デフォルト = 福岡市の amenity=toilets
 //   npm run seed -- --region tokyo-23     # プリセット指定
 //   npm run seed -- --bbox 33.5,130.3,33.7,130.5
 //   npm run seed -- --regions fukuoka-pref,tokyo-23  # 複数連続
+//   npm run seed -- --inferred            # 駅・モール・公共施設を「推定青ピン」で追加投入
+//   npm run seed -- --inferred-only       # 推定のみ(amenity=toilets はスキップ)
 //
 // 必要な環境変数(.env.local):
 //   NEXT_PUBLIC_SUPABASE_URL
@@ -13,7 +15,11 @@
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
 import { createClient } from "@supabase/supabase-js";
-import { fetchToiletsInBbox, type OsmToiletNode } from "../src/lib/osm";
+import {
+  fetchToiletsInBbox,
+  fetchInferredFacilities,
+  type OsmToiletNode,
+} from "../src/lib/osm";
 import { findRegion, REGIONS, type Region } from "../src/lib/regions";
 
 // 簡易 .env.local ローダ(dotenv 依存しないため)
@@ -52,10 +58,17 @@ loadDotenv(resolve(process.cwd(), ".env.local"));
 type Args = {
   regions: Region[];
   bbox: [number, number, number, number] | null;
+  includeToilets: boolean;
+  includeInferred: boolean;
 };
 
 function parseArgs(argv: string[]): Args {
-  const out: Args = { regions: [], bbox: null };
+  const out: Args = {
+    regions: [],
+    bbox: null,
+    includeToilets: true,
+    includeInferred: false,
+  };
   for (let i = 0; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--region") {
@@ -71,6 +84,11 @@ function parseArgs(argv: string[]): Args {
       if (parts.length === 4 && parts.every((n) => Number.isFinite(n))) {
         out.bbox = parts as [number, number, number, number];
       }
+    } else if (a === "--inferred") {
+      out.includeInferred = true;
+    } else if (a === "--inferred-only") {
+      out.includeInferred = true;
+      out.includeToilets = false;
     } else if (a === "--list") {
       console.log("利用可能なリージョン:");
       for (const r of REGIONS) console.log(`  ${r.key.padEnd(16)} ${r.label}`);
@@ -101,7 +119,9 @@ async function upsertNodes(nodes: OsmToiletNode[]) {
     has_soap: n.hasSoap,
     has_diaper_table: n.hasDiaperTable,
     is_universal: n.isUniversal,
-    source: "osm",
+    source: n.source,
+    inferred_access: n.inferredAccess,
+    opening_hours: n.openingHours,
   }));
 
   // 大量挿入時は 500 件ずつバッチ
@@ -119,23 +139,41 @@ async function upsertNodes(nodes: OsmToiletNode[]) {
   console.log(`\n  ✓ ${upserted} 件を upsert しました`);
 }
 
-async function seedOne(label: string, bbox: [number, number, number, number]) {
+async function seedOne(
+  label: string,
+  bbox: [number, number, number, number],
+  args: Args
+) {
   console.log(`\n▶ ${label}: bbox=${bbox.join(",")}`);
-  console.log("  Overpass からトイレデータ取得中…");
-  const nodes = await fetchToiletsInBbox(bbox);
-  console.log(`  ✓ ${nodes.length} 件取得`);
-  if (nodes.length === 0) return;
-  console.log("  Supabase に upsert 中…");
-  await upsertNodes(nodes);
+
+  if (args.includeToilets) {
+    console.log("  [amenity=toilets] Overpass 取得中…");
+    const nodes = await fetchToiletsInBbox(bbox);
+    console.log(`    ✓ ${nodes.length} 件取得`);
+    if (nodes.length > 0) {
+      console.log("    Supabase に upsert 中…");
+      await upsertNodes(nodes);
+    }
+  }
+
+  if (args.includeInferred) {
+    console.log("  [推定青ピン: 駅/モール/公共施設/観光案内] Overpass 取得中…");
+    const inferred = await fetchInferredFacilities(bbox);
+    console.log(`    ✓ ${inferred.length} 件取得`);
+    if (inferred.length > 0) {
+      console.log("    Supabase に upsert 中…");
+      await upsertNodes(inferred);
+    }
+  }
 }
 
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.bbox) {
-    await seedOne(`カスタム範囲`, args.bbox);
+    await seedOne(`カスタム範囲`, args.bbox, args);
   }
   for (const r of args.regions) {
-    await seedOne(r.label, r.bbox);
+    await seedOne(r.label, r.bbox, args);
   }
   console.log("\n🎉 シード完了");
 }

@@ -13,6 +13,7 @@ import "leaflet/dist/leaflet.css";
 
 import { useMapStore } from "@/store/mapStore";
 import { makePinIcon } from "./pinIcon";
+import { effectiveAccess, isUnconfirmed } from "@/types/toilet";
 import { LocateControl } from "./LocateControl";
 import { CompassBadge } from "./CompassBadge";
 import { PinSheet } from "./PinSheet";
@@ -110,8 +111,9 @@ export default function ToiletMap() {
             key={t.id}
             position={[t.lat, t.lng]}
             icon={makePinIcon({
-              access: t.dominant_access,
-              isUnranked: t.review_count < 10,
+              access: effectiveAccess(t),
+              isUnranked: isUnconfirmed(t),
+              isInferred: t.source === "inferred" && t.review_count === 0,
             })}
             eventHandlers={{ click: () => select(t.id) }}
           />

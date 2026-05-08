@@ -1,9 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { ExternalLink, MessageSquarePlus, Star, X } from "lucide-react";
+import { AlertTriangle, ExternalLink, MessageSquarePlus, Star, X } from "lucide-react";
 import { useMapStore } from "@/store/mapStore";
-import { ACCESS_LEVELS } from "@/types/toilet";
+import { ACCESS_LEVELS, effectiveAccess, isUnconfirmed } from "@/types/toilet";
 import { bearingDeg, compassLabel, formatDistance, haversineMeters } from "@/lib/geo";
 import { ReviewForm } from "../ReviewForm";
 
@@ -12,7 +12,7 @@ export function PinSheet() {
   const select = useMapStore((s) => s.select);
   const toilets = useMapStore((s) => s.toilets);
   const userPos = useMapStore((s) => s.userPos);
-  const [reviewOpen, setReviewOpen] = useState(false);
+  const [reviewMode, setReviewMode] = useState<"normal" | "report" | null>(null);
 
   const toilet = useMemo(
     () => toilets.find((t) => t.id === selectedId) ?? null,
@@ -28,9 +28,10 @@ export function PinSheet() {
       })()
     : null;
 
-  const access = toilet.dominant_access;
+  const access = effectiveAccess(toilet);
   const accessMeta = access ? ACCESS_LEVELS[access] : null;
-  const isUnranked = toilet.review_count < 10;
+  const unconfirmed = isUnconfirmed(toilet);
+  const isInferred = toilet.source === "inferred" && toilet.review_count === 0;
   const mapsHref = `https://www.google.com/maps/dir/?api=1&destination=${toilet.lat},${toilet.lng}`;
 
   return (
@@ -68,6 +69,11 @@ export function PinSheet() {
               評価不足
             </span>
           )}
+          {isInferred && (
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-100 px-2.5 py-1 text-xs font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+              ※未確認(推定)
+            </span>
+          )}
           {toilet.has_washlet && (
             <span className="rounded-full bg-emerald-100 px-2.5 py-1 text-xs font-medium text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
               ウォシュレット
@@ -85,13 +91,28 @@ export function PinSheet() {
           )}
         </div>
 
+        {isInferred && (
+          <div className="mb-3 flex items-start gap-2 rounded-lg bg-amber-50 p-2.5 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <p>
+              施設情報からの推定です。実際にトイレがあるか・利用できるかは未確認。
+              {toilet.opening_hours ? (
+                <> 営業時間: <span className="font-mono">{toilet.opening_hours}</span></>
+              ) : (
+                <> 施設の営業時間内のみ利用可</>
+              )}
+              。実際の状況をぜひ報告お願いします!
+            </p>
+          </div>
+        )}
+
         <div className="mb-4 flex items-center gap-2 text-sm">
           <Stars value={toilet.avg_rating ?? 0} />
           <span className="text-zinc-700 dark:text-zinc-300">
             {toilet.avg_rating ? toilet.avg_rating.toFixed(1) : "—"}
           </span>
           <span className="text-zinc-400">
-            ({toilet.review_count}件{isUnranked ? "・10件未満は参考値" : ""})
+            ({toilet.review_count}件{unconfirmed && toilet.review_count > 0 ? "・10件未満は参考値" : ""})
           </span>
         </div>
 
@@ -107,20 +128,29 @@ export function PinSheet() {
           </a>
           <button
             type="button"
-            onClick={() => setReviewOpen(true)}
+            onClick={() => setReviewMode("normal")}
             className="flex h-12 items-center justify-center gap-2 rounded-lg bg-emerald-600 text-sm font-semibold text-white shadow hover:bg-emerald-700 active:scale-95"
           >
             <MessageSquarePlus className="h-4 w-4" />
             評価する
           </button>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setReviewMode("report")}
+          className="mt-2 w-full text-xs text-zinc-500 underline-offset-2 hover:text-red-600 hover:underline"
+        >
+          ここはトイレがない・使えなかった と報告
+        </button>
       </div>
 
-      {reviewOpen && (
+      {reviewMode && (
         <ReviewForm
           toiletId={toilet.id}
           toiletName={toilet.name}
-          onClose={() => setReviewOpen(false)}
+          mode={reviewMode}
+          onClose={() => setReviewMode(null)}
         />
       )}
     </>
