@@ -42,7 +42,11 @@ export function PinSheet() {
   const onShare = async () => {
     const shareTitle = toilet.name ?? "ピットインで見つけたトイレ";
     const shareText = `${shareTitle} ${accessMeta ? `(${accessMeta.label})` : ""}`;
-    const shareUrl = mapsHref;
+    // 自アプリへの deep link を共有(ピットインに戻ってくる動線)
+    const shareUrl =
+      typeof window !== "undefined"
+        ? `${window.location.origin}/?id=${toilet.id}`
+        : `/?id=${toilet.id}`;
     if (typeof navigator !== "undefined" && "share" in navigator) {
       try {
         await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });

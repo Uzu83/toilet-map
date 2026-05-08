@@ -21,6 +21,7 @@ import { EmptyState } from "./EmptyState";
 import { LoadingIndicator } from "./LoadingIndicator";
 import { ClusteredMarkers } from "./ClusteredMarkers";
 import { SearchBar } from "./SearchBar";
+import { DeepLinkResolver } from "./DeepLinkResolver";
 import type { Toilet } from "@/types/toilet";
 
 // 博多駅(福岡市シード対象に合わせたフォールバック)
@@ -176,6 +177,7 @@ export default function ToiletMap() {
           maxZoom={19}
         />
         <BoundsWatcher onChange={onBoundsChange} />
+        <DeepLinkResolver />
         <SearchBar />
         <LocateControl />
         {userPos && (
