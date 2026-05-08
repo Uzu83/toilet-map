@@ -11,12 +11,13 @@
 |---|---|
 | Framework | Next.js 16 (App Router, Turbopack) + TypeScript |
 | Style | Tailwind CSS 4 |
-| Map | Leaflet + react-leaflet + OpenStreetMap タイル |
+| Map | Leaflet + react-leaflet + OpenStreetMap タイル + leaflet.markercluster |
+| Search | Nominatim (OSM 無料 geocoder) |
 | DB | Supabase (PostgreSQL + PostGIS) |
 | Auth | Phase 1 では未実装(IP rate limit のみ) |
-| PWA | manifest.json (Phase 1)、サービスワーカーは Phase 2 |
+| PWA | manifest.json + ホーム追加プロンプト(SW は Phase 2) |
 | 計測 | Vercel Analytics + Speed Insights |
-| Deploy | Vercel |
+| Deploy | Vercel(GitHub 連携 CD) |
 
 ---
 
@@ -32,8 +33,13 @@
 
 ### 2) DB スキーマを流す
 
-Supabase ダッシュボード **SQL Editor** で `supabase/migrations/001_init.sql` を貼り付けて Run。
-PostGIS 拡張・`access_level` enum・`toilets` / `reviews` テーブル・RPC・RLS が一括で作られる。
+Supabase ダッシュボード **SQL Editor** で以下を順に貼り付けて Run:
+1. `supabase/migrations/001_init.sql` — PostGIS / enum / テーブル / RPC / RLS / GRANT
+2. `supabase/migrations/002_inferred_access.sql` — 推定アクセス + 営業時間カラム
+3. `supabase/migrations/003_not_a_toilet_reports.sql` — 「ない」報告 + 5件以上で非表示
+4. `supabase/migrations/004_toilet_by_id.sql` — 単一トイレ取得 RPC(deep link 用)
+
+すべて IF NOT EXISTS / CREATE OR REPLACE で冪等。
 
 ### 3) 環境変数
 
@@ -54,12 +60,21 @@ npm run seed
 #   ✓ 312 件を upsert しました
 ```
 
+推定青ピン(駅・モール・公民館・図書館・観光案内所)を追加:
+
+```bash
+npm run seed -- --inferred              # 福岡市の推定青ピン追加
+npm run seed -- --regions fukuoka-pref,tokyo-23 --inferred
+npm run seed -- --region osaka --inferred
+npm run seed -- --inferred-only         # amenity=toilets はスキップ、推定のみ
+npm run seed -- --list                  # 利用可能なリージョン一覧
+```
+
 公開後はエリアを順次拡張:
 
 ```bash
 npm run seed -- --regions fukuoka-pref,tokyo-23
 npm run seed -- --region osaka
-npm run seed -- --list   # 利用可能なリージョン一覧
 ```
 
 ### 5) 開発サーバー起動
@@ -124,6 +139,20 @@ supabase/migrations/001_init.sql
 
 ## Phase ロードマップ
 
-- **Phase 1 (MVP, 現在)**: マップ・OSM ピン・認証なし投稿・IP rate limit・PWA・福岡市シード
-- **Phase 2**: Supabase Auth・AdSense・貢献者ポイント・ランドマーク重ね表示・スパム AI フィルター
-- **Phase 3**: 多言語 (EN/KR/ZH)・Stripe 応援・Flutter 移植検討
+### ✅ Phase 1 完了済み(2026-05-08)
+- マップ・OSM ピン・bbox debounce・ピンクラスタリング
+- 認証なし投稿・IP rate limit・「ない」報告で 5 件以上自動非表示
+- 推定青ピン(駅・モール・公民館・図書館・観光案内所)+ 視覚区別
+- フィルタ・距離順リスト・お気に入り・Web Share・Nominatim 検索
+- オンボーディング・免責・PWA インストールプロンプト・ダークモード・スケルトン
+- Per-toilet URL deep linking(?id=<uuid>)
+- /sitemap.xml・/robots.txt・JSON-LD・OG 動的画像・Vercel Analytics
+
+### Phase 2(次)
+- Supabase Auth(Email / Google)
+- AdSense 層1 バナー + 層2 インタースティシャル
+- 貢献者ポイント・ランク制度・スパム AI フィルター
+- 「トイレを追加」UI・営業時間自動判定・サービスワーカーオフライン
+
+### Phase 3
+- 多言語 (EN/KR/ZH)・Stripe 応援・Flutter ネイティブ移植検討
