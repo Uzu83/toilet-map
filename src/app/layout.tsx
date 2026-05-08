@@ -36,6 +36,16 @@ export const metadata: Metadata = {
     description: "ピン色と星評価で、3タップ以内に最適なトイレを。",
     type: "website",
     locale: "ja_JP",
+    siteName: "ピットイン",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "ピットイン - 近くのトイレ専用地図アプリ",
+    description: "ピン色と星評価で、3タップ以内に最適なトイレを。",
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
