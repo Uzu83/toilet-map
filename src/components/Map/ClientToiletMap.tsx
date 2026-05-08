@@ -21,9 +21,11 @@ const ToiletMap = dynamic(() => import("./ToiletMap"), {
 export default function ClientToiletMap() {
   const view = useMapStore((s) => s.view);
   const loadFavorites = useMapStore((s) => s.loadFavorites);
+  const loadFilters = useMapStore((s) => s.loadFilters);
   useEffect(() => {
     loadFavorites();
-  }, [loadFavorites]);
+    loadFilters();
+  }, [loadFavorites, loadFilters]);
   return (
     <ErrorBoundary>{view === "list" ? <ToiletList /> : <ToiletMap />}</ErrorBoundary>
   );

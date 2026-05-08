@@ -31,6 +31,7 @@ type MapState = {
   setLoading: (b: boolean) => void;
 
   filters: Filters;
+  loadFilters: () => void;
   toggleFilter: (key: keyof Filters) => void;
   resetFilters: () => void;
 
@@ -43,6 +44,7 @@ type MapState = {
 };
 
 const FAV_KEY = "toilet-map.favorites";
+const FILTERS_KEY = "toilet-map.filters";
 
 function readFavorites(): Set<string> {
   if (typeof window === "undefined") return new Set();
@@ -66,6 +68,32 @@ function persistFavorites(s: Set<string>) {
   }
 }
 
+function readFilters(): Filters {
+  if (typeof window === "undefined") return DEFAULT_FILTERS;
+  try {
+    const raw = localStorage.getItem(FILTERS_KEY);
+    if (!raw) return DEFAULT_FILTERS;
+    const parsed = JSON.parse(raw) as Partial<Filters>;
+    return {
+      washlet: !!parsed.washlet,
+      diaperTable: !!parsed.diaperTable,
+      universal: !!parsed.universal,
+      favoritesOnly: !!parsed.favoritesOnly,
+    };
+  } catch {
+    return DEFAULT_FILTERS;
+  }
+}
+
+function persistFilters(f: Filters) {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(FILTERS_KEY, JSON.stringify(f));
+  } catch {
+    // ignore
+  }
+}
+
 export const useMapStore = create<MapState>((set, get) => ({
   toilets: [],
   setToilets: (toilets) => set({ toilets }),
@@ -78,9 +106,17 @@ export const useMapStore = create<MapState>((set, get) => ({
   setLoading: (loading) => set({ loading }),
 
   filters: DEFAULT_FILTERS,
+  loadFilters: () => set({ filters: readFilters() }),
   toggleFilter: (key) =>
-    set((s) => ({ filters: { ...s.filters, [key]: !s.filters[key] } })),
-  resetFilters: () => set({ filters: DEFAULT_FILTERS }),
+    set((s) => {
+      const next = { ...s.filters, [key]: !s.filters[key] };
+      persistFilters(next);
+      return { filters: next };
+    }),
+  resetFilters: () => {
+    persistFilters(DEFAULT_FILTERS);
+    set({ filters: DEFAULT_FILTERS });
+  },
 
   view: "map",
   setView: (view) => set({ view }),

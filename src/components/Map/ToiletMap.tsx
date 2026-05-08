@@ -20,6 +20,7 @@ import { PinLegend } from "./PinLegend";
 import { EmptyState } from "./EmptyState";
 import { LoadingIndicator } from "./LoadingIndicator";
 import { ClusteredMarkers } from "./ClusteredMarkers";
+import { SearchBar } from "./SearchBar";
 import type { Toilet } from "@/types/toilet";
 
 // 博多駅(福岡市シード対象に合わせたフォールバック)
@@ -49,10 +50,29 @@ async function fetchToilets(bounds: L.LatLngBounds): Promise<Toilet[]> {
   const sw = bounds.getSouthWest();
   const ne = bounds.getNorthEast();
   const bbox = `${sw.lng},${sw.lat},${ne.lng},${ne.lat}`;
-  const res = await fetch(`/api/toilets?bbox=${bbox}`, { cache: "no-store" });
-  if (!res.ok) return [];
-  const json = (await res.json()) as { toilets?: Toilet[] };
-  return json.toilets ?? [];
+  const url = `/api/toilets?bbox=${bbox}`;
+  // 一時的なサーバエラーは 1 回だけリトライ(指数バックオフ最小)
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const res = await fetch(url, { cache: "no-store" });
+      if (!res.ok) {
+        if (res.status >= 500 && attempt === 0) {
+          await new Promise((r) => setTimeout(r, 400));
+          continue;
+        }
+        throw new Error(`API ${res.status}`);
+      }
+      const json = (await res.json()) as { toilets?: Toilet[] };
+      return json.toilets ?? [];
+    } catch (e) {
+      if (attempt === 0) {
+        await new Promise((r) => setTimeout(r, 400));
+        continue;
+      }
+      throw e;
+    }
+  }
+  return [];
 }
 
 export default function ToiletMap() {
@@ -113,6 +133,7 @@ export default function ToiletMap() {
           maxZoom={19}
         />
         <BoundsWatcher onChange={onBoundsChange} />
+        <SearchBar />
         <LocateControl />
         {userPos && (
           <Marker
