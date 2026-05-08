@@ -11,13 +11,16 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-import { useMapStore } from "@/store/mapStore";
+import { applyFilters, useMapStore } from "@/store/mapStore";
 import { makePinIcon } from "./pinIcon";
-import { effectiveAccess, isUnconfirmed } from "@/types/toilet";
 import { LocateControl } from "./LocateControl";
 import { CompassBadge } from "./CompassBadge";
 import { PinSheet } from "./PinSheet";
-import type { Toilet } from "@/types/toilet";
+import { FilterBar } from "./FilterBar";
+import { PinLegend } from "./PinLegend";
+import { EmptyState } from "./EmptyState";
+import { LoadingIndicator } from "./LoadingIndicator";
+import { effectiveAccess, isUnconfirmed, type Toilet } from "@/types/toilet";
 
 // 博多駅(福岡市シード対象に合わせたフォールバック)
 const HAKATA_STATION: [number, number] = [33.5904, 130.4204];
@@ -57,18 +60,32 @@ export default function ToiletMap() {
   const select = useMapStore((s) => s.select);
   const toilets = useMapStore((s) => s.toilets);
   const userPos = useMapStore((s) => s.userPos);
+  const filters = useMapStore((s) => s.filters);
+  const favorites = useMapStore((s) => s.favorites);
+  const loadFavorites = useMapStore((s) => s.loadFavorites);
+  const setLoading = useMapStore((s) => s.setLoading);
   const [error, setError] = useState<string | null>(null);
+  const [hasFetched, setHasFetched] = useState(false);
+
+  // localStorage から favorites を初期ロード
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
 
   const initialCenter: [number, number] = useMemo(() => HAKATA_STATION, []);
 
   const refetch = useRef(
     debounce(async (bounds: L.LatLngBounds) => {
+      setLoading(true);
       try {
         const t = await fetchToilets(bounds);
         setToilets(t);
+        setHasFetched(true);
         setError(null);
       } catch (e) {
         setError(e instanceof Error ? e.message : "fetch failed");
+      } finally {
+        setLoading(false);
       }
     }, 500)
   ).current;
@@ -80,12 +97,20 @@ export default function ToiletMap() {
     [refetch]
   );
 
+  const visible = useMemo(
+    () => applyFilters(toilets, filters, favorites),
+    [toilets, filters, favorites]
+  );
+  const filterActive = useMemo(() => Object.values(filters).some(Boolean), [filters]);
+  const showEmpty = hasFetched && visible.length === 0 && !error;
+
   return (
     <div className="relative h-full w-full">
       <MapContainer
         center={initialCenter}
         zoom={15}
         scrollWheelZoom
+        zoomControl={false}
         className="h-full w-full"
       >
         <TileLayer
@@ -106,7 +131,7 @@ export default function ToiletMap() {
             interactive={false}
           />
         )}
-        {toilets.map((t) => (
+        {visible.map((t) => (
           <Marker
             key={t.id}
             position={[t.lat, t.lng]}
@@ -119,10 +144,14 @@ export default function ToiletMap() {
           />
         ))}
       </MapContainer>
+      <FilterBar visibleCount={visible.length} />
       <CompassBadge />
+      <LoadingIndicator />
+      <PinLegend />
+      {showEmpty && <EmptyState filtered={filterActive} />}
       <PinSheet />
       {error && (
-        <div className="absolute left-4 top-4 z-1000 rounded-lg bg-red-500/90 px-3 py-2 text-sm text-white shadow">
+        <div className="absolute left-4 top-20 z-1000 rounded-lg bg-red-500/90 px-3 py-2 text-sm text-white shadow">
           読み込みエラー: {error}
         </div>
       )}
