@@ -12,7 +12,6 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
 import { applyFilters, useMapStore } from "@/store/mapStore";
-import { makePinIcon } from "./pinIcon";
 import { LocateControl } from "./LocateControl";
 import { CompassBadge } from "./CompassBadge";
 import { PinSheet } from "./PinSheet";
@@ -20,7 +19,8 @@ import { FilterBar } from "./FilterBar";
 import { PinLegend } from "./PinLegend";
 import { EmptyState } from "./EmptyState";
 import { LoadingIndicator } from "./LoadingIndicator";
-import { effectiveAccess, isUnconfirmed, type Toilet } from "@/types/toilet";
+import { ClusteredMarkers } from "./ClusteredMarkers";
+import type { Toilet } from "@/types/toilet";
 
 // 博多駅(福岡市シード対象に合わせたフォールバック)
 const HAKATA_STATION: [number, number] = [33.5904, 130.4204];
@@ -125,18 +125,7 @@ export default function ToiletMap() {
             interactive={false}
           />
         )}
-        {visible.map((t) => (
-          <Marker
-            key={t.id}
-            position={[t.lat, t.lng]}
-            icon={makePinIcon({
-              access: effectiveAccess(t),
-              isUnranked: isUnconfirmed(t),
-              isInferred: t.source === "inferred" && t.review_count === 0,
-            })}
-            eventHandlers={{ click: () => select(t.id) }}
-          />
-        ))}
+        <ClusteredMarkers toilets={visible} onSelect={select} />
       </MapContainer>
       <FilterBar visibleCount={visible.length} />
       <CompassBadge />
