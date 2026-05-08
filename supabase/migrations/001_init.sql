@@ -111,3 +111,12 @@ create policy "public read reviews" on reviews for select using (true);
 
 -- bbox RPC は anon でも実行可
 grant execute on function toilets_in_bbox(double precision, double precision, double precision, double precision, int) to anon, authenticated;
+
+-- API ロールへの明示 GRANT(プロジェクト作成時「Automatically expose new tables = OFF」を選んだため自動付与されない)
+grant usage on schema public to anon, authenticated, service_role;
+grant select on toilets, reviews to anon, authenticated, service_role;
+grant select on toilet_stats to anon, authenticated, service_role;
+grant insert, update, delete on toilets, reviews to service_role;
+-- 将来テーブル追加時のデフォルト権限(オプション、運用が楽になる)
+alter default privileges in schema public grant select on tables to anon, authenticated;
+alter default privileges in schema public grant all on tables to service_role;
