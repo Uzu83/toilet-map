@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AlertTriangle, ExternalLink, MessageSquarePlus, Star, X } from "lucide-react";
+import { AlertTriangle, ExternalLink, Heart, MessageSquarePlus, Share2, Star, X } from "lucide-react";
 import { useMapStore } from "@/store/mapStore";
 import { ACCESS_LEVELS, effectiveAccess, isUnconfirmed } from "@/types/toilet";
 import { bearingDeg, compassLabel, formatDistance, haversineMeters } from "@/lib/geo";
@@ -12,7 +12,10 @@ export function PinSheet() {
   const select = useMapStore((s) => s.select);
   const toilets = useMapStore((s) => s.toilets);
   const userPos = useMapStore((s) => s.userPos);
+  const favorites = useMapStore((s) => s.favorites);
+  const toggleFavorite = useMapStore((s) => s.toggleFavorite);
   const [reviewMode, setReviewMode] = useState<"normal" | "report" | null>(null);
+  const [shared, setShared] = useState(false);
 
   const toilet = useMemo(
     () => toilets.find((t) => t.id === selectedId) ?? null,
@@ -32,7 +35,30 @@ export function PinSheet() {
   const accessMeta = access ? ACCESS_LEVELS[access] : null;
   const unconfirmed = isUnconfirmed(toilet);
   const isInferred = toilet.source === "inferred" && toilet.review_count === 0;
+  const fav = favorites.has(toilet.id);
   const mapsHref = `https://www.google.com/maps/dir/?api=1&destination=${toilet.lat},${toilet.lng}`;
+
+  const onShare = async () => {
+    const shareTitle = toilet.name ?? "ピットインで見つけたトイレ";
+    const shareText = `${shareTitle} ${accessMeta ? `(${accessMeta.label})` : ""}`;
+    const shareUrl = mapsHref;
+    if (typeof navigator !== "undefined" && "share" in navigator) {
+      try {
+        await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
+        return;
+      } catch {
+        // ユーザーキャンセル等
+      }
+    }
+    // フォールバック: クリップボード
+    try {
+      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      setShared(true);
+      setTimeout(() => setShared(false), 1500);
+    } catch {
+      // 何もできない環境
+    }
+  };
 
   return (
     <>
@@ -46,14 +72,40 @@ export function PinSheet() {
               <p className="text-xs text-zinc-500 dark:text-zinc-400">{distInfo}</p>
             )}
           </div>
-          <button
-            type="button"
-            onClick={() => select(null)}
-            aria-label="閉じる"
-            className="rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex shrink-0 items-center">
+            <button
+              type="button"
+              onClick={() => toggleFavorite(toilet.id)}
+              aria-pressed={fav}
+              aria-label={fav ? "お気に入りから外す" : "お気に入り登録"}
+              className="rounded-full p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            >
+              <Heart
+                className={fav ? "h-5 w-5 fill-rose-500 text-rose-500" : "h-5 w-5 text-zinc-400"}
+              />
+            </button>
+            <button
+              type="button"
+              onClick={onShare}
+              aria-label="共有"
+              className="relative rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            >
+              <Share2 className="h-5 w-5" />
+              {shared && (
+                <span className="absolute -bottom-6 right-0 whitespace-nowrap rounded bg-zinc-900 px-1.5 py-0.5 text-[10px] text-white shadow">
+                  リンクをコピーしました
+                </span>
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={() => select(null)}
+              aria-label="閉じる"
+              className="rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         <div className="mb-3 flex flex-wrap gap-2">

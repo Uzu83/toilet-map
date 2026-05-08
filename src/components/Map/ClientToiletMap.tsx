@@ -1,6 +1,9 @@
 "use client";
 
+import { useEffect } from "react";
 import dynamic from "next/dynamic";
+import { useMapStore } from "@/store/mapStore";
+import { ToiletList } from "./ToiletList";
 
 // Leaflet は window / document に依存するため SSR 不可。
 // `next/dynamic` の `ssr: false` は Client Component 内でのみ使えるため、
@@ -15,5 +18,10 @@ const ToiletMap = dynamic(() => import("./ToiletMap"), {
 });
 
 export default function ClientToiletMap() {
-  return <ToiletMap />;
+  const view = useMapStore((s) => s.view);
+  const loadFavorites = useMapStore((s) => s.loadFavorites);
+  useEffect(() => {
+    loadFavorites();
+  }, [loadFavorites]);
+  return view === "list" ? <ToiletList /> : <ToiletMap />;
 }

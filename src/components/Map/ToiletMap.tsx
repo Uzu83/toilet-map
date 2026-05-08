@@ -62,15 +62,9 @@ export default function ToiletMap() {
   const userPos = useMapStore((s) => s.userPos);
   const filters = useMapStore((s) => s.filters);
   const favorites = useMapStore((s) => s.favorites);
-  const loadFavorites = useMapStore((s) => s.loadFavorites);
   const setLoading = useMapStore((s) => s.setLoading);
   const [error, setError] = useState<string | null>(null);
   const [hasFetched, setHasFetched] = useState(false);
-
-  // localStorage から favorites を初期ロード
-  useEffect(() => {
-    loadFavorites();
-  }, [loadFavorites]);
 
   const initialCenter: [number, number] = useMemo(() => HAKATA_STATION, []);
 

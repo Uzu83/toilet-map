@@ -1,6 +1,7 @@
 import Link from "next/link";
 import ClientToiletMap from "@/components/Map/ClientToiletMap";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
+import { BottomTabBar } from "@/components/BottomTabBar";
 
 export default function HomePage() {
   return (
@@ -22,9 +23,10 @@ export default function HomePage() {
         </nav>
       </header>
       <DisclaimerBanner />
-      <main className="relative flex-1">
+      <main className="relative flex-1 pb-14">
         <ClientToiletMap />
       </main>
+      <BottomTabBar />
     </div>
   );
 }
