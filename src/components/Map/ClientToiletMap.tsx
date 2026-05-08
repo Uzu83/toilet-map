@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useMapStore } from "@/store/mapStore";
 import { ToiletList } from "./ToiletList";
+import { ErrorBoundary } from "../ErrorBoundary";
 
 // Leaflet は window / document に依存するため SSR 不可。
 // `next/dynamic` の `ssr: false` は Client Component 内でのみ使えるため、
@@ -23,5 +24,7 @@ export default function ClientToiletMap() {
   useEffect(() => {
     loadFavorites();
   }, [loadFavorites]);
-  return view === "list" ? <ToiletList /> : <ToiletMap />;
+  return (
+    <ErrorBoundary>{view === "list" ? <ToiletList /> : <ToiletMap />}</ErrorBoundary>
+  );
 }

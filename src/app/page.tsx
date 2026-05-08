@@ -1,6 +1,6 @@
 import Link from "next/link";
 import ClientToiletMap from "@/components/Map/ClientToiletMap";
-import { DisclaimerBanner } from "@/components/DisclaimerBanner";
+import { OnboardingCard } from "@/components/OnboardingCard";
 import { BottomTabBar } from "@/components/BottomTabBar";
 
 export default function HomePage() {
@@ -22,11 +22,11 @@ export default function HomePage() {
           </Link>
         </nav>
       </header>
-      <DisclaimerBanner />
       <main className="relative flex-1 pb-14">
         <ClientToiletMap />
       </main>
       <BottomTabBar />
+      <OnboardingCard />
     </div>
   );
 }

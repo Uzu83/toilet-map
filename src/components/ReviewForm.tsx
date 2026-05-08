@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { AlertTriangle, Star, X } from "lucide-react";
 import { ACCESS_LEVELS, type AccessLevel } from "@/types/toilet";
+import { trackEvent } from "@/lib/analytics";
 
 type Mode = "normal" | "report";
 type Props = {
@@ -45,6 +46,10 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
       return;
     }
     setDone(true);
+    trackEvent(isReport ? "report_submit" : "review_submit", {
+      toiletId,
+      ...(isReport ? {} : { rating, accessLevel }),
+    });
     setTimeout(onClose, 1400);
   };
 

@@ -5,6 +5,7 @@ import { AlertTriangle, ExternalLink, Heart, MessageSquarePlus, Share2, Star, X 
 import { useMapStore } from "@/store/mapStore";
 import { ACCESS_LEVELS, effectiveAccess, isUnconfirmed } from "@/types/toilet";
 import { bearingDeg, compassLabel, formatDistance, haversineMeters } from "@/lib/geo";
+import { trackEvent } from "@/lib/analytics";
 import { ReviewForm } from "../ReviewForm";
 
 export function PinSheet() {
@@ -45,6 +46,7 @@ export function PinSheet() {
     if (typeof navigator !== "undefined" && "share" in navigator) {
       try {
         await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
+        trackEvent("pin_share", { toiletId: toilet.id, method: "native" });
         return;
       } catch {
         // ユーザーキャンセル等
@@ -54,6 +56,7 @@ export function PinSheet() {
     try {
       await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
       setShared(true);
+      trackEvent("pin_share", { toiletId: toilet.id, method: "clipboard" });
       setTimeout(() => setShared(false), 1500);
     } catch {
       // 何もできない環境
