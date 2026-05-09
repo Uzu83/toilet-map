@@ -125,6 +125,7 @@ export default function ToiletMap() {
   const filters = useMapStore((s) => s.filters);
   const favorites = useMapStore((s) => s.favorites);
   const setLoading = useMapStore((s) => s.setLoading);
+  const selectedId = useMapStore((s) => s.selectedId);
   const [error, setError] = useState<string | null>(null);
   const [hasFetched, setHasFetched] = useState(false);
 
@@ -195,7 +196,7 @@ export default function ToiletMap() {
             interactive={false}
           />
         )}
-        <ClusteredMarkers toilets={visible} onSelect={select} />
+        <ClusteredMarkers toilets={visible} selectedId={selectedId} onSelect={select} />
       </MapContainer>
       <FilterBar visibleCount={visible.length} />
       <CompassBadge />

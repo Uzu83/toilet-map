@@ -12,10 +12,11 @@ import { makePinIcon } from "./pinIcon";
 
 type Props = {
   toilets: Toilet[];
+  selectedId: string | null;
   onSelect: (id: string) => void;
 };
 
-export function ClusteredMarkers({ toilets, onSelect }: Props) {
+export function ClusteredMarkers({ toilets, selectedId, onSelect }: Props) {
   const map = useMap();
   const groupRef = useRef<L.MarkerClusterGroup | null>(null);
 
@@ -52,23 +53,30 @@ export function ClusteredMarkers({ toilets, onSelect }: Props) {
     };
   }, [map]);
 
-  // toilets 変更時にマーカー再構築
+  // toilets / selectedId 変更時にマーカー再構築。
+  // 選択中ピンを最後に追加して z-index で前面表示。
   useEffect(() => {
     const group = groupRef.current;
     if (!group) return;
     group.clearLayers();
+    let selectedMarker: L.Marker | null = null;
     for (const t of toilets) {
+      const isSelected = t.id === selectedId;
       const marker = L.marker([t.lat, t.lng], {
         icon: makePinIcon({
           access: effectiveAccess(t),
           isUnranked: isUnconfirmed(t),
           isInferred: t.source === "inferred" && t.review_count === 0,
+          isSelected,
         }),
+        zIndexOffset: isSelected ? 1000 : 0,
       });
       marker.on("click", () => onSelect(t.id));
-      group.addLayer(marker);
+      if (isSelected) selectedMarker = marker;
+      else group.addLayer(marker);
     }
-  }, [toilets, onSelect]);
+    if (selectedMarker) group.addLayer(selectedMarker);
+  }, [toilets, selectedId, onSelect]);
 
   return null;
 }

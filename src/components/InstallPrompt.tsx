@@ -75,13 +75,13 @@ export function InstallPrompt() {
     setDeferred(null);
   };
 
-  // iOS Safari は beforeinstallprompt 非対応のため、共有メニューからの手動手順を案内
+  // iOS は Safari/Chrome ともに beforeinstallprompt 非対応のため、共有メニューからの手動手順を案内
   if (isIos && !deferred) {
     return (
       <div className="fixed bottom-20 left-3 right-3 z-1000 mx-auto flex max-w-sm items-start gap-2 rounded-2xl bg-zinc-900/95 px-3 py-2.5 text-xs text-white shadow-xl">
         <Share className="mt-0.5 h-4 w-4 shrink-0 text-blue-300" />
         <p className="flex-1 leading-relaxed">
-          ホーム画面に追加してアプリ化:Safari の <b className="text-blue-300">共有</b> →
+          アプリ化するには:画面下の <b className="text-blue-300">共有ボタン</b> →
           <b className="text-blue-300">「ホーム画面に追加」</b>
         </p>
         <button
