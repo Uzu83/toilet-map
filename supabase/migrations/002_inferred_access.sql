@@ -7,6 +7,9 @@ alter table toilets
   add column if not exists opening_hours text;
 
 -- toilets_in_bbox RPC を更新: inferred_access + opening_hours を返却
+-- 戻り値型を変えるため、CREATE OR REPLACE では弾かれる。先に DROP する。
+drop function if exists toilets_in_bbox(double precision, double precision, double precision, double precision, int);
+
 create or replace function toilets_in_bbox(
   min_lng double precision,
   min_lat double precision,

@@ -21,6 +21,9 @@ left join reviews r on r.toilet_id = t.id
 group by t.id;
 
 -- toilets_in_bbox に not_a_toilet_count を追加
+-- 戻り値型を変えるため、CREATE OR REPLACE では弾かれる。先に DROP する。
+drop function if exists toilets_in_bbox(double precision, double precision, double precision, double precision, int);
+
 create or replace function toilets_in_bbox(
   min_lng double precision,
   min_lat double precision,
