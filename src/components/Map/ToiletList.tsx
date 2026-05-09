@@ -21,6 +21,7 @@ export function ToiletList() {
   const userPos = useMapStore((s) => s.userPos);
   const select = useMapStore((s) => s.select);
   const setView = useMapStore((s) => s.setView);
+  const setFlyToTarget = useMapStore((s) => s.setFlyToTarget);
   const toggleFavorite = useMapStore((s) => s.toggleFavorite);
   const loading = useMapStore((s) => s.loading);
 
@@ -39,8 +40,11 @@ export function ToiletList() {
   }, [toilets, filters, favorites, origin]);
 
   const onTap = (t: Toilet) => {
-    select(t.id);
+    // 先にマップを移動指定 → ビュー切替 → 選択。マップ mount 時に
+    // FlyToWatcher が拾って flyTo する。
+    setFlyToTarget({ lat: t.lat, lng: t.lng, zoom: 17 });
     setView("map");
+    select(t.id);
   };
 
   return (

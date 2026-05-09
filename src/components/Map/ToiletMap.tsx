@@ -23,6 +23,7 @@ import { ClusteredMarkers } from "./ClusteredMarkers";
 import { SearchBar } from "./SearchBar";
 import { DeepLinkResolver } from "./DeepLinkResolver";
 import { AutoLocate } from "./AutoLocate";
+import { FlyToWatcher } from "./FlyToWatcher";
 import type { Toilet } from "@/types/toilet";
 
 // 博多駅(福岡市シード対象に合わせたフォールバック)
@@ -180,6 +181,7 @@ export default function ToiletMap() {
         <BoundsWatcher onChange={onBoundsChange} />
         <DeepLinkResolver />
         <AutoLocate />
+        <FlyToWatcher />
         <SearchBar />
         <LocateControl />
         {userPos && (

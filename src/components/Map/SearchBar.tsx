@@ -76,7 +76,7 @@ export function SearchBar() {
   };
 
   return (
-    <div className="absolute left-1/2 top-12 z-1000 w-full max-w-md -translate-x-1/2 px-2">
+    <div className="absolute left-1/2 top-16 z-1000 w-full max-w-md -translate-x-1/2 px-2">
       <div className="relative">
         <div className="flex items-center gap-2 rounded-full bg-white/95 px-3 py-1.5 shadow-md ring-1 ring-black/5 backdrop-blur dark:bg-zinc-900/95 dark:ring-white/10">
           <Search className="h-4 w-4 text-zinc-400" />

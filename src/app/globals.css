@@ -68,3 +68,7 @@ body {
 /* 任意 z-index */
 .z-1000 { z-index: 1000; }
 .z-2000 { z-index: 2000; }
+
+/* スクロールバー非表示(モバイルの横スクロールチップ用) */
+.scrollbar-none { scrollbar-width: none; }
+.scrollbar-none::-webkit-scrollbar { display: none; }

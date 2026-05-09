@@ -27,6 +27,10 @@ type MapState = {
   userPos: { lat: number; lng: number } | null;
   setUserPos: (p: { lat: number; lng: number } | null) => void;
 
+  // リスト→マップ遷移などで「次にマップが mount したら飛んでね」と伝えるトークン
+  flyToTarget: { lat: number; lng: number; zoom?: number } | null;
+  setFlyToTarget: (t: { lat: number; lng: number; zoom?: number } | null) => void;
+
   loading: boolean;
   setLoading: (b: boolean) => void;
 
@@ -101,6 +105,9 @@ export const useMapStore = create<MapState>((set, get) => ({
   select: (selectedId) => set({ selectedId }),
   userPos: null,
   setUserPos: (userPos) => set({ userPos }),
+
+  flyToTarget: null,
+  setFlyToTarget: (flyToTarget) => set({ flyToTarget }),
 
   loading: false,
   setLoading: (loading) => set({ loading }),

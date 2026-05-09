@@ -41,12 +41,17 @@ export function PinSheet() {
 
   const onShare = async () => {
     const shareTitle = toilet.name ?? "ピットインで見つけたトイレ";
-    const shareText = `${shareTitle} ${accessMeta ? `(${accessMeta.label})` : ""}`;
-    // 自アプリへの deep link を共有(ピットインに戻ってくる動線)
+    const accessLabel = accessMeta ? ` (${accessMeta.label})` : "";
+    // 自アプリへの deep link(ピットインに戻ってくる動線)
     const shareUrl =
       typeof window !== "undefined"
         ? `${window.location.origin}/?id=${toilet.id}`
         : `/?id=${toilet.id}`;
+    // text に URL も含める。AirDrop 等の受信側が url フィールドを無視しても
+    // text だけは確実に伝わる(覇王の検証で iPhone→Mac AirDrop 時に title だけ
+    // 残る挙動が確認されたため)
+    const shareText = `${shareTitle}${accessLabel}\n${shareUrl}`;
+
     if (typeof navigator !== "undefined" && "share" in navigator) {
       try {
         await navigator.share({ title: shareTitle, text: shareText, url: shareUrl });
@@ -58,7 +63,7 @@ export function PinSheet() {
     }
     // フォールバック: クリップボード
     try {
-      await navigator.clipboard.writeText(`${shareText}\n${shareUrl}`);
+      await navigator.clipboard.writeText(shareText);
       setShared(true);
       trackEvent("pin_share", { toiletId: toilet.id, method: "clipboard" });
       setTimeout(() => setShared(false), 1500);

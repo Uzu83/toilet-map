@@ -20,7 +20,7 @@ export function FilterBar({ visibleCount }: { visibleCount: number }) {
 
   return (
     <div className="absolute inset-x-0 top-0 z-1000 px-2 pt-2">
-      <div className="mx-auto flex max-w-2xl flex-wrap items-center gap-1.5 rounded-full bg-white/95 px-2 py-1.5 shadow-md ring-1 ring-black/5 backdrop-blur dark:bg-zinc-900/95 dark:ring-white/10">
+      <div className="scrollbar-none mx-auto flex max-w-2xl items-center gap-1.5 overflow-x-auto whitespace-nowrap rounded-full bg-white/95 px-2 py-1.5 shadow-md ring-1 ring-black/5 backdrop-blur dark:bg-zinc-900/95 dark:ring-white/10 md:flex-wrap md:overflow-visible md:whitespace-normal">
         {CHIPS.map((c) => {
           const active = filters[c.key];
           return (
@@ -40,7 +40,7 @@ export function FilterBar({ visibleCount }: { visibleCount: number }) {
             </button>
           );
         })}
-        <span className="ml-auto pr-1 text-[11px] text-zinc-500 tabular-nums dark:text-zinc-400">
+        <span className="ml-auto shrink-0 pr-1 text-[11px] text-zinc-500 tabular-nums dark:text-zinc-400">
           {visibleCount}件
         </span>
         {anyOn && (
