@@ -1,6 +1,6 @@
 {
-  "name": "ピットイン - 近くのトイレ専用地図アプリ",
-  "short_name": "ピットイン",
+  "name": "Loo map - 近くのトイレを最速で見つける地図",
+  "short_name": "Loo map",
   "description": "ピン色と星評価で、3タップ以内に最適なトイレを。",
   "start_url": "/",
   "display": "standalone",

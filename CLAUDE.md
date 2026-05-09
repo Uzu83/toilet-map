@@ -6,10 +6,10 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## プロジェクト概要
 
-🚽 **ピットイン (toilet-map)** — Notion ハブ「🔵 Vercelプロジェクト管理」配下の Phase 1 MVP。
-近くの公衆トイレを「許可不要(青) / 一声かけ要(黄) / 許可必要(赤)」のピン色と星 1-5 の清潔度で 3 タップ以内に探せる Web アプリ。Next.js 15 (Turbopack) + Tailwind 4 + Leaflet + Supabase (PostGIS) + PWA。
+🚽 **Loo map (toilet-map)** — Notion ハブ「🔵 Vercelプロジェクト管理」配下の Phase 1 MVP。
+近くの公衆トイレを「許可不要(青) / 一声かけ要(黄) / 許可必要(赤)」のピン色と星 1-5 の清潔度で 3 タップ以内に探せる Web アプリ。Next.js 16 (Turbopack) + Tailwind 4 + Leaflet + Supabase (PostGIS) + PWA。
 
-仮称「ピットイン」は **商標調査未完了**(J-PlatPat 9類)。リネーム耐性のためリポ名・フォルダ名は機能直結の `toilet-map` 固定 — 表示名のみ変更可能な設計を維持すること。
+**表示名 = Loo map(半角スペース付き)**。2026-05-09 J-PlatPat 商標調査により旧名「ピットイン」から改名(出光興産・LIXIL・伊藤忠 CTC・住友三井オートサービス・アールステップが類似区分で登録あり、出願拒絶+警告書リスク高と判定)。リポ名・フォルダ名は機能直結の `toilet-map` 固定 — 表示名のみの変更で済む耐性設計が功を奏した。詳細は Notion 「⚖️ 商標調査ログ」(https://www.notion.so/35b1ef8488d58132b7baed8b6830a823)。
 
 ## よく使うコマンド
 
@@ -64,6 +64,7 @@ Phase 2+ の機能を Phase 1 に混ぜない(スコープ膨張回避)。
 ## 関連 Notion ページ
 
 - 親ハブ: [🔵 Vercelプロジェクト管理](https://www.notion.so/35a1ef8488d581daba0ef47ff15003c2)
-- 本アプリ: [🚽 ピットイン (toilet-map)](https://www.notion.so/35a1ef8488d581abb452c26dc5fed7f1)
-- 詳細仕様: [🚽 ピットイン -近くのトイレ専用地図アプリ-](https://www.notion.so/35a1ef8488d581afaf3fff53da269f9c)
+- 本アプリ: [🚽 Loo map (toilet-map)](https://www.notion.so/35a1ef8488d581abb452c26dc5fed7f1)
+- 詳細仕様(旧ページ、ピットイン名のまま): [🚽 ピットイン -近くのトイレ専用地図アプリ-](https://www.notion.so/35a1ef8488d581afaf3fff53da269f9c)
+- 商標調査ログ: [⚖️ 商標調査ログ](https://www.notion.so/35b1ef8488d58132b7baed8b6830a823)
 - 共通テンプレ: [⚡ Next.js初期セットアップ](https://www.notion.so/35a1ef8488d5815290bcd07ac5937e4f) / [📊 Vercel Analytics](https://www.notion.so/35a1ef8488d5814ba4fef7372dc88c38) / [🎨 Tailwindデザインルール](https://www.notion.so/35a1ef8488d58116b2befd42347840b3) / [🔍 SEO最適化](https://www.notion.so/35a1ef8488d581e196e2c4db8521d461)

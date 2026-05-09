@@ -19,33 +19,36 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl()),
   title: {
-    default: "ピットイン - 近くのトイレ専用地図アプリ",
-    template: "%s | ピットイン",
+    default: "Loo map - 近くのトイレを最速で見つける地図",
+    template: "%s | Loo map",
   },
   description:
-    "近くの公衆トイレを「許可不要(青)・声かけ要(黄)・許可要(赤)」のピンと星1-5の清潔度で3タップ以内に探せる地図アプリ。",
-  applicationName: "ピットイン",
+    "近くの公衆トイレを「許可不要(青)・声かけ要(黄)・許可要(赤)」のピンと星1-5の清潔度で3タップ以内に探せる地図。福岡市から順次全国へ。",
+  applicationName: "Loo map",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "ピットイン",
+    title: "Loo map",
   },
   openGraph: {
-    title: "ピットイン - 近くのトイレ専用地図アプリ",
+    title: "Loo map - 近くのトイレを最速で見つける地図",
     description: "ピン色と星評価で、3タップ以内に最適なトイレを。",
     type: "website",
     locale: "ja_JP",
-    siteName: "ピットイン",
+    siteName: "Loo map",
   },
   twitter: {
     card: "summary_large_image",
-    title: "ピットイン - 近くのトイレ専用地図アプリ",
+    title: "Loo map - 近くのトイレを最速で見つける地図",
     description: "ピン色と星評価で、3タップ以内に最適なトイレを。",
   },
   robots: {
     index: true,
     follow: true,
+  },
+  verification: {
+    google: "hHdNAnGirkxFJ9QvjPGe6o1exoJVEAYuDEUaQPRxvS8",
   },
 };
 

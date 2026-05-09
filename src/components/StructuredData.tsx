@@ -5,10 +5,10 @@ export function StructuredData() {
   const data = {
     "@context": "https://schema.org",
     "@type": "WebApplication",
-    name: "ピットイン",
-    alternateName: ["Pittin", "PIT IN", "toilet-map"],
+    name: "Loo map",
+    alternateName: ["Loo Map", "ルーマップ", "toilet-map"],
     description:
-      "近くの公衆トイレを「許可不要(青)・声かけ要(黄)・許可要(赤)」のピンと星1-5の清潔度で3タップ以内に探せる地図アプリ。福岡市から順次全国へ展開予定。",
+      "近くの公衆トイレを「許可不要(青)・声かけ要(黄)・許可要(赤)」のピンと星1-5の清潔度で3タップ以内に探せる地図。福岡市から順次全国へ展開予定。",
     url,
     applicationCategory: "TravelApplication",
     operatingSystem: "Any (Web)",

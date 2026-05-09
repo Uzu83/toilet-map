@@ -36,7 +36,7 @@ export function OnboardingCard() {
       <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl dark:bg-zinc-900">
         <div className="mb-3 flex items-start justify-between">
           <h2 className="text-lg font-bold text-zinc-900 dark:text-zinc-50">
-            🚽 ピットインへようこそ
+            🚽 Loo map へようこそ
           </h2>
           <button
             type="button"

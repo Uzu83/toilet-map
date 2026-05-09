@@ -40,9 +40,9 @@ export function PinSheet() {
   const mapsHref = `https://www.google.com/maps/dir/?api=1&destination=${toilet.lat},${toilet.lng}`;
 
   const onShare = async () => {
-    const shareTitle = toilet.name ?? "ピットインで見つけたトイレ";
+    const shareTitle = toilet.name ?? "Loo map で見つけたトイレ";
     const accessLabel = accessMeta ? ` (${accessMeta.label})` : "";
-    // 自アプリへの deep link(ピットインに戻ってくる動線)
+    // 自アプリへの deep link(Loo map に戻ってくる動線)
     const shareUrl =
       typeof window !== "undefined"
         ? `${window.location.origin}/?id=${toilet.id}`

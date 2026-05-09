@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 
 export const runtime = "edge";
-export const alt = "ピットイン - 近くのトイレ専用地図アプリ";
+export const alt = "Loo map - 近くのトイレを最速で見つける地図";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -22,8 +22,9 @@ export default function Image() {
         }}
       >
         <div style={{ fontSize: 220, lineHeight: 1, marginBottom: 24 }}>🚽</div>
-        <div style={{ fontSize: 96, fontWeight: 800, letterSpacing: -2 }}>
-          ピットイン
+        <div style={{ fontSize: 110, fontWeight: 800, letterSpacing: -2, display: "flex", gap: 16 }}>
+          <span style={{ color: "#FFFFFF" }}>Loo</span>
+          <span style={{ color: "#10B981" }}>map</span>
         </div>
         <div
           style={{

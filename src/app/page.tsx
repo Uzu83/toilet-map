@@ -9,7 +9,7 @@ export default function HomePage() {
     <div className="flex h-dvh w-full flex-col">
       <header className="flex shrink-0 items-center justify-between gap-2 px-3 py-2">
         <h1 className="text-base font-bold tracking-tight text-blue-600">
-          🚽 ピットイン
+          🚽 Loo map
         </h1>
         <nav className="flex gap-3 text-xs text-zinc-500">
           <Link href="/contact" className="hover:text-zinc-900 dark:hover:text-zinc-200">

@@ -12,7 +12,7 @@ export default function TermsPage() {
 
       <h2 className="pt-4 text-lg font-semibold">1. サービスの目的</h2>
       <p>
-        本サービス「ピットイン」は、ユーザーが近隣の公衆トイレを快適に発見できるよう、地図表示と評価機能を提供するものです。
+        本サービス「Loo map」(以下「本サービス」)は、ユーザーが近隣の公衆トイレを快適に発見できるよう、地図表示と評価機能を提供するものです。
       </p>
 
       <h2 className="pt-4 text-lg font-semibold">2. 禁止事項</h2>
