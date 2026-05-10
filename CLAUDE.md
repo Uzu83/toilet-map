@@ -18,11 +18,17 @@ npm run dev          # 開発サーバー (http://localhost:3000)
 npm run build        # 本番ビルド (型・リント・最適化)
 npm run lint         # ESLint
 npm run seed         # 福岡市の OSM トイレデータ投入(.env.local が必要)
-npm run seed -- --region tokyo-23
+npm run seed -- --region tokyo-23        # 市区プリセット
 npm run seed -- --regions fukuoka-pref,tokyo-23
 npm run seed -- --bbox 33.5,130.3,33.7,130.5
-npm run seed -- --list                   # 利用可能リージョン一覧
+npm run seed -- --inferred               # 駅・モール・公共施設の推定青ピン追加
+npm run seed -- --prefecture JP-13       # 都道府県境界で取得 (ISO 3166-2:JP)
+npm run seed -- --all-japan              # 47都道府県を順次取得(全国一括、Phase 0 方針)
+npm run seed -- --all-japan --inferred   # 全国 + 推定青ピン(数十分)
+npm run seed -- --list                   # 市区プリセット + 都道府県コード一覧
 ```
+
+シード戦略 (Notion「🤖 AI駆動グロース戦略」Phase 0): 全国の `amenity=toilets` を都道府県単位で一括投入し「初期から全国数万箇所表示されるマップ」にしてデータ不足の鶏卵問題を解消する。`--all-japan` は Overpass mirror へのレート制限配慮で各県 3 秒待機・失敗県スキップ・`osm_id` 冪等。`fetchToiletsInPrefecture` / `fetchInferredFacilitiesInPrefecture` は `area["ISO3166-2"="JP-XX"]` で県境界を厳密に取得。
 
 `npm run seed` は `tsx` 経由で `scripts/seed-osm.ts` を実行する。Overpass API (https://overpass-api.de) に叩いて `amenity=toilets` ノードを `toilets` テーブルに `osm_id` で upsert する(冪等)。
 

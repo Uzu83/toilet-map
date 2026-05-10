@@ -2,11 +2,15 @@
 //
 // 使い方(ローカル CLI):
 //   npm run seed                          # デフォルト = 福岡市の amenity=toilets
-//   npm run seed -- --region tokyo-23     # プリセット指定
+//   npm run seed -- --region tokyo-23     # 市区プリセット指定
 //   npm run seed -- --bbox 33.5,130.3,33.7,130.5
 //   npm run seed -- --regions fukuoka-pref,tokyo-23  # 複数連続
 //   npm run seed -- --inferred            # 駅・モール・公共施設を「推定青ピン」で追加投入
 //   npm run seed -- --inferred-only       # 推定のみ(amenity=toilets はスキップ)
+//   npm run seed -- --prefecture JP-13    # 都道府県境界で取得(ISO 3166-2:JP コード)
+//   npm run seed -- --all-japan           # 47都道府県を順次取得(全国一括、Phase 0 方針)
+//   npm run seed -- --all-japan --inferred  # 全国 + 推定青ピンも(時間かかる)
+//   npm run seed -- --list                # 市区プリセット一覧
 //
 // 必要な環境変数(.env.local):
 //   NEXT_PUBLIC_SUPABASE_URL
@@ -18,9 +22,20 @@ import { createClient } from "@supabase/supabase-js";
 import {
   fetchToiletsInBbox,
   fetchInferredFacilities,
+  fetchToiletsInPrefecture,
+  fetchInferredFacilitiesInPrefecture,
   type OsmToiletNode,
 } from "../src/lib/osm";
-import { findRegion, REGIONS, type Region } from "../src/lib/regions";
+import {
+  findRegion,
+  findPrefecture,
+  REGIONS,
+  JP_PREFECTURES,
+  type Region,
+  type Prefecture,
+} from "../src/lib/regions";
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // 簡易 .env.local ローダ(dotenv 依存しないため)
 // 仕様: 引用符なしの値は `<空白>#` 以降をコメントとして剥がし trim、
@@ -57,7 +72,9 @@ loadDotenv(resolve(process.cwd(), ".env.local"));
 
 type Args = {
   regions: Region[];
+  prefectures: Prefecture[];
   bbox: [number, number, number, number] | null;
+  allJapan: boolean;
   includeToilets: boolean;
   includeInferred: boolean;
 };
@@ -65,7 +82,9 @@ type Args = {
 function parseArgs(argv: string[]): Args {
   const out: Args = {
     regions: [],
+    prefectures: [],
     bbox: null,
+    allJapan: false,
     includeToilets: true,
     includeInferred: false,
   };
@@ -79,6 +98,11 @@ function parseArgs(argv: string[]): Args {
         const r = findRegion(k.trim());
         if (r) out.regions.push(r);
       }
+    } else if (a === "--prefecture") {
+      const p = findPrefecture(argv[++i] ?? "");
+      if (p) out.prefectures.push(p);
+    } else if (a === "--all-japan") {
+      out.allJapan = true;
     } else if (a === "--bbox") {
       const parts = (argv[++i] ?? "").split(",").map(Number);
       if (parts.length === 4 && parts.every((n) => Number.isFinite(n))) {
@@ -90,12 +114,19 @@ function parseArgs(argv: string[]): Args {
       out.includeInferred = true;
       out.includeToilets = false;
     } else if (a === "--list") {
-      console.log("利用可能なリージョン:");
+      console.log("市区プリセット:");
       for (const r of REGIONS) console.log(`  ${r.key.padEnd(16)} ${r.label}`);
+      console.log("\n都道府県(--prefecture <code>):");
+      for (const p of JP_PREFECTURES) console.log(`  ${p.code}  ${p.label}`);
       process.exit(0);
     }
   }
-  if (out.regions.length === 0 && !out.bbox) {
+  if (
+    out.regions.length === 0 &&
+    out.prefectures.length === 0 &&
+    !out.bbox &&
+    !out.allJapan
+  ) {
     out.regions.push(findRegion("fukuoka-city")!);
   }
   return out;
@@ -167,6 +198,28 @@ async function seedOne(
   }
 }
 
+async function seedPrefecture(pref: Prefecture, args: Args) {
+  console.log(`\n▶ ${pref.label} (${pref.code})`);
+  if (args.includeToilets) {
+    console.log("  [amenity=toilets] Overpass 取得中…");
+    const nodes = await fetchToiletsInPrefecture(pref.code);
+    console.log(`    ✓ ${nodes.length} 件取得`);
+    if (nodes.length > 0) {
+      console.log("    Supabase に upsert 中…");
+      await upsertNodes(nodes);
+    }
+  }
+  if (args.includeInferred) {
+    console.log("  [推定青ピン: 駅/モール/公共施設/観光案内] Overpass 取得中…");
+    const inferred = await fetchInferredFacilitiesInPrefecture(pref.code);
+    console.log(`    ✓ ${inferred.length} 件取得`);
+    if (inferred.length > 0) {
+      console.log("    Supabase に upsert 中…");
+      await upsertNodes(inferred);
+    }
+  }
+}
+
 async function main() {
   const args = parseArgs(process.argv.slice(2));
   if (args.bbox) {
@@ -174,6 +227,25 @@ async function main() {
   }
   for (const r of args.regions) {
     await seedOne(r.label, r.bbox, args);
+  }
+  for (const p of args.prefectures) {
+    await seedPrefecture(p, args);
+    await sleep(2000); // Overpass に優しく
+  }
+  if (args.allJapan) {
+    console.log(`\n🗾 全国モード: 47都道府県を順次取得します(Overpass レート制限のため間に待機を入れます)`);
+    let i = 0;
+    for (const p of JP_PREFECTURES) {
+      i++;
+      console.log(`\n[${i}/47] ──────────────`);
+      try {
+        await seedPrefecture(p, args);
+      } catch (e) {
+        console.error(`  ⚠️ ${p.label} 失敗(スキップして続行):`, e instanceof Error ? e.message : e);
+      }
+      // 最後以外は 3 秒待つ(全ミラーへの負荷分散)
+      if (i < JP_PREFECTURES.length) await sleep(3000);
+    }
   }
   console.log("\n🎉 シード完了");
 }

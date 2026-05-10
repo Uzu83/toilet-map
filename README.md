@@ -69,15 +69,20 @@ npm run seed -- --inferred              # 福岡市の推定青ピン追加
 npm run seed -- --regions fukuoka-pref,tokyo-23 --inferred
 npm run seed -- --region osaka --inferred
 npm run seed -- --inferred-only         # amenity=toilets はスキップ、推定のみ
-npm run seed -- --list                  # 利用可能なリージョン一覧
+npm run seed -- --list                  # 市区プリセット + 都道府県コード一覧
 ```
 
-公開後はエリアを順次拡張:
+### 全国一括投入(Phase 0 方針: 1万箇所超でリリース)
+
+都道府県境界(ISO 3166-2:JP)で取得:
 
 ```bash
-npm run seed -- --regions fukuoka-pref,tokyo-23
-npm run seed -- --region osaka
+npm run seed -- --prefecture JP-13              # 東京都だけ
+npm run seed -- --all-japan                     # 47都道府県を順次(amenity=toilets)
+npm run seed -- --all-japan --inferred          # 全国 + 推定青ピンも(数十分かかる)
 ```
+
+`--all-japan` は Overpass のレート制限に配慮して各県の間に 3 秒待機、失敗した県はスキップして続行する。`osm_id` で冪等なので途中で止めても再実行で続きから埋まる。
 
 ### 5) 開発サーバー起動
 

@@ -131,21 +131,18 @@ function elementCoords(el: OverpassElement): { lat: number; lng: number } | null
   return null;
 }
 
-export async function fetchToiletsInBbox(
-  bbox: [number, number, number, number]
-): Promise<OsmToiletNode[]> {
-  const [s, w, n, e] = bbox;
-  const query = `[out:json][timeout:90];node["amenity"="toilets"](${s},${w},${n},${e});out;`;
-  const json = await postOverpass(query);
-  return json.elements
-    .filter((el) => el.type === "node")
+function mapToiletElements(elements: OverpassElement[]): OsmToiletNode[] {
+  return elements
+    .filter((el) => el.type === "node" || el.center)
     .map((el): OsmToiletNode | null => {
       const coords = elementCoords(el);
       if (!coords) return null;
       const tags = el.tags ?? {};
       const wheelchair = tags.wheelchair;
+      const idPrefix =
+        el.type === "way" ? 1_000_000_000_000 : el.type === "relation" ? 2_000_000_000_000 : 0;
       return {
-        osmId: el.id,
+        osmId: idPrefix + el.id,
         lat: coords.lat,
         lng: coords.lng,
         name: pickName(tags, ["name:ja", "name"]),
@@ -162,6 +159,70 @@ export async function fetchToiletsInBbox(
       };
     })
     .filter((n): n is OsmToiletNode => n !== null);
+}
+
+export async function fetchToiletsInBbox(
+  bbox: [number, number, number, number]
+): Promise<OsmToiletNode[]> {
+  const [s, w, n, e] = bbox;
+  const query = `[out:json][timeout:120];node["amenity"="toilets"](${s},${w},${n},${e});out;`;
+  const json = await postOverpass(query);
+  return mapToiletElements(json.elements);
+}
+
+// ISO 3166-2:JP コード(例: "JP-13")の都道府県境界内の amenity=toilets を取得。
+// node / way / relation すべて対象、way/relation は center 座標で代表点を取る。
+export async function fetchToiletsInPrefecture(iso3166_2: string): Promise<OsmToiletNode[]> {
+  const query = `[out:json][timeout:180];
+area["ISO3166-2"="${iso3166_2}"]->.a;
+(
+  node["amenity"="toilets"](area.a);
+  way["amenity"="toilets"](area.a);
+  relation["amenity"="toilets"](area.a);
+);
+out center;`;
+  const json = await postOverpass(query);
+  return mapToiletElements(json.elements);
+}
+
+export async function fetchInferredFacilitiesInPrefecture(
+  iso3166_2: string
+): Promise<OsmToiletNode[]> {
+  const all: OsmToiletNode[] = [];
+  for (const cat of INFERRED_CATEGORIES) {
+    const selectorQueries = cat.selectors.flatMap((sel) => [
+      `node${sel}(area.a)`,
+      `way${sel}(area.a)`,
+      `relation${sel}(area.a)`,
+    ]);
+    const query = `[out:json][timeout:180];
+area["ISO3166-2"="${iso3166_2}"]->.a;
+(${selectorQueries.join(";")};);
+out center;`;
+    const json = await postOverpass(query);
+    for (const el of json.elements) {
+      const coords = elementCoords(el);
+      if (!coords) continue;
+      const tags = el.tags ?? {};
+      const idPrefix =
+        el.type === "way" ? 1_000_000_000_000 : el.type === "relation" ? 2_000_000_000_000 : 0;
+      all.push({
+        osmId: idPrefix + el.id,
+        lat: coords.lat,
+        lng: coords.lng,
+        name: pickName(tags, cat.nameKeys) ?? `(${cat.label})`,
+        hasWashlet: null,
+        hasPaper: null,
+        hasSoap: null,
+        hasDiaperTable: null,
+        isUniversal: tags.wheelchair === "yes" ? true : null,
+        openingHours: tags["opening_hours"] ?? null,
+        source: "inferred",
+        inferredAccess: cat.inferredAccess,
+      });
+    }
+  }
+  return all;
 }
 
 export async function fetchInferredFacilities(
