@@ -1,25 +1,13 @@
 export type AccessLevel = "open" | "ask" | "permission";
 
-export const ACCESS_LEVELS: Record<
-  AccessLevel,
-  { label: string; color: string; description: string }
-> = {
-  open: {
-    label: "声かけ不要",
-    color: "#3B82F6",
-    description: "コンビニ・駅・公衆トイレなど、訪れるだけで使える",
-  },
-  ask: {
-    label: "一声かけて",
-    color: "#F59E0B",
-    description: "オフィスビル・店舗など、ひとこと声をかけて使う",
-  },
-  permission: {
-    label: "許可が必要",
-    color: "#EF4444",
-    description: "ホテル・会員制施設など、利用許可をもらう必要あり",
-  },
+// 色のみ。ラベル・説明は i18n メッセージ(messages/*.json の "access" 名前空間)から取得する。
+export const ACCESS_COLORS: Record<AccessLevel, string> = {
+  open: "#3B82F6",
+  ask: "#F59E0B",
+  permission: "#EF4444",
 };
+
+export const ACCESS_KEYS: AccessLevel[] = ["open", "ask", "permission"];
 
 export type Toilet = {
   id: string;

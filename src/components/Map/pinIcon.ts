@@ -1,5 +1,5 @@
 import L from "leaflet";
-import { ACCESS_LEVELS, type AccessLevel } from "@/types/toilet";
+import { ACCESS_COLORS, type AccessLevel } from "@/types/toilet";
 
 const STAR = `<path d="M10 1.5l2.62 5.31 5.86.85-4.24 4.13 1 5.84L10 14.88 4.76 17.63l1-5.84L1.52 7.66l5.86-.85L10 1.5z" fill="#fff" stroke="rgba(0,0,0,.25)" stroke-width=".5"/>`;
 
@@ -9,7 +9,7 @@ export function makePinIcon(opts: {
   isInferred?: boolean;
   isSelected?: boolean;
 }): L.DivIcon {
-  const color = opts.access ? ACCESS_LEVELS[opts.access].color : "#9CA3AF";
+  const color = opts.access ? ACCESS_COLORS[opts.access] : "#9CA3AF";
   const strokeColor = opts.isSelected
     ? "#FFFFFF"
     : opts.isInferred

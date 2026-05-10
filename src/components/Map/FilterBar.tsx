@@ -1,18 +1,20 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { Baby, Droplets, Heart, X } from "lucide-react";
 import { useMapStore, type Filters } from "@/store/mapStore";
 
-type Chip = { key: keyof Filters; label: string; icon: React.ReactNode };
+type Chip = { key: keyof Filters; icon: React.ReactNode };
 
 const CHIPS: Chip[] = [
-  { key: "washlet", label: "ウォシュレット", icon: <Droplets className="h-3.5 w-3.5" /> },
-  { key: "diaperTable", label: "おむつ替え", icon: <Baby className="h-3.5 w-3.5" /> },
-  { key: "universal", label: "ユニバーサル", icon: <span aria-hidden>♿</span> },
-  { key: "favoritesOnly", label: "お気に入り", icon: <Heart className="h-3.5 w-3.5" /> },
+  { key: "washlet", icon: <Droplets className="h-3.5 w-3.5" /> },
+  { key: "diaperTable", icon: <Baby className="h-3.5 w-3.5" /> },
+  { key: "universal", icon: <span aria-hidden>♿</span> },
+  { key: "favoritesOnly", icon: <Heart className="h-3.5 w-3.5" /> },
 ];
 
 export function FilterBar({ visibleCount }: { visibleCount: number }) {
+  const t = useTranslations("filter");
   const filters = useMapStore((s) => s.filters);
   const toggleFilter = useMapStore((s) => s.toggleFilter);
   const resetFilters = useMapStore((s) => s.resetFilters);
@@ -36,18 +38,18 @@ export function FilterBar({ visibleCount }: { visibleCount: number }) {
               }
             >
               {c.icon}
-              {c.label}
+              {t(c.key)}
             </button>
           );
         })}
         <span className="ml-auto shrink-0 pr-1 text-[11px] text-zinc-500 tabular-nums dark:text-zinc-400">
-          {visibleCount}件
+          {t("count", { count: visibleCount })}
         </span>
         {anyOn && (
           <button
             type="button"
             onClick={resetFilters}
-            aria-label="フィルタをリセット"
+            aria-label={t("reset")}
             className="rounded-full p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
             <X className="h-3.5 w-3.5" />

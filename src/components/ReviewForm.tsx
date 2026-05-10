@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { AlertTriangle, Star, X } from "lucide-react";
-import { ACCESS_LEVELS, type AccessLevel } from "@/types/toilet";
+import { ACCESS_COLORS, ACCESS_KEYS, type AccessLevel } from "@/types/toilet";
 import { trackEvent } from "@/lib/analytics";
 
 type Mode = "normal" | "report";
@@ -14,6 +15,9 @@ type Props = {
 };
 
 export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
+  const t = useTranslations("review");
+  const ta = useTranslations("access");
+  const tp = useTranslations("pinSheet");
   const [rating, setRating] = useState(0);
   const [accessLevel, setAccessLevel] = useState<AccessLevel | null>(null);
   const [hasWashlet, setHasWashlet] = useState<boolean | null>(null);
@@ -23,10 +27,11 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
   const [done, setDone] = useState(false);
 
   const isReport = mode === "report";
+  const displayName = toiletName ?? tp("unnamed");
 
   const submit = async () => {
     if (!isReport && (rating === 0 || !accessLevel)) {
-      setError("星と「利用許可」を選んでください");
+      setError(t("errStarAccess"));
       return;
     }
     setSubmitting(true);
@@ -42,7 +47,7 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
     setSubmitting(false);
     if (!res.ok) {
       const j = (await res.json().catch(() => ({}))) as { error?: string };
-      setError(j.error ?? "送信に失敗しました");
+      setError(j.error ?? t("errSubmit"));
       return;
     }
     setDone(true);
@@ -59,14 +64,14 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50">
-              {isReport ? "「ここトイレない/使えない」を報告" : "評価する"}
+              {isReport ? t("titleReport") : t("titleNormal")}
             </h3>
-            <p className="text-xs text-zinc-500">{toiletName ?? "名称未設定のトイレ"}</p>
+            <p className="text-xs text-zinc-500">{displayName}</p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="閉じる"
+            aria-label={t("close")}
             className="rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
             <X className="h-5 w-5" />
@@ -75,27 +80,23 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
 
         {done ? (
           <p className="rounded-lg bg-emerald-50 p-4 text-center text-sm text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-200">
-            ありがとうございます!投稿を受け付けました。
+            {t("thanks")}
           </p>
         ) : isReport ? (
           <>
             <div className="mb-4 flex items-start gap-2 rounded-lg bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-200">
               <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-              <p>
-                報告 5 件以上で自動的にこのピンが非表示になります。
-                <br />
-                次のユーザーを救うため、率直なフィードバックをお願いします。
-              </p>
+              <p>{t("reportWarning")}</p>
             </div>
             <fieldset className="mb-4">
               <legend className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                状況(任意)
+                {t("reportStatus")}
               </legend>
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value.slice(0, 500))}
                 rows={3}
-                placeholder="例: トイレ自体ない / お客さん限定で断られた / 営業時間外で閉まってた、など"
+                placeholder={t("reportPlaceholder")}
                 className="w-full resize-none rounded-lg border border-zinc-200 p-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
               />
             </fieldset>
@@ -108,17 +109,15 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
               disabled={submitting}
               className="h-12 w-full rounded-lg bg-red-600 text-base font-semibold text-white shadow hover:bg-red-700 disabled:opacity-50"
             >
-              {submitting ? "送信中…" : "報告する"}
+              {submitting ? t("submitting") : t("reportSubmit")}
             </button>
-            <p className="mt-2 text-center text-xs text-zinc-400">
-              同じトイレへの投稿は1時間に1回までです
-            </p>
+            <p className="mt-2 text-center text-xs text-zinc-400">{t("rateLimit")}</p>
           </>
         ) : (
           <>
             <fieldset className="mb-4">
               <legend className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                清潔度
+                {t("cleanliness")}
               </legend>
               <div className="flex gap-1">
                 {[1, 2, 3, 4, 5].map((n) => (
@@ -126,7 +125,7 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
                     key={n}
                     type="button"
                     onClick={() => setRating(n)}
-                    aria-label={`${n}星`}
+                    aria-label={t("starN", { n })}
                     className="rounded-lg p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800"
                   >
                     <Star
@@ -143,12 +142,12 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
 
             <fieldset className="mb-4">
               <legend className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                利用許可
+                {t("accessPermission")}
               </legend>
               <div className="grid grid-cols-3 gap-2">
-                {(Object.keys(ACCESS_LEVELS) as AccessLevel[]).map((k) => {
-                  const meta = ACCESS_LEVELS[k];
+                {ACCESS_KEYS.map((k) => {
                   const active = accessLevel === k;
+                  const color = ACCESS_COLORS[k];
                   return (
                     <button
                       key={k}
@@ -156,16 +155,13 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
                       onClick={() => setAccessLevel(k)}
                       className="flex flex-col items-center gap-1 rounded-lg border-2 p-3 text-xs font-medium transition"
                       style={{
-                        borderColor: active ? meta.color : "transparent",
-                        backgroundColor: active ? `${meta.color}10` : "var(--color-muted, #f4f4f5)",
-                        color: active ? meta.color : "#52525b",
+                        borderColor: active ? color : "transparent",
+                        backgroundColor: active ? `${color}10` : "var(--color-muted, #f4f4f5)",
+                        color: active ? color : "#52525b",
                       }}
                     >
-                      <span
-                        className="h-5 w-5 rounded-full"
-                        style={{ backgroundColor: meta.color }}
-                      />
-                      {meta.label}
+                      <span className="h-5 w-5 rounded-full" style={{ backgroundColor: color }} />
+                      {ta(`${k}.label`)}
                     </button>
                   );
                 })}
@@ -174,13 +170,13 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
 
             <fieldset className="mb-4">
               <legend className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                ウォシュレット
+                {t("washletQ")}
               </legend>
               <div className="flex gap-2">
                 {[
-                  { v: true, label: "あり" },
-                  { v: false, label: "なし" },
-                  { v: null, label: "わからない" },
+                  { v: true, label: t("yes") },
+                  { v: false, label: t("no") },
+                  { v: null, label: t("unknown") },
                 ].map((o) => (
                   <button
                     key={String(o.v)}
@@ -200,13 +196,13 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
 
             <fieldset className="mb-4">
               <legend className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                コメント (任意・500文字以内)
+                {t("comment")}
               </legend>
               <textarea
                 value={comment}
                 onChange={(e) => setComment(e.target.value.slice(0, 500))}
                 rows={3}
-                placeholder="例: ベビーカーで入れる、24時間利用可、など"
+                placeholder={t("commentPlaceholder")}
                 className="w-full resize-none rounded-lg border border-zinc-200 p-2 text-sm dark:border-zinc-700 dark:bg-zinc-800"
               />
             </fieldset>
@@ -219,11 +215,9 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
               disabled={submitting}
               className="h-12 w-full rounded-lg bg-blue-600 text-base font-semibold text-white shadow hover:bg-blue-700 disabled:opacity-50"
             >
-              {submitting ? "送信中…" : "送信する"}
+              {submitting ? t("submitting") : t("submit")}
             </button>
-            <p className="mt-2 text-center text-xs text-zinc-400">
-              同じトイレへの投稿は1時間に1回までです
-            </p>
+            <p className="mt-2 text-center text-xs text-zinc-400">{t("rateLimit")}</p>
           </>
         )}
       </div>

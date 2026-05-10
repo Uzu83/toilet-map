@@ -1,20 +1,25 @@
 "use client";
 
 import { useMemo } from "react";
+import { useTranslations } from "next-intl";
 import { Heart, MapPin, Star } from "lucide-react";
 import {
-  ACCESS_LEVELS,
+  ACCESS_COLORS,
   effectiveAccess,
   isUnconfirmed,
   type Toilet,
 } from "@/types/toilet";
 import { applyFilters, useMapStore } from "@/store/mapStore";
-import { bearingDeg, compassLabel, formatDistance, haversineMeters } from "@/lib/geo";
+import { bearingDeg, bearingIndex, formatDistance, haversineMeters } from "@/lib/geo";
 import { FilterBar } from "./FilterBar";
 
 const HAKATA_STATION = { lat: 33.5904, lng: 130.4204 };
 
 export function ToiletList() {
+  const t = useTranslations("list");
+  const tp = useTranslations("pinSheet");
+  const ta = useTranslations("access");
+  const tc = useTranslations("compass");
   const toilets = useMapStore((s) => s.toilets);
   const filters = useMapStore((s) => s.filters);
   const favorites = useMapStore((s) => s.favorites);
@@ -70,19 +75,19 @@ export function ToiletList() {
           <div className="mx-auto mt-10 max-w-sm rounded-2xl bg-white p-6 text-center shadow ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10">
             <MapPin className="mx-auto mb-2 h-6 w-6 text-zinc-400" />
             <p className="text-sm font-semibold text-zinc-800 dark:text-zinc-100">
-              条件に合うトイレが近くにありません
+              {t("noResults")}
             </p>
-            <p className="mt-1 text-xs text-zinc-500">
-              フィルタを外す/マップで別のエリアに移動してください
-            </p>
+            <p className="mt-1 text-xs text-zinc-500">{t("noResultsHint")}</p>
           </div>
         ) : (
           <ul className="mx-auto max-w-2xl divide-y divide-zinc-200/70 px-2 dark:divide-zinc-800">
             {items.map(({ toilet, distance, bearing }) => {
               const access = effectiveAccess(toilet);
-              const accessMeta = access ? ACCESS_LEVELS[access] : null;
+              const accessColor = access ? ACCESS_COLORS[access] : null;
+              const accessLabel = access ? ta(`${access}.label`) : null;
               const inferred = toilet.source === "inferred" && toilet.review_count === 0;
               const fav = favorites.has(toilet.id);
+              const dir = tc(String(bearingIndex(bearing)));
               return (
                 <li key={toilet.id}>
                   <button
@@ -93,7 +98,7 @@ export function ToiletList() {
                     <span
                       className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-white shadow"
                       style={{
-                        backgroundColor: accessMeta?.color ?? "#9CA3AF",
+                        backgroundColor: accessColor ?? "#9CA3AF",
                         opacity: inferred ? 0.6 : 1,
                         border: inferred ? "2px dashed #fff" : undefined,
                       }}
@@ -102,19 +107,19 @@ export function ToiletList() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                        {toilet.name ?? "名称未設定のトイレ"}
+                        {toilet.name ?? tp("unnamed")}
                       </p>
                       <p className="text-xs text-zinc-500">
-                        {formatDistance(distance)} {compassLabel(bearing)}方向
-                        {accessMeta && <> ・ {accessMeta.label}</>}
-                        {inferred && <> ・ ※未確認</>}
+                        {formatDistance(distance)} {dir}{tp("directionSuffix")}
+                        {accessLabel && <> ・ {accessLabel}</>}
+                        {inferred && <> ・ {t("unconfirmedShort")}</>}
                       </p>
                       <div className="mt-0.5 flex items-center gap-1">
                         <Stars value={toilet.avg_rating ?? 0} />
                         <span className="text-[10px] text-zinc-500 tabular-nums">
                           {toilet.avg_rating ? toilet.avg_rating.toFixed(1) : "—"}
                           ({toilet.review_count})
-                          {isUnconfirmed(toilet) && toilet.review_count > 0 && " ※参考値"}
+                          {isUnconfirmed(toilet) && toilet.review_count > 0 && ` ${t("referenceValue")}`}
                         </span>
                       </div>
                     </div>

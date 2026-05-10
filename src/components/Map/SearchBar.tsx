@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useMap } from "react-leaflet";
+import { useTranslations } from "next-intl";
 import { Loader2, Search, X } from "lucide-react";
 
 type NominatimResult = {
@@ -30,6 +31,7 @@ async function geocode(q: string, signal: AbortSignal): Promise<NominatimResult[
 }
 
 export function SearchBar() {
+  const t = useTranslations("search");
   const map = useMap();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
@@ -85,7 +87,7 @@ export function SearchBar() {
             value={q}
             onChange={(e) => onInputChange(e.target.value)}
             onFocus={() => results.length > 0 && setOpen(true)}
-            placeholder="場所を検索 (例: 博多駅、天神、キャナルシティ)"
+            placeholder={t("placeholder")}
             className="flex-1 bg-transparent text-sm text-zinc-800 outline-none placeholder:text-zinc-400 dark:text-zinc-100"
           />
           {busy && <Loader2 className="h-4 w-4 animate-spin text-zinc-400" />}
@@ -95,7 +97,7 @@ export function SearchBar() {
               onClick={() => {
                 onInputChange("");
               }}
-              aria-label="クリア"
+              aria-label={t("clear")}
               className="rounded-full p-0.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <X className="h-4 w-4" />

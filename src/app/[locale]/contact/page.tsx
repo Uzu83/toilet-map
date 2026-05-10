@@ -1,19 +1,36 @@
-import Link from "next/link";
+import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ExternalLink, Mail } from "lucide-react";
+import { Link } from "@/i18n/navigation";
+import { routing } from "@/i18n/routing";
 
-export const metadata = { title: "ご意見・ご要望" };
+export const metadata = { title: "ご意見・ご要望 / Feedback" };
 
 const FEEDBACK_FORM_URL = "https://forms.gle/iKxY3vB6tg4t4vTW9";
 
-export default function ContactPage() {
+export default async function ContactPage({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}) {
+  const { locale } = await params;
+  setRequestLocale(locale);
+  const tn = await getTranslations("nav");
+  const tl = await getTranslations("legalNotice");
+  const isJa = locale === routing.defaultLocale;
+
   return (
     <article className="mx-auto max-w-2xl space-y-5 px-4 py-8 text-sm leading-7 text-zinc-700 dark:text-zinc-300">
       <Link href="/" className="text-xs text-blue-600 hover:underline">
-        ← マップに戻る
+        {tn("backToMap")}
       </Link>
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-        ご意見・ご要望
-      </h1>
+      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{tn("feedback")}</h1>
+
+      {!isJa && (
+        <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          {tl("japaneseOnly")}
+        </p>
+      )}
+
       <p>
         Loo map へのバグ報告・トイレ情報の誤り・機能要望・感想など、お気軽にどうぞ。匿名で送信できます。
       </p>
@@ -25,7 +42,7 @@ export default function ContactPage() {
         className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 text-base font-semibold text-white shadow hover:bg-blue-700 active:scale-[0.99]"
       >
         <ExternalLink className="h-4 w-4" />
-        フィードバックフォームを開く
+        フィードバックフォームを開く / Open feedback form
       </a>
 
       <p className="text-xs text-zinc-500">

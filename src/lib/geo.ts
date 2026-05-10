@@ -31,10 +31,10 @@ export function bearingDeg(
   return (toDeg(Math.atan2(y, x)) + 360) % 360;
 }
 
-export function compassLabel(deg: number): string {
-  const dirs = ["北", "北東", "東", "南東", "南", "南西", "西", "北西"];
-  const idx = Math.round(deg / 45) % 8;
-  return dirs[idx]!;
+// 8 方位のインデックス (0=N, 1=NE, 2=E, 3=SE, 4=S, 5=SW, 6=W, 7=NW)。
+// 文言は i18n の "compass" 配列から引く。
+export function bearingIndex(deg: number): number {
+  return Math.round(deg / 45) % 8;
 }
 
 export function formatDistance(m: number): string {

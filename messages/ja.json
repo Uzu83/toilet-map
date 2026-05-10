@@ -1,0 +1,138 @@
+{
+  "app": {
+    "name": "Loo map",
+    "tagline": "近くのトイレを最速で見つける地図"
+  },
+  "metadata": {
+    "title": "Loo map - 近くのトイレを最速で見つける地図",
+    "description": "近くの公衆トイレを「許可不要(青)・声かけ要(黄)・許可要(赤)」のピンと星1-5の清潔度で3タップ以内に探せる地図。日本全国対応。"
+  },
+  "nav": {
+    "feedback": "ご意見",
+    "privacy": "プライバシー",
+    "terms": "規約",
+    "backToMap": "← マップに戻る"
+  },
+  "onboarding": {
+    "welcome": "🚽 Loo map へようこそ",
+    "intro": "近くの公衆トイレを 3 タップ以内で見つけよう。",
+    "colorBadge": "色",
+    "colorLine": "<b>青</b>=声かけ不要 / <b>黄</b>=一声かけて / <b>赤</b>=要許可",
+    "pinTap": "ピンタップで詳細・距離・「ここに行く」ナビ",
+    "review": "使った後に評価/「ない」報告で次の人を救おう",
+    "favorite": "よく行く場所はお気に入りに保存",
+    "disclaimer": "※ 一部のピンは推定情報。実際と異なる場合は「使えなかった」報告にご協力ください。",
+    "start": "始める",
+    "etiquetteTitle": "日本のトイレの使い方(初めての方へ)",
+    "etiquetteSit": "座って使ってください(立って使わない)",
+    "etiquettePaper": "トイレットペーパーは便器に流してください(ゴミ箱に捨てない)",
+    "etiquetteFlush": "使用後は必ず水を流してください",
+    "etiquetteNoStand": "便座の上に立たないでください"
+  },
+  "filter": {
+    "washlet": "ウォシュレット",
+    "diaperTable": "おむつ替え",
+    "universal": "ユニバーサル",
+    "favoritesOnly": "お気に入り",
+    "count": "{count}件",
+    "reset": "フィルタをリセット"
+  },
+  "legend": {
+    "title": "ピンの色",
+    "unranked": "評価不足",
+    "inferred": "推定(未確認)"
+  },
+  "access": {
+    "open": { "label": "声かけ不要", "desc": "コンビニ・駅・公衆トイレなど、訪れるだけで使える" },
+    "ask": { "label": "一声かけて", "desc": "オフィスビル・店舗など、ひとこと声をかけて使う" },
+    "permission": { "label": "許可が必要", "desc": "ホテル・会員制施設など、利用許可をもらう必要あり" }
+  },
+  "pinSheet": {
+    "unnamed": "名称未設定のトイレ",
+    "directionSuffix": "方向",
+    "unconfirmed": "※未確認(推定)",
+    "washlet": "ウォシュレット",
+    "diaperTable": "おむつ替え台",
+    "universal": "ユニバーサル",
+    "ratingNote": "10件未満は参考値",
+    "reviewCount": "{count}件",
+    "noRating": "評価不足",
+    "goHere": "ここに行く",
+    "review": "評価する",
+    "report": "ここはトイレがない・使えなかった と報告",
+    "inferredNoteWithHours": "施設情報からの推定です。実際にトイレがあるか・利用できるかは未確認。営業時間: {hours}。実際の状況をぜひ報告お願いします!",
+    "inferredNoteNoHours": "施設情報からの推定です。実際にトイレがあるか・利用できるかは未確認。施設の営業時間内のみ利用可。実際の状況をぜひ報告お願いします!",
+    "copied": "リンクをコピーしました",
+    "shareDefault": "Loo map で見つけたトイレ",
+    "favoriteAdd": "お気に入り登録",
+    "favoriteRemove": "お気に入りから外す",
+    "share": "共有",
+    "close": "閉じる"
+  },
+  "review": {
+    "titleNormal": "評価する",
+    "titleReport": "「ここトイレない/使えない」を報告",
+    "cleanliness": "清潔度",
+    "accessPermission": "利用許可",
+    "washletQ": "ウォシュレット",
+    "yes": "あり",
+    "no": "なし",
+    "unknown": "わからない",
+    "comment": "コメント (任意・500文字以内)",
+    "commentPlaceholder": "例: ベビーカーで入れる、24時間利用可、など",
+    "submit": "送信する",
+    "submitting": "送信中…",
+    "rateLimit": "同じトイレへの投稿は1時間に1回までです",
+    "thanks": "ありがとうございます!投稿を受け付けました。",
+    "errStarAccess": "星と「利用許可」を選んでください",
+    "errSubmit": "送信に失敗しました",
+    "reportWarning": "報告 5 件以上で自動的にこのピンが非表示になります。次のユーザーを救うため、率直なフィードバックをお願いします。",
+    "reportStatus": "状況(任意)",
+    "reportPlaceholder": "例: トイレ自体ない / お客さん限定で断られた / 営業時間外で閉まってた、など",
+    "reportSubmit": "報告する",
+    "starN": "{n}星",
+    "close": "閉じる"
+  },
+  "search": {
+    "placeholder": "場所を検索 (例: 博多駅、天神、キャナルシティ)",
+    "clear": "クリア"
+  },
+  "list": {
+    "noResults": "条件に合うトイレが近くにありません",
+    "noResultsHint": "フィルタを外す/マップで別のエリアに移動してください",
+    "referenceValue": "※参考値",
+    "unconfirmedShort": "※未確認"
+  },
+  "map": {
+    "loading": "地図を読み込み中…",
+    "loadError": "読み込みエラー: {message}",
+    "emptyFiltered": "条件に合うトイレが見つかりません",
+    "emptyFilteredHint": "フィルタを外すか、別のエリアを試してください",
+    "emptyArea": "このエリアにはまだトイレ情報がありません",
+    "emptyAreaHint": "ズームアウトする / 別の街に移動する / 投稿するで増やせます",
+    "loadingBadge": "読み込み中",
+    "locate": "現在地に移動",
+    "locateDenied": "位置情報の許可がありません",
+    "northBadge": "北方位"
+  },
+  "tab": {
+    "map": "マップ",
+    "list": "リスト",
+    "switchView": "ビュー切替"
+  },
+  "install": {
+    "iosHint": "アプリ化するには:画面下の共有ボタン → 「ホーム画面に追加」",
+    "addToHome": "ホーム画面に追加",
+    "close": "閉じる"
+  },
+  "errorBoundary": {
+    "title": "画面の表示中にエラーが発生しました",
+    "hint": "一時的な問題かもしれません。再読み込みをお試しください。",
+    "retry": "再試行",
+    "home": "トップへ"
+  },
+  "legalNotice": {
+    "japaneseOnly": "このページは日本語のみで提供されています。"
+  },
+  "compass": ["北", "北東", "東", "南東", "南", "南西", "西", "北西"]
+}

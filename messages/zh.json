@@ -1,0 +1,138 @@
+{
+  "app": {
+    "name": "Loo map",
+    "tagline": "最快找到附近厕所的地图"
+  },
+  "metadata": {
+    "title": "Loo map - 在日本快速找到附近的厕所",
+    "description": "在日本全国查找附近的公共厕所。彩色图钉（蓝色 = 可直接使用，黄色 = 需先打声招呼，红色 = 需获得许可）和 1-5 星清洁度评分，3 次点击即可找到。"
+  },
+  "nav": {
+    "feedback": "意见反馈",
+    "privacy": "隐私",
+    "terms": "条款",
+    "backToMap": "← 返回地图"
+  },
+  "onboarding": {
+    "welcome": "🚽 欢迎使用 Loo map",
+    "intro": "3 次点击以内找到附近的公共厕所。",
+    "colorBadge": "颜色",
+    "colorLine": "<b>蓝色</b> = 可直接使用 / <b>黄色</b> = 需先打声招呼 / <b>红色</b> = 需获得许可",
+    "pinTap": "点击图钉查看详情、距离和\"带我去\"导航",
+    "review": "使用后请评价，或报告\"无法使用\"以帮助下一个人",
+    "favorite": "把常去的地方保存为收藏",
+    "disclaimer": "※ 部分图钉为推测信息。如与实际不符，请协助报告\"无法使用\"。",
+    "start": "开始使用",
+    "etiquetteTitle": "日本厕所使用方法（初次使用者必读）",
+    "etiquetteSit": "请坐着使用（不要站着或蹲在便座上使用）",
+    "etiquettePaper": "厕纸请直接冲入马桶——切勿丢入垃圾桶",
+    "etiquetteFlush": "使用后请务必冲水",
+    "etiquetteNoStand": "请勿站在马桶座圈上"
+  },
+  "filter": {
+    "washlet": "智能马桶盖",
+    "diaperTable": "尿布台",
+    "universal": "无障碍",
+    "favoritesOnly": "收藏",
+    "count": "{count}处",
+    "reset": "重置筛选"
+  },
+  "legend": {
+    "title": "图钉颜色",
+    "unranked": "评价不足",
+    "inferred": "推测（未确认）"
+  },
+  "access": {
+    "open": { "label": "可直接使用", "desc": "便利店、车站、公共厕所等，直接进入即可使用" },
+    "ask": { "label": "需先打声招呼", "desc": "写字楼、店铺等，说一声后使用" },
+    "permission": { "label": "需获得许可", "desc": "酒店、会员制设施等，需获得使用许可" }
+  },
+  "pinSheet": {
+    "unnamed": "未命名的厕所",
+    "directionSuffix": "方向",
+    "unconfirmed": "未确认（推测）",
+    "washlet": "智能马桶盖",
+    "diaperTable": "尿布台",
+    "universal": "无障碍",
+    "ratingNote": "不足 10 条仅供参考",
+    "reviewCount": "{count}条",
+    "noRating": "评价不足",
+    "goHere": "带我去",
+    "review": "评价",
+    "report": "报告：这里没有厕所 / 无法使用",
+    "inferredNoteWithHours": "根据设施信息推测。是否真有厕所、能否使用均未确认。营业时间：{hours}。请务必报告实际情况！",
+    "inferredNoteNoHours": "根据设施信息推测。是否真有厕所、能否使用均未确认。仅在设施营业时间内可用。请务必报告实际情况！",
+    "copied": "已复制链接",
+    "shareDefault": "我在 Loo map 上找到的厕所",
+    "favoriteAdd": "加入收藏",
+    "favoriteRemove": "取消收藏",
+    "share": "分享",
+    "close": "关闭"
+  },
+  "review": {
+    "titleNormal": "评价",
+    "titleReport": "报告\"没有厕所/无法使用\"",
+    "cleanliness": "清洁度",
+    "accessPermission": "使用许可",
+    "washletQ": "智能马桶盖",
+    "yes": "有",
+    "no": "无",
+    "unknown": "不清楚",
+    "comment": "评论（选填，500 字以内）",
+    "commentPlaceholder": "例如：可推婴儿车进入、24 小时开放等",
+    "submit": "提交",
+    "submitting": "提交中…",
+    "rateLimit": "同一厕所每小时只能发布一次。",
+    "thanks": "谢谢！您的提交已收到。",
+    "errStarAccess": "请选择星级和\"使用许可\"。",
+    "errSubmit": "提交失败",
+    "reportWarning": "若收到 5 条以上报告，此图钉将被自动隐藏。请如实反馈以帮助下一个人。",
+    "reportStatus": "情况（选填）",
+    "reportPlaceholder": "例如：根本没有厕所 / 仅限顾客被拒绝 / 营业时间外关闭",
+    "reportSubmit": "提交报告",
+    "starN": "{n}星",
+    "close": "关闭"
+  },
+  "search": {
+    "placeholder": "搜索地点（例如：博多站、天神、运河城）",
+    "clear": "清除"
+  },
+  "list": {
+    "noResults": "附近没有符合条件的厕所",
+    "noResultsHint": "请取消筛选，或在地图上移动到其他区域",
+    "referenceValue": "仅供参考",
+    "unconfirmedShort": "未确认"
+  },
+  "map": {
+    "loading": "正在加载地图…",
+    "loadError": "加载错误：{message}",
+    "emptyFiltered": "没有符合筛选条件的厕所",
+    "emptyFilteredHint": "请取消筛选或尝试其他区域",
+    "emptyArea": "该区域暂无厕所信息",
+    "emptyAreaHint": "可通过缩小地图 / 移动到其他城市 / 添加厕所来增加",
+    "loadingBadge": "加载中",
+    "locate": "移动到当前位置",
+    "locateDenied": "未授予位置权限",
+    "northBadge": "北"
+  },
+  "tab": {
+    "map": "地图",
+    "list": "列表",
+    "switchView": "切换视图"
+  },
+  "install": {
+    "iosHint": "安装为应用：点击屏幕下方的分享按钮 →「添加到主屏幕」",
+    "addToHome": "添加到主屏幕",
+    "close": "关闭"
+  },
+  "errorBoundary": {
+    "title": "显示此页面时发生错误",
+    "hint": "这可能是临时问题。请尝试重新加载。",
+    "retry": "重试",
+    "home": "返回首页"
+  },
+  "legalNotice": {
+    "japaneseOnly": "本页面仅提供日语版本。"
+  },
+  "compass": ["北", "东北", "东", "东南", "南", "西南", "西", "西北"]
+}

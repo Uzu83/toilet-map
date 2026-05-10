@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import {
   MapContainer,
   Marker,
@@ -118,6 +119,7 @@ async function fetchToilets(bounds: L.LatLngBounds): Promise<Toilet[]> {
 }
 
 export default function ToiletMap() {
+  const tm = useTranslations("map");
   const setToilets = useMapStore((s) => s.setToilets);
   const select = useMapStore((s) => s.select);
   const toilets = useMapStore((s) => s.toilets);
@@ -206,7 +208,7 @@ export default function ToiletMap() {
       <PinSheet />
       {error && (
         <div className="absolute left-4 top-20 z-1000 rounded-lg bg-red-500/90 px-3 py-2 text-sm text-white shadow">
-          読み込みエラー: {error}
+          {tm("loadError", { message: error })}
         </div>
       )}
     </div>

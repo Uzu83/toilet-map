@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useSyncExternalStore } from "react";
+import { useTranslations } from "next-intl";
 import { Download, Share, X } from "lucide-react";
 
 type BeforeInstallPromptEvent = Event & {
@@ -32,6 +33,7 @@ const getClientIsIos = () => {
 };
 
 export function InstallPrompt() {
+  const t = useTranslations("install");
   const dismissedFromStorage = useSyncExternalStore(
     subscribe,
     getClientDismissed,
@@ -80,14 +82,11 @@ export function InstallPrompt() {
     return (
       <div className="fixed bottom-20 left-3 right-3 z-1000 mx-auto flex max-w-sm items-start gap-2 rounded-2xl bg-zinc-900/95 px-3 py-2.5 text-xs text-white shadow-xl">
         <Share className="mt-0.5 h-4 w-4 shrink-0 text-blue-300" />
-        <p className="flex-1 leading-relaxed">
-          アプリ化するには:画面下の <b className="text-blue-300">共有ボタン</b> →
-          <b className="text-blue-300">「ホーム画面に追加」</b>
-        </p>
+        <p className="flex-1 leading-relaxed">{t("iosHint")}</p>
         <button
           type="button"
           onClick={() => dismiss()}
-          aria-label="閉じる"
+          aria-label={t("close")}
           className="-mr-1 -mt-1 rounded-full p-1 hover:bg-white/15"
         >
           <X className="h-3.5 w-3.5" />
@@ -112,12 +111,12 @@ export function InstallPrompt() {
     <div className="fixed bottom-20 right-3 z-1000 flex items-center gap-2 rounded-full bg-blue-600 py-2 pl-3 pr-1.5 text-sm font-semibold text-white shadow-xl">
       <Download className="h-4 w-4" />
       <button type="button" onClick={install}>
-        ホーム画面に追加
+        {t("addToHome")}
       </button>
       <button
         type="button"
         onClick={() => dismiss()}
-        aria-label="閉じる"
+        aria-label={t("close")}
         className="rounded-full p-1 hover:bg-white/15"
       >
         <X className="h-3.5 w-3.5" />

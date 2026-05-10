@@ -1,0 +1,138 @@
+{
+  "app": {
+    "name": "Loo map",
+    "tagline": "가까운 화장실을 가장 빠르게 찾는 지도"
+  },
+  "metadata": {
+    "title": "Loo map - 일본에서 가까운 화장실 찾기",
+    "description": "일본 전역의 공중화장실을 색상 핀(파랑 = 자유 이용, 노랑 = 직원에게 한마디, 빨강 = 허가 필요)과 1~5점 청결도로 3탭 안에 찾을 수 있는 지도."
+  },
+  "nav": {
+    "feedback": "의견",
+    "privacy": "개인정보",
+    "terms": "이용약관",
+    "backToMap": "← 지도로 돌아가기"
+  },
+  "onboarding": {
+    "welcome": "🚽 Loo map에 오신 것을 환영합니다",
+    "intro": "가까운 공중화장실을 3탭 이내에 찾아보세요.",
+    "colorBadge": "색상",
+    "colorLine": "<b>파랑</b> = 그냥 이용 가능 / <b>노랑</b> = 직원에게 한마디 / <b>빨강</b> = 허가 필요",
+    "pinTap": "핀을 탭하면 상세 정보·거리·\"길 안내\"가 나옵니다",
+    "review": "이용 후 평가하거나 \"이용 불가\" 신고로 다음 사람을 도와주세요",
+    "favorite": "자주 가는 곳은 즐겨찾기에 저장",
+    "disclaimer": "※ 일부 핀은 추정 정보입니다. 실제와 다르면 \"이용 불가\" 신고에 협조 부탁드립니다.",
+    "start": "시작하기",
+    "etiquetteTitle": "일본 화장실 이용 방법 (처음 오신 분께)",
+    "etiquetteSit": "앉아서 이용해 주세요 (서서 이용하지 마세요)",
+    "etiquettePaper": "화장지는 변기에 흘려보내 주세요 (휴지통에 버리지 마세요)",
+    "etiquetteFlush": "사용 후 반드시 물을 내려 주세요",
+    "etiquetteNoStand": "변기 위에 올라서지 마세요"
+  },
+  "filter": {
+    "washlet": "비데",
+    "diaperTable": "기저귀 교환대",
+    "universal": "장애인용",
+    "favoritesOnly": "즐겨찾기",
+    "count": "{count}곳",
+    "reset": "필터 초기화"
+  },
+  "legend": {
+    "title": "핀 색상",
+    "unranked": "평가 부족",
+    "inferred": "추정 (미확인)"
+  },
+  "access": {
+    "open": { "label": "자유 이용", "desc": "편의점·역·공중화장실 등, 그냥 들어가서 이용" },
+    "ask": { "label": "직원에게 한마디", "desc": "오피스 빌딩·상점 등, 한마디 하고 이용" },
+    "permission": { "label": "허가 필요", "desc": "호텔·회원제 시설 등, 이용 허가가 필요" }
+  },
+  "pinSheet": {
+    "unnamed": "이름 없는 화장실",
+    "directionSuffix": "쪽",
+    "unconfirmed": "미확인 (추정)",
+    "washlet": "비데",
+    "diaperTable": "기저귀 교환대",
+    "universal": "장애인용",
+    "ratingNote": "10건 미만은 참고용",
+    "reviewCount": "{count}건",
+    "noRating": "평가 부족",
+    "goHere": "길 안내",
+    "review": "평가하기",
+    "report": "여기는 화장실이 없거나 이용 불가 신고",
+    "inferredNoteWithHours": "시설 정보에서 추정한 것입니다. 실제로 화장실이 있는지·이용 가능한지 미확인. 영업시간: {hours}. 실제 상황을 꼭 신고해 주세요!",
+    "inferredNoteNoHours": "시설 정보에서 추정한 것입니다. 실제로 화장실이 있는지·이용 가능한지 미확인. 시설 영업시간 내에만 이용 가능. 실제 상황을 꼭 신고해 주세요!",
+    "copied": "링크를 복사했습니다",
+    "shareDefault": "Loo map에서 찾은 화장실",
+    "favoriteAdd": "즐겨찾기 추가",
+    "favoriteRemove": "즐겨찾기 해제",
+    "share": "공유",
+    "close": "닫기"
+  },
+  "review": {
+    "titleNormal": "평가하기",
+    "titleReport": "\"화장실 없음/이용 불가\" 신고",
+    "cleanliness": "청결도",
+    "accessPermission": "이용 허가",
+    "washletQ": "비데",
+    "yes": "있음",
+    "no": "없음",
+    "unknown": "모름",
+    "comment": "코멘트 (선택, 500자 이내)",
+    "commentPlaceholder": "예: 유모차 진입 가능, 24시간 이용 가능 등",
+    "submit": "보내기",
+    "submitting": "전송 중…",
+    "rateLimit": "같은 화장실에 대한 게시는 1시간에 1회까지입니다.",
+    "thanks": "감사합니다! 게시물이 접수되었습니다.",
+    "errStarAccess": "별점과 \"이용 허가\"를 선택해 주세요.",
+    "errSubmit": "전송에 실패했습니다",
+    "reportWarning": "신고 5건 이상이면 자동으로 이 핀이 숨겨집니다. 다음 사람을 위해 솔직한 피드백 부탁드립니다.",
+    "reportStatus": "상황 (선택)",
+    "reportPlaceholder": "예: 화장실 자체가 없음 / 손님 전용이라 거절당함 / 영업시간 외라 닫혀 있었음",
+    "reportSubmit": "신고하기",
+    "starN": "{n}점",
+    "close": "닫기"
+  },
+  "search": {
+    "placeholder": "장소 검색 (예: 하카타역, 텐진, 캐널시티)",
+    "clear": "지우기"
+  },
+  "list": {
+    "noResults": "조건에 맞는 화장실이 근처에 없습니다",
+    "noResultsHint": "필터를 해제하거나 지도에서 다른 지역으로 이동하세요",
+    "referenceValue": "참고용",
+    "unconfirmedShort": "미확인"
+  },
+  "map": {
+    "loading": "지도를 불러오는 중…",
+    "loadError": "불러오기 오류: {message}",
+    "emptyFiltered": "필터에 맞는 화장실이 없습니다",
+    "emptyFilteredHint": "필터를 해제하거나 다른 지역을 시도해 보세요",
+    "emptyArea": "이 지역에는 아직 화장실 정보가 없습니다",
+    "emptyAreaHint": "축소 / 다른 도시로 이동 / 등록으로 늘릴 수 있습니다",
+    "loadingBadge": "불러오는 중",
+    "locate": "현재 위치로 이동",
+    "locateDenied": "위치 권한이 없습니다",
+    "northBadge": "북쪽"
+  },
+  "tab": {
+    "map": "지도",
+    "list": "목록",
+    "switchView": "뷰 전환"
+  },
+  "install": {
+    "iosHint": "앱으로 설치하려면: 화면 하단 공유 버튼 → \"홈 화면에 추가\"",
+    "addToHome": "홈 화면에 추가",
+    "close": "닫기"
+  },
+  "errorBoundary": {
+    "title": "화면을 표시하는 중 오류가 발생했습니다",
+    "hint": "일시적인 문제일 수 있습니다. 새로고침해 보세요.",
+    "retry": "다시 시도",
+    "home": "처음으로"
+  },
+  "legalNotice": {
+    "japaneseOnly": "이 페이지는 일본어로만 제공됩니다."
+  },
+  "compass": ["북", "북동", "동", "남동", "남", "남서", "서", "북서"]
+}

@@ -1,0 +1,138 @@
+{
+  "app": {
+    "name": "Loo map",
+    "tagline": "Find the nearest toilet, fast"
+  },
+  "metadata": {
+    "title": "Loo map - Find the nearest toilet in Japan",
+    "description": "Find nearby public toilets across Japan. Color-coded pins (blue = free to use, yellow = ask staff, red = permission needed) and 1-5 star cleanliness ratings. Tap to find one in 3 taps."
+  },
+  "nav": {
+    "feedback": "Feedback",
+    "privacy": "Privacy",
+    "terms": "Terms",
+    "backToMap": "← Back to map"
+  },
+  "onboarding": {
+    "welcome": "🚽 Welcome to Loo map",
+    "intro": "Find a nearby public toilet in 3 taps or fewer.",
+    "colorBadge": "color",
+    "colorLine": "<b>Blue</b> = free to use / <b>Yellow</b> = ask staff first / <b>Red</b> = permission needed",
+    "pinTap": "Tap a pin for details, distance, and a \"Take me there\" route",
+    "review": "After using one, leave a review or report \"not usable\" to help the next person",
+    "favorite": "Save places you visit often as favorites",
+    "disclaimer": "Note: some pins are estimated. If something is wrong, please report \"couldn't use it\".",
+    "start": "Get started",
+    "etiquetteTitle": "How to use a Japanese toilet (for first-time visitors)",
+    "etiquetteSit": "Please sit down to use it (don't stand or squat over it)",
+    "etiquettePaper": "Flush toilet paper down the toilet — do NOT put it in the trash bin",
+    "etiquetteFlush": "Always flush after use",
+    "etiquetteNoStand": "Do not stand on the toilet seat"
+  },
+  "filter": {
+    "washlet": "Washlet",
+    "diaperTable": "Diaper table",
+    "universal": "Accessible",
+    "favoritesOnly": "Favorites",
+    "count": "{count}",
+    "reset": "Reset filters"
+  },
+  "legend": {
+    "title": "Pin colors",
+    "unranked": "Not enough reviews",
+    "inferred": "Estimated (unverified)"
+  },
+  "access": {
+    "open": { "label": "Free to use", "desc": "Convenience stores, stations, public toilets — just walk in" },
+    "ask": { "label": "Ask staff first", "desc": "Office buildings, shops — ask a quick word before using" },
+    "permission": { "label": "Permission needed", "desc": "Hotels, members-only facilities — you need permission to use" }
+  },
+  "pinSheet": {
+    "unnamed": "Unnamed toilet",
+    "directionSuffix": "",
+    "unconfirmed": "Unverified (estimated)",
+    "washlet": "Washlet",
+    "diaperTable": "Diaper table",
+    "universal": "Accessible",
+    "ratingNote": "fewer than 10 reviews — for reference only",
+    "reviewCount": "{count} reviews",
+    "noRating": "Not enough reviews",
+    "goHere": "Take me there",
+    "review": "Leave a review",
+    "report": "Report: no toilet here / couldn't use it",
+    "inferredNoteWithHours": "Estimated from facility data. Whether a toilet actually exists / can be used is unverified. Hours: {hours}. Please report the actual situation!",
+    "inferredNoteNoHours": "Estimated from facility data. Whether a toilet actually exists / can be used is unverified. Usable only during the facility's opening hours. Please report the actual situation!",
+    "copied": "Link copied",
+    "shareDefault": "A toilet I found on Loo map",
+    "favoriteAdd": "Add to favorites",
+    "favoriteRemove": "Remove from favorites",
+    "share": "Share",
+    "close": "Close"
+  },
+  "review": {
+    "titleNormal": "Leave a review",
+    "titleReport": "Report \"no toilet / couldn't use it\"",
+    "cleanliness": "Cleanliness",
+    "accessPermission": "Access",
+    "washletQ": "Washlet",
+    "yes": "Yes",
+    "no": "No",
+    "unknown": "Don't know",
+    "comment": "Comment (optional, up to 500 characters)",
+    "commentPlaceholder": "e.g. stroller-friendly, open 24h, etc.",
+    "submit": "Submit",
+    "submitting": "Submitting…",
+    "rateLimit": "You can post about the same toilet once per hour.",
+    "thanks": "Thank you! Your submission has been received.",
+    "errStarAccess": "Please select a star rating and an access level.",
+    "errSubmit": "Failed to submit",
+    "reportWarning": "If 5 or more reports come in, this pin is automatically hidden. Please give honest feedback to help the next person.",
+    "reportStatus": "Details (optional)",
+    "reportPlaceholder": "e.g. no toilet at all / customers only and was refused / closed outside opening hours",
+    "reportSubmit": "Submit report",
+    "starN": "{n} stars",
+    "close": "Close"
+  },
+  "search": {
+    "placeholder": "Search a place (e.g. Hakata Station, Tenjin, Canal City)",
+    "clear": "Clear"
+  },
+  "list": {
+    "noResults": "No matching toilets nearby",
+    "noResultsHint": "Remove filters / move to a different area on the map",
+    "referenceValue": "for reference",
+    "unconfirmedShort": "unverified"
+  },
+  "map": {
+    "loading": "Loading map…",
+    "loadError": "Load error: {message}",
+    "emptyFiltered": "No toilets match your filters",
+    "emptyFilteredHint": "Remove filters or try a different area",
+    "emptyArea": "No toilet data in this area yet",
+    "emptyAreaHint": "Zoom out / move to another city / add one to grow the map",
+    "loadingBadge": "Loading",
+    "locate": "Go to current location",
+    "locateDenied": "Location permission not granted",
+    "northBadge": "North"
+  },
+  "tab": {
+    "map": "Map",
+    "list": "List",
+    "switchView": "Switch view"
+  },
+  "install": {
+    "iosHint": "To install as an app: tap the Share button → \"Add to Home Screen\"",
+    "addToHome": "Add to Home Screen",
+    "close": "Close"
+  },
+  "errorBoundary": {
+    "title": "Something went wrong while displaying this screen",
+    "hint": "This may be a temporary issue. Please try reloading.",
+    "retry": "Retry",
+    "home": "Go to top"
+  },
+  "legalNotice": {
+    "japaneseOnly": "This page is available in Japanese only."
+  },
+  "compass": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+}
