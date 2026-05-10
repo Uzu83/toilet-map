@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { SITE_TEAM } from "@/lib/contact";
 
 export const metadata = { title: "プライバシーポリシー / Privacy Policy" };
 
@@ -28,7 +29,7 @@ export default async function PrivacyPage({
         </p>
       )}
       <p>
-        本サービス「Loo map」(以下「本サービス」)は、ユーザーのプライバシーを最大限尊重し、個人情報保護法および関連法令を遵守して運営します。
+        本サービス「Loo map」(以下「本サービス」、運営: {SITE_TEAM})は、ユーザーのプライバシーを最大限尊重し、個人情報保護法および関連法令を遵守して運営します。
       </p>
 
       <h2 className="pt-4 text-lg font-semibold">収集する情報</h2>
@@ -50,7 +51,9 @@ export default async function PrivacyPage({
 
       <h2 className="pt-4 text-lg font-semibold">お問い合わせ</h2>
       <p>
-        サポート連絡先: <a className="text-blue-600 underline" href="mailto:tosagiken.info@gmail.com">tosagiken.info@gmail.com</a>
+        ご質問・データ削除のご依頼は{" "}
+        <Link href="/contact" className="text-blue-600 underline">フィードバックフォーム</Link>
+        からお願いします。
       </p>
 
       <p className="pt-6 text-xs text-zinc-500">最終更新: 2026-05-08</p>

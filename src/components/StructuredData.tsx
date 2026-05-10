@@ -21,7 +21,7 @@ export async function StructuredData() {
     browserRequirements: "Requires JavaScript and Geolocation API",
     offers: { "@type": "Offer", price: "0", priceCurrency: "JPY" },
     inLanguage: SCHEMA_LANG[locale] ?? "ja",
-    author: { "@type": "Organization", name: "tosagiken", email: "tosagiken.info@gmail.com" },
+    author: { "@type": "Organization", name: "TosaGiken" },
   };
   return (
     <script

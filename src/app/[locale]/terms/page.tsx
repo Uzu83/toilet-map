@@ -1,6 +1,7 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { SITE_TEAM } from "@/lib/contact";
 
 export const metadata = { title: "利用規約 / Terms of Service" };
 
@@ -28,7 +29,7 @@ export default async function TermsPage({
 
       <h2 className="pt-4 text-lg font-semibold">1. サービスの目的</h2>
       <p>
-        本サービス「Loo map」(以下「本サービス」)は、ユーザーが近隣の公衆トイレを快適に発見できるよう、地図表示と評価機能を提供するものです。
+        本サービス「Loo map」(以下「本サービス」、運営: {SITE_TEAM})は、ユーザーが近隣の公衆トイレを快適に発見できるよう、地図表示と評価機能を提供するものです。
       </p>
 
       <h2 className="pt-4 text-lg font-semibold">2. 禁止事項</h2>
@@ -56,7 +57,9 @@ export default async function TermsPage({
 
       <h2 className="pt-4 text-lg font-semibold">6. お問い合わせ</h2>
       <p>
-        運営者連絡先: <a className="text-blue-600 underline" href="mailto:tosagiken.info@gmail.com">tosagiken.info@gmail.com</a>
+        本サービスへのお問い合わせは{" "}
+        <Link href="/contact" className="text-blue-600 underline">フィードバックフォーム</Link>
+        からお願いします。
       </p>
 
       <p className="pt-6 text-xs text-zinc-500">最終更新: 2026-05-08</p>

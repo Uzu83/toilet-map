@@ -9,7 +9,7 @@ const OVERPASS_ENDPOINTS = [
 ];
 
 const USER_AGENT =
-  "toilet-map-seed/1.0 (https://github.com/uzu83/toilet-map; tosagiken.info@gmail.com)";
+  "toilet-map-seed/1.0 (+https://github.com/Uzu83/toilet-map)";
 
 export type OsmToiletNode = {
   osmId: number;

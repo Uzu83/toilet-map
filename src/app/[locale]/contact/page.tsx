@@ -1,11 +1,10 @@
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ExternalLink, Mail } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { CONTACT_FORM_URL } from "@/lib/contact";
 
 export const metadata = { title: "ご意見・ご要望 / Feedback" };
-
-const FEEDBACK_FORM_URL = "https://forms.gle/iKxY3vB6tg4t4vTW9";
 
 export default async function ContactPage({
   params,
@@ -36,7 +35,7 @@ export default async function ContactPage({
       </p>
 
       <a
-        href={FEEDBACK_FORM_URL}
+        href={CONTACT_FORM_URL}
         target="_blank"
         rel="noopener noreferrer"
         className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 text-base font-semibold text-white shadow hover:bg-blue-700 active:scale-[0.99]"
@@ -44,17 +43,6 @@ export default async function ContactPage({
         <ExternalLink className="h-4 w-4" />
         フィードバックフォームを開く / Open feedback form
       </a>
-
-      <p className="text-xs text-zinc-500">
-        フォームが開けない場合はメールでも受け付けています:{" "}
-        <a
-          className="inline-flex items-center gap-1 text-blue-600 underline"
-          href="mailto:tosagiken.info@gmail.com?subject=%5BLoo%20map%5D%20%E3%83%95%E3%82%A3%E3%83%BC%E3%83%89%E3%83%90%E3%83%83%E3%82%AF"
-        >
-          <Mail className="h-3 w-3" />
-          tosagiken.info@gmail.com
-        </a>
-      </p>
 
       <h2 className="pt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
         書いてもらえると助かること

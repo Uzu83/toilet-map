@@ -139,7 +139,8 @@ supabase/migrations/001_init.sql
 
 ## サポート
 
-- バグ・要望: [tosagiken.info@gmail.com](mailto:tosagiken.info@gmail.com)
+- バグ・要望: アプリ内の `/contact`(Google フィードバックフォーム)から
+- 運営: TosaGiken（東佐技研）
 - データソース: © OpenStreetMap contributors (ODbL)
 
 ---
