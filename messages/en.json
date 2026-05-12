@@ -11,6 +11,7 @@
     "feedback": "Feedback",
     "privacy": "Privacy",
     "terms": "Terms",
+    "about": "Help",
     "backToMap": "← Back to map"
   },
   "onboarding": {
@@ -133,6 +134,62 @@
   },
   "legalNotice": {
     "japaneseOnly": "This page is available in Japanese only."
+  },
+  "toiletPage": {
+    "breadcrumbHome": "Home",
+    "viewOnMap": "View on map",
+    "openInGoogleMaps": "Open in Google Maps",
+    "accessLabel": "Access",
+    "cleanlinessLabel": "Cleanliness",
+    "hoursLabel": "Hours",
+    "amenitiesLabel": "Amenities",
+    "noRating": "Not enough reviews (for reference)",
+    "ratingCount": "{count} reviews",
+    "unconfirmedNote": "Some details are estimated from facility data. Please check the actual situation before you go.",
+    "nearbyTitle": "Nearby toilets",
+    "noNearby": "No other registered toilets nearby.",
+    "metaDescription": "{name}: location, access type and cleanliness. Find nearby public toilets on a map with Loo map.",
+    "relatedAreaPrefix": "Toilets in this area:",
+    "washlet": "Washlet",
+    "diaperTable": "Diaper table",
+    "universal": "Accessible"
+  },
+  "areaPage": {
+    "breadcrumbHome": "Home",
+    "heading": "Public toilets in {label}",
+    "countLine": "{count} toilets registered.",
+    "intro": "Public toilets in {label} on a map. Color-coded pins (blue = free to use, yellow = ask staff, red = permission needed) and star ratings — find a usable toilet in 3 taps.",
+    "empty": "No registered toilets in this area yet. Search on the map or let us know via feedback.",
+    "viewAreaOnMap": "View this area on the map",
+    "otherAreas": "Other areas",
+    "listHeading": "Registered toilets",
+    "metaDescription": "{count} public toilets in {label}. A map you can search by pin color (free / ask / permission) and star rating — Loo map."
+  },
+  "about": {
+    "title": "How to use Loo map / FAQ",
+    "metaDescription": "How to use Loo map and frequently asked questions: what the pin colors mean, estimated pins, Japanese toilet etiquette, and more.",
+    "intro": "Loo map is a map service for finding nearby public toilets in 3 taps or fewer, using color-coded pins (blue = free to use, yellow = ask staff, red = permission needed) and 1-5 star cleanliness ratings.",
+    "sectionFaq": "Frequently asked questions",
+    "sectionAreas": "Coverage areas",
+    "sectionOperator": "Operator",
+    "areasIntro": "Toilet lists for major areas:",
+    "operatorLine": "Operated by {team}. Please reach us via the feedback form.",
+    "q_howToFind": "How do I find a toilet nearby?",
+    "a_howToFind": "Open the app → allow location → tap a pin on the map. You'll see details, distance, and a \"Take me there\" route.",
+    "q_pinColors": "What do the pin colors mean?",
+    "a_pinColors": "Blue = free to use (convenience stores, stations, public toilets), yellow = ask staff first (shops, office buildings), red = permission needed (hotels, members-only facilities).",
+    "q_inferred": "What are the dashed, semi-transparent pins?",
+    "a_inferred": "Pins estimated from facility data (stations, malls, community centers, libraries, tourist information offices). Whether a toilet actually exists / can be used is unverified — please report the real situation via \"couldn't use it\".",
+    "q_notEnoughReviews": "Why does it say \"not enough reviews\"?",
+    "a_notEnoughReviews": "Toilets with fewer than 10 reviews show their rating only as a reference, to avoid spam and bias.",
+    "q_etiquette": "How do I use a Japanese toilet?",
+    "a_etiquette": "Sit down to use it / flush toilet paper down the toilet (do not put it in the trash bin) / always flush after use / do not stand on the toilet seat.",
+    "q_coverage": "Which areas are covered?",
+    "a_coverage": "Public toilet data from OpenStreetMap (amenity=toilets) across Japan. Per-area toilet lists are also available on the area pages.",
+    "q_addToilet": "Can I add or fix a toilet?",
+    "a_addToilet": "There is no add UI yet. For incorrect data or \"no toilet here\", please use the in-app report or the feedback form.",
+    "q_operator": "Who operates this?",
+    "a_operator": "Operated by TosaGiken. Please contact us via the feedback form."
   },
   "compass": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
 }

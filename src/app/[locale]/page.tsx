@@ -31,6 +31,9 @@ export default async function HomePage({
           <Link href="/terms" className="hover:text-zinc-900 dark:hover:text-zinc-200">
             {t("terms")}
           </Link>
+          <Link href="/about" className="hover:text-zinc-900 dark:hover:text-zinc-200">
+            {t("about")}
+          </Link>
           <LocaleSwitcher />
         </nav>
       </header>

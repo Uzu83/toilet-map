@@ -11,6 +11,7 @@
     "feedback": "의견",
     "privacy": "개인정보",
     "terms": "이용약관",
+    "about": "도움말",
     "backToMap": "← 지도로 돌아가기"
   },
   "onboarding": {
@@ -133,6 +134,62 @@
   },
   "legalNotice": {
     "japaneseOnly": "이 페이지는 일본어로만 제공됩니다."
+  },
+  "toiletPage": {
+    "breadcrumbHome": "홈",
+    "viewOnMap": "지도에서 보기",
+    "openInGoogleMaps": "Google 지도에서 열기",
+    "accessLabel": "이용 구분",
+    "cleanlinessLabel": "청결도",
+    "hoursLabel": "영업시간",
+    "amenitiesLabel": "설비",
+    "noRating": "평가 부족 (참고용)",
+    "ratingCount": "리뷰 {count}건",
+    "unconfirmedNote": "일부 정보는 시설 정보에서 추정한 것입니다. 실제로 화장실이 있는지·이용 가능한지 방문 전에 확인해 주세요.",
+    "nearbyTitle": "근처 화장실",
+    "noNearby": "근처에 등록된 다른 화장실이 없습니다.",
+    "metaDescription": "{name}의 위치·이용 구분·청결도. Loo map에서 근처 공중화장실을 지도로 찾아보세요.",
+    "relatedAreaPrefix": "이 지역의 화장실 목록:",
+    "washlet": "비데",
+    "diaperTable": "기저귀 교환대",
+    "universal": "장애인용"
+  },
+  "areaPage": {
+    "breadcrumbHome": "홈",
+    "heading": "{label}의 공중화장실",
+    "countLine": "화장실 {count}곳이 등록되어 있습니다.",
+    "intro": "{label}의 공중화장실을 지도로. 색상 핀(파랑 = 자유 이용, 노랑 = 직원에게 한마디, 빨강 = 허가 필요)과 별점으로 가까운 이용 가능한 화장실을 3탭 이내에.",
+    "empty": "현재 이 지역에는 등록된 화장실이 없습니다. 지도에서 찾거나 의견으로 알려 주세요.",
+    "viewAreaOnMap": "이 지역을 지도에서 보기",
+    "otherAreas": "다른 지역",
+    "listHeading": "등록 화장실",
+    "metaDescription": "{label}의 공중화장실 {count}곳. 핀 색상(자유 이용·직원에게 한마디·허가 필요)과 별점으로 찾을 수 있는 지도 — Loo map."
+  },
+  "about": {
+    "title": "Loo map 사용법 · 자주 묻는 질문",
+    "metaDescription": "Loo map 사용법과 자주 묻는 질문: 핀 색상의 의미, 추정 핀, 일본 화장실 이용 매너 등.",
+    "intro": "Loo map은 가까운 공중화장실을 색상 핀(파랑 = 자유 이용, 노랑 = 직원에게 한마디, 빨강 = 허가 필요)과 1~5점 청결도로 3탭 이내에 찾을 수 있는 지도 서비스입니다.",
+    "sectionFaq": "자주 묻는 질문",
+    "sectionAreas": "지원 지역",
+    "sectionOperator": "운영",
+    "areasIntro": "주요 지역의 화장실 목록:",
+    "operatorLine": "운영: {team}. 문의는 의견 폼으로 부탁드립니다.",
+    "q_howToFind": "근처 화장실은 어떻게 찾나요?",
+    "a_howToFind": "앱 열기 → 위치 허용 → 지도에서 핀 탭. 상세 정보·거리·\"길 안내\"가 표시됩니다.",
+    "q_pinColors": "핀 색상은 무엇을 의미하나요?",
+    "a_pinColors": "파랑 = 자유 이용(편의점·역·공중화장실 등), 노랑 = 직원에게 한마디(상점·오피스 빌딩 등), 빨강 = 허가 필요(호텔·회원제 시설 등).",
+    "q_inferred": "점선의 반투명 핀은 무엇인가요?",
+    "a_inferred": "역·쇼핑몰·주민센터·도서관·관광안내소 등 시설 정보에서 \"화장실이 있을 것 같다\"고 추정한 핀입니다. 실제로 화장실이 있는지·이용 가능한지 미확인이므로 현장 상황을 \"이용 불가\" 신고로 알려 주세요.",
+    "q_notEnoughReviews": "\"평가 부족\"이라고 표시되는 이유는 무엇인가요?",
+    "a_notEnoughReviews": "리뷰가 10건 미만인 화장실은 스팸과 편향을 피하기 위해 평가를 참고용으로 표시합니다.",
+    "q_etiquette": "일본 화장실 이용 방법을 알려 주세요.",
+    "a_etiquette": "변기에 앉아서 이용 / 화장지는 변기에 흘려보내기(휴지통에 버리지 않기) / 사용 후 반드시 물 내리기 / 변기 위에 올라서지 않기.",
+    "q_coverage": "어떤 지역을 지원하나요?",
+    "a_coverage": "OpenStreetMap의 공중화장실 데이터(amenity=toilets)를 일본 전역에서 가져옵니다. 지역별 화장실 목록은 지역 페이지에서도 볼 수 있습니다.",
+    "q_addToilet": "화장실을 추가·수정할 수 있나요?",
+    "a_addToilet": "현재 신규 추가 UI는 없습니다. 정보 오류나 \"여기는 화장실이 없음\"은 앱 내 신고 또는 의견 폼으로 알려 주세요.",
+    "q_operator": "운영 주체는 어디인가요?",
+    "a_operator": "TosaGiken(東佐技研)이 운영합니다. 문의는 의견 폼으로 부탁드립니다."
   },
   "compass": ["북", "북동", "동", "남동", "남", "남서", "서", "북서"]
 }

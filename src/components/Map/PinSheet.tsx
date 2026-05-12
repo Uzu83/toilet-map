@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { AlertTriangle, ExternalLink, Heart, MessageSquarePlus, Share2, Star, X } from "lucide-react";
+import { routing } from "@/i18n/routing";
 import { useMapStore } from "@/store/mapStore";
 import { ACCESS_COLORS, effectiveAccess, isUnconfirmed } from "@/types/toilet";
 import { bearingDeg, bearingIndex, formatDistance, haversineMeters } from "@/lib/geo";
@@ -13,6 +14,7 @@ export function PinSheet() {
   const t = useTranslations("pinSheet");
   const ta = useTranslations("access");
   const tc = useTranslations("compass");
+  const locale = useLocale();
   const selectedId = useMapStore((s) => s.selectedId);
   const select = useMapStore((s) => s.select);
   const toilets = useMapStore((s) => s.toilets);
@@ -48,10 +50,11 @@ export function PinSheet() {
   const onShare = async () => {
     const shareTitle = toilet.name ?? t("shareDefault");
     const accessSuffix = accessLabel ? ` (${accessLabel})` : "";
+    const localePrefix = locale === routing.defaultLocale ? "" : `/${locale}`;
     const shareUrl =
       typeof window !== "undefined"
-        ? `${window.location.origin}/?id=${toilet.id}`
-        : `/?id=${toilet.id}`;
+        ? `${window.location.origin}${localePrefix}/toilet/${toilet.id}`
+        : `${localePrefix}/toilet/${toilet.id}`;
     const shareText = `${shareTitle}${accessSuffix}\n${shareUrl}`;
 
     if (typeof navigator !== "undefined" && "share" in navigator) {

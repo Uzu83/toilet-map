@@ -1,9 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getServerSupabasePublishable } from "@/lib/supabase/server";
+import { UUID_RE } from "@/lib/uuid";
 
 export const runtime = "nodejs";
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export async function GET(
   _request: NextRequest,

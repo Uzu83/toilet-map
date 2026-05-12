@@ -11,6 +11,7 @@
     "feedback": "ご意見",
     "privacy": "プライバシー",
     "terms": "規約",
+    "about": "ヘルプ",
     "backToMap": "← マップに戻る"
   },
   "onboarding": {
@@ -133,6 +134,62 @@
   },
   "legalNotice": {
     "japaneseOnly": "このページは日本語のみで提供されています。"
+  },
+  "toiletPage": {
+    "breadcrumbHome": "ホーム",
+    "viewOnMap": "地図で見る",
+    "openInGoogleMaps": "Google マップで開く",
+    "accessLabel": "利用区分",
+    "cleanlinessLabel": "清潔度",
+    "hoursLabel": "営業時間",
+    "amenitiesLabel": "設備",
+    "noRating": "評価不足(参考値)",
+    "ratingCount": "{count}件のレビュー",
+    "unconfirmedNote": "一部の情報は施設情報からの推定です。実際にトイレがあるか・利用できるかはご利用前にご確認ください。",
+    "nearbyTitle": "近くのトイレ",
+    "noNearby": "近くに登録された他のトイレはありません。",
+    "metaDescription": "{name}の場所・利用区分・清潔度。Loo map で近くの公衆トイレを地図から探せます。",
+    "relatedAreaPrefix": "このエリアのトイレ一覧:",
+    "washlet": "ウォシュレット",
+    "diaperTable": "おむつ替え台",
+    "universal": "ユニバーサル"
+  },
+  "areaPage": {
+    "breadcrumbHome": "ホーム",
+    "heading": "{label}の公衆トイレ",
+    "countLine": "{count}件のトイレが登録されています。",
+    "intro": "{label}の公衆トイレを地図で。許可不要(青)・声かけ要(黄)・許可要(赤)のピンと星評価で、近くの使えるトイレを3タップ以内に。",
+    "empty": "現在このエリアには登録トイレがありません。地図で探すか、フィードバックでお知らせください。",
+    "viewAreaOnMap": "このエリアを地図で見る",
+    "otherAreas": "他のエリア",
+    "listHeading": "登録トイレ",
+    "metaDescription": "{label}の公衆トイレ{count}件。許可不要・声かけ要・許可要のピン色と星評価で探せる地図 — Loo map。"
+  },
+  "about": {
+    "title": "Loo map の使い方・よくある質問",
+    "metaDescription": "Loo map(ルーマップ)の使い方とよくある質問。ピンの色の意味、推定ピン、日本のトイレマナーなど。",
+    "intro": "Loo map は、近くの公衆トイレを「許可不要(青)・声かけ要(黄)・許可要(赤)」のピン色と星1-5の清潔度で3タップ以内に探せる地図サービスです。",
+    "sectionFaq": "よくある質問",
+    "sectionAreas": "対応エリア",
+    "sectionOperator": "運営",
+    "areasIntro": "主なエリアのトイレ一覧:",
+    "operatorLine": "運営: {team}。お問い合わせはフィードバックフォームからどうぞ。",
+    "q_howToFind": "近くのトイレはどうやって探しますか?",
+    "a_howToFind": "アプリを開く → 位置情報を許可 → 地図上のピンをタップ。詳細・距離・「ここに行く」ナビが表示されます。",
+    "q_pinColors": "ピンの色は何を意味しますか?",
+    "a_pinColors": "青=声かけ不要(コンビニ・駅・公衆トイレなど)、黄=一声かけて(店舗・オフィスビルなど)、赤=許可が必要(ホテル・会員制施設など)です。",
+    "q_inferred": "破線の半透明ピンは何ですか?",
+    "a_inferred": "駅・モール・公民館・図書館・観光案内所など、施設情報から「トイレがありそう」と推定したピンです。実際にトイレがあるか・使えるかは未確認なので、現地の状況を「使えなかった」報告でぜひ教えてください。",
+    "q_notEnoughReviews": "「評価不足」と表示されるのはなぜですか?",
+    "a_notEnoughReviews": "レビューが10件未満のトイレは、スパムや偏りを避けるため評価を参考値として控えめに表示しています。",
+    "q_etiquette": "日本のトイレの使い方を教えてください。",
+    "a_etiquette": "便座に座って使う/トイレットペーパーは便器に流す(ゴミ箱に捨てない)/使用後は必ず水を流す/便座の上に立たない。",
+    "q_coverage": "どのエリアに対応していますか?",
+    "a_coverage": "OpenStreetMap の公衆トイレデータ(amenity=toilets)を日本全国で取り込んでいます。地域ごとのトイレ一覧はエリアページからもご覧いただけます。",
+    "q_addToilet": "トイレを追加・修正できますか?",
+    "a_addToilet": "現在は新規追加 UI はありません。情報の誤りや「ここはトイレがない」はアプリ内の報告またはフィードバックフォームからお知らせください。",
+    "q_operator": "運営はどこですか?",
+    "a_operator": "TosaGiken(東佐技研)が運営しています。お問い合わせはフィードバックフォームからどうぞ。"
   },
   "compass": ["北", "北東", "東", "南東", "南", "南西", "西", "北西"]
 }
