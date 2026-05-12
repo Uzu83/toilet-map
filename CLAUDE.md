@@ -4,6 +4,24 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 @AGENTS.md
 
+## Subagents
+
+このリポジトリには `.claude/agents/` に 4 つのサブエージェントが定義されている。**自動 orchestration は無い** — ユーザは普通にチャットに投げるだけで、メインセッションがタスクの性質に応じて適切なエージェントに委任する。
+
+| エージェント | 役割 | tools | いつ使う |
+|---|---|---|---|
+| `coder` | 機能実装・バグ修正・リファクタリング | Read/Write/Edit/Bash/Grep/Glob/Web* | コードを書く作業全般。終了時に必ず `pnpm run lint && pnpm run build` を通す。コミットはしない |
+| `reviewer` | push 前チェック(レビュー専用、コード変更なし) | Read/Bash/Grep/Glob | push 直前。lint/build・公開表記ポリシー違反・i18n 漏れ・セキュリティ・アーキテクチャ規約を監査し指摘リストを返す |
+| `seo-writer` | SEO・多言語コピー(ja/en/ko/zh) | Read/Write/Edit/Grep/Glob/Web* | キーワード調査、`messages/*.json` のドラフト、metadata/OGP/JSON-LD 文言、ローカル SEO ランディング文 |
+| `planner` | 実装プランニング(コード変更なし) | Read/Grep/Glob/Bash/Web* | 新機能・改修の前のタスク洗い出し・影響範囲調査・段階的プラン作成 |
+
+共通の遵守事項(全エージェントの定義にも明記):
+- **公開表記ポリシー**: サイト UI/OGP/JSON-LD/README/コミットメッセージに本名・事業者メアドを出さない。運営表記は `TosaGiken（東佐技研）`、問い合わせは `src/lib/contact.ts` の Google Form のみ
+- **i18n**: 新規 UI 文言は `messages/{ja,en,ko,zh}.json` 4 ファイル全部に追加し `useTranslations()` で参照
+- **node は mise 経由**: Bash の先頭に `export PATH="$HOME/.local/share/mise/installs/node/24.14.1/bin:$PATH"`
+- コミット・push はメインセッションのみ(サブエージェントはしない)
+- Phase 2+ 機能(認証/AdSense/貢献者ポイント/Stripe/トイレ追加 UI)を Phase 1 に混ぜない
+
 ## プロジェクト概要
 
 🚽 **Loo map (toilet-map)** — Notion ハブ「🔵 Vercelプロジェクト管理」配下の Phase 1 MVP。
