@@ -1,6 +1,9 @@
 // /area/[region] ランディングページが対象にするエリア一覧。
-// = 既存の市プリセット REGIONS(キー: fukuoka-city など)+ 47 都道府県(slug: jp-01 … jp-47)。
+// = 既存の市プリセット REGIONS(キー: fukuoka-city など。ただし都道府県と重複する `*-pref` は除外)
+//   + 47 都道府県(slug: jp-01 … jp-47)。
 // bbox は [southLat, westLng, northLat, eastLng]。
+// 表示名は messages/*.json の `areaNames` 名前空間(slug がキー)から locale 別に引く。
+// `label` フィールドは日本語の正規名(translator が無い場面でのフォールバック)。
 
 import { REGIONS, JP_PREFECTURES, type Region } from "@/lib/regions";
 
@@ -8,7 +11,7 @@ export type AreaKind = "city" | "prefecture";
 
 export type Area = {
   slug: string;
-  label: string; // 日本語の地名(地名なので i18n しない)
+  label: string; // 日本語の正規名(messages の areaNames が無い場合のフォールバック)
   bbox: [number, number, number, number];
   kind: AreaKind;
 };
@@ -18,12 +21,10 @@ export function prefectureSlug(code: string): string {
   return code.toLowerCase();
 }
 
-const CITY_AREAS: Area[] = REGIONS.map((r: Region) => ({
-  slug: r.key,
-  label: r.label,
-  bbox: r.bbox,
-  kind: "city" as const,
-}));
+// `*-pref`(例: fukuoka-pref)は jp-NN の都道府県ページと重複するので /area には出さない。
+const CITY_AREAS: Area[] = REGIONS.filter((r) => !r.key.endsWith("-pref")).map(
+  (r: Region) => ({ slug: r.key, label: r.label, bbox: r.bbox, kind: "city" as const })
+);
 
 const PREF_AREAS: Area[] = JP_PREFECTURES.map((p) => ({
   slug: prefectureSlug(p.code),
@@ -32,7 +33,7 @@ const PREF_AREAS: Area[] = JP_PREFECTURES.map((p) => ({
   kind: "prefecture" as const,
 }));
 
-// 市プリセットを先に、その後に都道府県。findArea は market→pref の順で解決。
+// 市プリセットを先に、その後に都道府県。findArea は city→pref の順で解決。
 export const ALL_AREAS: Area[] = [...CITY_AREAS, ...PREF_AREAS];
 
 export function areaSlugs(): string[] {
@@ -52,9 +53,16 @@ export function relatedAreas(area: Area, n = 8): Area[] {
   return pool.slice(start, start + n);
 }
 
-// プレフィックスなし(都道府県は ja の地名ラベルで十分)。
-export function areaLabel(area: Area): string {
-  return area.label;
+// messages/*.json の `areaNames` 名前空間の translator を渡してロケール別の地名を得る。
+// 翻訳が見つからなければ日本語の正規名にフォールバック。
+export function areaLabel(area: Area, t?: (key: string) => string): string {
+  if (!t) return area.label;
+  try {
+    const v = t(area.slug);
+    return v && v !== area.slug ? v : area.label;
+  } catch {
+    return area.label;
+  }
 }
 
 // 緯度経度を含む都道府県エリア(なければ undefined)。bbox は概算なので複数候補ありうるが先頭を返す。

@@ -5,7 +5,7 @@ import { Link } from "@/i18n/navigation";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { AreaJsonLd } from "@/components/seo/AreaJsonLd";
 import { AccessChip } from "@/components/seo/AccessChip";
-import { findArea, relatedAreas, type Area } from "@/lib/areas";
+import { findArea, relatedAreas, areaLabel, type Area } from "@/lib/areas";
 import { getRegionCount, getToiletsInRegion } from "@/lib/toilets";
 import { toiletAccessKey, toiletDisplayName } from "@/lib/toiletSeo";
 import { absUrl, languageAlternates, inLanguageOf } from "@/lib/urls";
@@ -42,9 +42,11 @@ export async function generateMetadata({
   const data = await loadArea(region);
   const t = await getTranslations({ locale, namespace: "areaPage" });
   if (!data) return { title: "Not found", robots: { index: false, follow: false } };
+  const tan = await getTranslations({ locale, namespace: "areaNames" });
+  const label = areaLabel(data.area, tan);
   const path = `/area/${data.area.slug}`;
-  const title = t("heading", { label: data.area.label });
-  const description = t("metaDescription", { label: data.area.label, count: data.count });
+  const title = t("heading", { label });
+  const description = t("metaDescription", { label, count: data.count });
   return {
     title,
     description,
@@ -67,8 +69,10 @@ export default async function AreaPage({
 
   const t = await getTranslations("areaPage");
   const tn = await getTranslations("nav");
+  const tan = await getTranslations("areaNames");
+  const label = areaLabel(area, tan);
   const path = `/area/${area.slug}`;
-  const heading = t("heading", { label: area.label });
+  const heading = t("heading", { label });
   const related = relatedAreas(area);
 
   return (
@@ -76,9 +80,9 @@ export default async function AreaPage({
       <Link href="/" className="text-xs text-blue-600 hover:underline">
         {tn("backToMap")}
       </Link>
-      <Breadcrumbs items={[{ label: t("breadcrumbHome"), href: "/" }, { label: area.label }]} />
+      <Breadcrumbs items={[{ label: t("breadcrumbHome"), href: "/" }, { label }]} />
       <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{heading}</h1>
-      <p>{t("intro", { label: area.label })}</p>
+      <p>{t("intro", { label })}</p>
       <p className="text-zinc-500 dark:text-zinc-400">{t("countLine", { count })}</p>
       <Link
         href="/"
@@ -112,7 +116,7 @@ export default async function AreaPage({
               href={`/area/${a.slug}`}
               className="inline-block rounded-full bg-zinc-100 px-3 py-1 text-xs text-blue-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-blue-300 dark:hover:bg-zinc-700"
             >
-              {a.label}
+              {areaLabel(a, tan)}
             </Link>
           </li>
         ))}
@@ -129,13 +133,13 @@ export default async function AreaPage({
       <AreaJsonLd
         name={heading}
         url={absUrl(locale, path)}
-        description={t("metaDescription", { label: area.label, count })}
-        areaName={area.label}
+        description={t("metaDescription", { label, count })}
+        areaName={label}
         isPrefecture={area.kind === "prefecture"}
         inLanguage={inLanguageOf(locale)}
         breadcrumb={[
           { name: t("breadcrumbHome"), url: absUrl(locale, "") },
-          { name: area.label, url: absUrl(locale, path) },
+          { name: label, url: absUrl(locale, path) },
         ]}
       />
     </article>

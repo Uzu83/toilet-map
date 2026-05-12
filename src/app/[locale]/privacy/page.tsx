@@ -1,9 +1,24 @@
+import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
+import { absUrl, languageAlternates } from "@/lib/urls";
 import { SITE_TEAM } from "@/lib/contact";
 
-export const metadata = { title: "プライバシーポリシー / Privacy Policy" };
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ locale: string }>;
+}): Promise<Metadata> {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "privacy" });
+  const path = "/privacy";
+  return {
+    title: t("metaTitle"),
+    alternates: { canonical: absUrl(locale, path), languages: languageAlternates(path) },
+    robots: { index: true, follow: true },
+  };
+}
 
 export default async function PrivacyPage({
   params,
@@ -12,6 +27,7 @@ export default async function PrivacyPage({
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
+  const t = await getTranslations("privacy");
   const tn = await getTranslations("nav");
   const tl = await getTranslations("legalNotice");
   const isJa = locale === routing.defaultLocale;
@@ -20,43 +36,39 @@ export default async function PrivacyPage({
       <Link href="/" className="text-xs text-blue-600 hover:underline">
         {tn("backToMap")}
       </Link>
-      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">
-        プライバシーポリシー
-      </h1>
+      <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{t("title")}</h1>
       {!isJa && (
         <p className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          {tl("japaneseOnly")}
+          {tl("translationNote")}
         </p>
       )}
-      <p>
-        本サービス「Loo map」(以下「本サービス」、運営: {SITE_TEAM})は、ユーザーのプライバシーを最大限尊重し、個人情報保護法および関連法令を遵守して運営します。
-      </p>
+      <p>{t("intro", { team: SITE_TEAM })}</p>
 
-      <h2 className="pt-4 text-lg font-semibold">収集する情報</h2>
+      <h2 className="pt-4 text-lg font-semibold">{t("collectTitle")}</h2>
       <ul className="list-disc pl-5">
-        <li>位置情報: トイレ検索の際に一時的にブラウザから取得し、サーバー側には保存しません。</li>
-        <li>レビュー投稿内容: 星評価・利用許可区分・ウォシュレット有無・コメント(任意)。</li>
-        <li>送信元 IP アドレス: スパム防止目的で SHA256 ハッシュ化し保存します(原 IP は保存しません)。</li>
+        <li>{t("collectLocation")}</li>
+        <li>{t("collectReview")}</li>
+        <li>{t("collectIp")}</li>
       </ul>
 
-      <h2 className="pt-4 text-lg font-semibold">第三者提供</h2>
+      <h2 className="pt-4 text-lg font-semibold">{t("thirdPartyTitle")}</h2>
+      <p>{t("thirdParty")}</p>
+
+      <h2 className="pt-4 text-lg font-semibold">{t("analyticsTitle")}</h2>
+      <p>{t("analytics")}</p>
+
+      <h2 className="pt-4 text-lg font-semibold">{t("contactTitle")}</h2>
       <p>
-        収集した情報を第三者に提供することはありません。広告配信のための匿名化集計データのみ、提携先と共有する場合があります。
+        {t.rich("contactBody", {
+          link: (chunks) => (
+            <Link href="/contact" className="text-blue-600 underline">
+              {chunks}
+            </Link>
+          ),
+        })}
       </p>
 
-      <h2 className="pt-4 text-lg font-semibold">解析ツール</h2>
-      <p>
-        本サービスは Vercel Analytics / Speed Insights を利用してアクセス状況を匿名で計測しています。
-      </p>
-
-      <h2 className="pt-4 text-lg font-semibold">お問い合わせ</h2>
-      <p>
-        ご質問・データ削除のご依頼は{" "}
-        <Link href="/contact" className="text-blue-600 underline">フィードバックフォーム</Link>
-        からお願いします。
-      </p>
-
-      <p className="pt-6 text-xs text-zinc-500">最終更新: 2026-05-08</p>
+      <p className="pt-6 text-xs text-zinc-500">{t("lastUpdated")}</p>
     </article>
   );
 }

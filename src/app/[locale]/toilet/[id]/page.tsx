@@ -12,7 +12,7 @@ import {
   toiletAmenityKeys,
   toiletDisplayName,
 } from "@/lib/toiletSeo";
-import { findContainingPrefecture } from "@/lib/areas";
+import { findContainingPrefecture, areaLabel } from "@/lib/areas";
 import { absUrl, languageAlternates, localePrefix, inLanguageOf } from "@/lib/urls";
 import { formatDistance, haversineMeters } from "@/lib/geo";
 import type { Toilet } from "@/types/toilet";
@@ -79,6 +79,7 @@ export default async function ToiletPage({
   const tp = await getTranslations("pinSheet");
   const ta = await getTranslations("access");
   const tn = await getTranslations("nav");
+  const tan = await getTranslations("areaNames");
 
   const name = toiletDisplayName(toilet, tp("unnamed"));
   const access = toiletAccessKey(toilet);
@@ -88,16 +89,17 @@ export default async function ToiletPage({
   const mapHref = `${localePrefix(locale)}/?id=${toilet.id}`;
   const gmapsHref = `https://www.google.com/maps/search/?api=1&query=${toilet.lat},${toilet.lng}`;
   const area = findContainingPrefecture(toilet.lat, toilet.lng);
+  const areaName = area ? areaLabel(area, tan) : null;
   const nearby = await getNearbyToilets(toilet);
 
   const crumbs: { label: string; href?: string }[] = [
     { label: tt("breadcrumbHome"), href: "/" },
-    ...(area ? [{ label: area.label, href: `/area/${area.slug}` }] : []),
+    ...(area && areaName ? [{ label: areaName, href: `/area/${area.slug}` }] : []),
     { label: name },
   ];
   const jsonLdCrumbs = [
     { name: tt("breadcrumbHome"), url: absUrl(locale, "") },
-    ...(area ? [{ name: area.label, url: absUrl(locale, `/area/${area.slug}`) }] : []),
+    ...(area && areaName ? [{ name: areaName, url: absUrl(locale, `/area/${area.slug}`) }] : []),
     { name, url: absUrl(locale, path) },
   ];
 
@@ -189,13 +191,13 @@ export default async function ToiletPage({
       </section>
 
       <ul className="flex flex-wrap gap-2 pt-2">
-        {area && (
+        {area && areaName && (
           <li>
             <Link
               href={`/area/${area.slug}`}
               className="inline-block rounded-full bg-zinc-100 px-3 py-1 text-xs text-blue-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-blue-300 dark:hover:bg-zinc-700"
             >
-              {tt("relatedAreaPrefix")} {area.label}
+              {tt("relatedAreaPrefix")} {areaName}
             </Link>
           </li>
         )}

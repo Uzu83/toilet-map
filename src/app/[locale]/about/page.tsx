@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { FaqJsonLd } from "@/components/seo/FaqJsonLd";
 import { absUrl, languageAlternates } from "@/lib/urls";
-import { findArea } from "@/lib/areas";
+import { findArea, areaLabel } from "@/lib/areas";
 import { SITE_TEAM, CONTACT_FORM_URL } from "@/lib/contact";
 
 const FAQ_KEYS = [
@@ -46,6 +46,7 @@ export default async function AboutPage({
   setRequestLocale(locale);
   const t = await getTranslations("about");
   const tn = await getTranslations("nav");
+  const tan = await getTranslations("areaNames");
 
   const faqItems = FAQ_KEYS.map((k) => ({ q: t(`q_${k}`), a: t(`a_${k}`) }));
   const areas = FEATURED_AREA_SLUGS.map((s) => findArea(s)).filter((a): a is NonNullable<typeof a> => !!a);
@@ -78,7 +79,7 @@ export default async function AboutPage({
               href={`/area/${a.slug}`}
               className="inline-block rounded-full bg-zinc-100 px-3 py-1 text-xs text-blue-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-blue-300 dark:hover:bg-zinc-700"
             >
-              {a.label}
+              {areaLabel(a, tan)}
             </Link>
           </li>
         ))}
