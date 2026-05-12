@@ -89,24 +89,36 @@ export async function getToiletCount(): Promise<number> {
   }
 }
 
+// PostgREST(Supabase API)は 1 レスポンス最大 1000 行なので、RPC に p_limit を大きく渡しても
+// 1000 行で切れる。よって 1000 行ずつ内部ページングして `limit` 行まで集める。
+const PG_MAX_ROWS = 1000;
+
 export async function getToiletIdsPage(
   offset: number,
   limit: number
 ): Promise<{ id: string; created_at: string | null }[]> {
+  const out: { id: string; created_at: string | null }[] = [];
   try {
     const supabase = getServerSupabasePublishable();
-    const { data, error } = await supabase.rpc("toilet_ids_page", {
-      p_offset: offset,
-      p_limit: limit,
-    });
-    if (error || !Array.isArray(data)) return [];
-    return data.map((r) => ({
-      id: String((r as Record<string, unknown>).id),
-      created_at: ((r as Record<string, unknown>).created_at as string | null) ?? null,
-    }));
+    while (out.length < limit) {
+      const batch = Math.min(PG_MAX_ROWS, limit - out.length);
+      const { data, error } = await supabase.rpc("toilet_ids_page", {
+        p_offset: offset + out.length,
+        p_limit: batch,
+      });
+      if (error || !Array.isArray(data) || data.length === 0) break;
+      for (const r of data) {
+        out.push({
+          id: String((r as Record<string, unknown>).id),
+          created_at: ((r as Record<string, unknown>).created_at as string | null) ?? null,
+        });
+      }
+      if (data.length < batch) break; // データを取り切った
+    }
   } catch {
-    return [];
+    // 取れた分だけ返す(部分 sitemap)
   }
+  return out;
 }
 
 // 指定トイレ周辺の近隣トイレ(自身を除く、距離順)。
