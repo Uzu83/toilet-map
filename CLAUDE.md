@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Subagents
 
-このリポジトリには `.claude/agents/` に 4 つのサブエージェントが定義されている。**自動 orchestration は無い** — ユーザは普通にチャットに投げるだけで、メインセッションがタスクの性質に応じて適切なエージェントに委任する。
+このリポジトリには `.claude/agents/` に 6 つのサブエージェントが定義されている。**自動 orchestration は無い** — ユーザは普通にチャットに投げるだけで、メインセッションがタスクの性質に応じて適切なエージェントに委任する。
 
 | エージェント | 役割 | tools | いつ使う |
 |---|---|---|---|
@@ -14,6 +14,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 | `reviewer` | push 前チェック(レビュー専用、コード変更なし) | Read/Bash/Grep/Glob | push 直前。lint/build・公開表記ポリシー違反・i18n 漏れ・セキュリティ・アーキテクチャ規約を監査し指摘リストを返す |
 | `seo-writer` | SEO・多言語コピー(ja/en/ko/zh) | Read/Write/Edit/Grep/Glob/Web* | キーワード調査、`messages/*.json` のドラフト、metadata/OGP/JSON-LD 文言、ローカル SEO ランディング文 |
 | `planner` | 実装プランニング(コード変更なし) | Read/Grep/Glob/Bash/Web* | 新機能・改修の前のタスク洗い出し・影響範囲調査・段階的プラン作成 |
+| `data-osm` | OSM データパイプライン専門 | Read/Write/Edit/Bash/Grep/Glob/Web* | Overpass シード、都市/都道府県カバレッジ拡大、OSM タグパース改善、推定ピン dedup、Phase 2 の AI-RAG エンリッチメント設計。`--all-japan` は勝手に流さない |
+| `notion-sync` | 進捗の Notion 反映(コード変更なし) | Read/Bash/Grep/Glob + Notion MCP | 最近のコミットを読んで Loo map Notion ページのステータス・実装サマリ・残タスクを部分更新。事実の追記中心、方針は書き換えない |
 
 共通の遵守事項(全エージェントの定義にも明記):
 - **公開表記ポリシー**: サイト UI/OGP/JSON-LD/README/コミットメッセージに本名・事業者メアドを出さない。運営表記は `TosaGiken（東佐技研）`、問い合わせは `src/lib/contact.ts` の Google Form のみ
