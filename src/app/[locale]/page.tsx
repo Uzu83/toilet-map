@@ -5,6 +5,7 @@ import { OnboardingCard } from "@/components/OnboardingCard";
 import { BottomTabBar } from "@/components/BottomTabBar";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
+import { KO_FI_URL } from "@/lib/contact";
 
 export default async function HomePage({
   params,
@@ -17,11 +18,11 @@ export default async function HomePage({
 
   return (
     <div className="flex h-dvh w-full flex-col">
-      <header className="flex shrink-0 items-center justify-between gap-2 px-3 py-2">
+      <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 px-3 py-2">
         <h1 className="text-base font-bold tracking-tight text-blue-600">
           🚽 Loo map
         </h1>
-        <nav className="flex items-center gap-3 text-xs text-zinc-500">
+        <nav className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-zinc-500">
           <Link href="/contact" className="hover:text-zinc-900 dark:hover:text-zinc-200">
             {t("feedback")}
           </Link>
@@ -34,6 +35,14 @@ export default async function HomePage({
           <Link href="/about" className="hover:text-zinc-900 dark:hover:text-zinc-200">
             {t("about")}
           </Link>
+          <a
+            href={KO_FI_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-zinc-900 dark:hover:text-zinc-200"
+          >
+            ☕ {t("support")}
+          </a>
           <LocaleSwitcher />
         </nav>
       </header>
