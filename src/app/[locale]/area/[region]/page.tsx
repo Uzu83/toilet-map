@@ -11,7 +11,7 @@ import { toiletAccessKey, toiletDisplayName } from "@/lib/toiletSeo";
 import { absUrl, languageAlternates, inLanguageOf } from "@/lib/urls";
 import type { Toilet } from "@/types/toilet";
 
-export const revalidate = 21600; // 6h
+export const revalidate = 604800; // 7日(件数はシード時くらいしか変わらない。ISR Writes 節約)
 export const dynamicParams = true; // 初回アクセス時にレンダリング → ISR キャッシュ。未知 slug は notFound()。
 
 // 空配列 = ビルド時は事前生成せず全件オンデマンド ISR(ビルド時の Supabase 呼び出しを避ける)。

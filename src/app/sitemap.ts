@@ -10,12 +10,12 @@ export const revalidate = 86400;
 
 const STATIC_PATHS = ["", "/about", "/contact", "/privacy", "/terms"] as const;
 
-// id 0 = 静的ページ + 全エリアページ、id 1..N = トイレ個別ページのチャンク。
-// NOTE: generateSitemaps はビルド時のみ実行され ISR 再検証では再呼び出しされない。
-//       大規模シード(--all-japan)後にトイレ数が SITEMAP_CHUNK_TOILETS を超えて増えた場合は再デプロイが必要
-//       (robots.ts も同じ sitemapChunkCount() を使うのでチャンク URL は常に sitemap 側と一致する)。
+// 現状 sitemap は id 0(静的ページ + 全エリアページ)のみ。
+// 個別トイレページ(/toilet/[id])はレビュー 0 件が大半で noindex,follow にしているため sitemap には載せない
+// (理由は sitemapChunks.ts 参照)。レビュー付きトイレが増えたらサブセットのチャンクを足す。
+// 下の id >= 1 ブランチはその再開時用に残してあるが、現在は到達しない。
 export async function generateSitemaps() {
-  const n = await sitemapChunkCount();
+  const n = await sitemapChunkCount(); // 現状は常に 1
   return Array.from({ length: n }, (_, i) => ({ id: i }));
 }
 

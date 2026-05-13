@@ -22,6 +22,14 @@ export function isToiletUnconfirmed(t: Toilet): boolean {
   return t.review_count < 10 || t.source === "inferred";
 }
 
+// 個別トイレページを検索エンジンに index させるか。
+// レビューが 1 件も無いトイレページは「名前 + amenity タグ + 地図リンク」だけの薄いページなので
+// noindex,follow とし、sitemap にも載せない(クローラ巡回コストと thin-content リスクの回避)。
+// レビューが付けば自動で indexable に昇格する。
+export function isToiletIndexable(t: Toilet): boolean {
+  return t.review_count > 0;
+}
+
 export function toiletAmenityKeys(t: Toilet): ("washlet" | "diaperTable" | "universal")[] {
   const out: ("washlet" | "diaperTable" | "universal")[] = [];
   if (t.has_washlet) out.push("washlet");

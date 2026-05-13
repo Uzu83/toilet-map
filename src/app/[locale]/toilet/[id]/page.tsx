@@ -7,6 +7,7 @@ import { AccessChip } from "@/components/seo/AccessChip";
 import { ToiletJsonLd } from "@/components/seo/ToiletJsonLd";
 import { getNearbyToilets, getToiletById } from "@/lib/toilets";
 import {
+  isToiletIndexable,
   isToiletUnconfirmed,
   toiletAccessKey,
   toiletAmenityKeys,
@@ -17,7 +18,9 @@ import { absUrl, languageAlternates, localePrefix, inLanguageOf } from "@/lib/ur
 import { formatDistance, haversineMeters } from "@/lib/geo";
 import type { Toilet } from "@/types/toilet";
 
-export const revalidate = 3600; // 1h(レビューがじわじわ増える)
+// 30日(トイレ/レビュー数はほぼ変わらない & 約8万ページ × 4 ロケールあるので、
+// クローラ巡回のたびに再生成すると ISR Writes が無料枠を即溢れさせる)。
+export const revalidate = 2592000;
 export const dynamicParams = true;
 
 // 空配列 = ビルド時は事前生成せず、初回アクセス時にレンダリング → ISR キャッシュ。
@@ -61,7 +64,7 @@ export async function generateMetadata({
     description,
     alternates: { canonical: absUrl(locale, path), languages: languageAlternates(path) },
     openGraph: { title, description, url: absUrl(locale, path) },
-    robots: { index: true, follow: true },
+    robots: { index: isToiletIndexable(toilet), follow: true },
   };
 }
 
