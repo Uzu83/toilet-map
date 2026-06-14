@@ -35,6 +35,29 @@ export type ReviewInput = {
   notAToilet?: boolean;
 };
 
+// pending 申請ピン。pending_submissions_in_bbox RPC(008)の戻り値に対応する表示用の最小形。
+// ip_hash 等の個人データ・access_level/comment はピン表示に不要なため RPC で返さない(Codex #8)。
+export type ToiletSubmission = {
+  id: string;
+  lat: number;
+  lng: number;
+  name: string | null;
+  status: "pending" | "approved" | "rejected";
+  confirm_count: number;
+  created_at: string;
+};
+
+// 申請フォームの送信ペイロード(/api/submissions POST のボディ)。
+export type SubmissionInput = {
+  lat: number;
+  lng: number;
+  accessLevel: AccessLevel;
+  name?: string;
+  isOutdoor?: boolean;
+  isUniversal?: boolean;
+  comment?: string;
+};
+
 // ピンの最終表示色を決める(レビュー > 推定 > グレー)
 export function effectiveAccess(t: Toilet): AccessLevel | null {
   if (t.dominant_access) return t.dominant_access;

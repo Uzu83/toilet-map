@@ -33,6 +33,17 @@ export function checkAndRecord(ipHash: string, toiletId: string): RateLimitResul
   return { ok: true };
 }
 
+// トイレ申請(Phase 2)用の座標バケットキー。緯度経度を小数 3 桁(≈111m 格子)に丸めて
+// 「同一 IP × 同一地点バケット」を checkAndRecord の key に使う(IP rate limit, 多層防御の第 1 層)。
+// ※同一地点 5 分スロットル(地点グローバル)は in-memory ではサーバーレスで甘いため DB 側(submit_toilet RPC)に置く。
+// 丸め粒度は DB の advisory lock バケットと揃える(008 = round 3 桁)。
+export function makeCoordKey(lat: number, lng: number): string {
+  if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+    throw new Error("invalid coordinates");
+  }
+  return `${lat.toFixed(3)},${lng.toFixed(3)}`;
+}
+
 export function extractIp(req: Request): string {
   const fwd = req.headers.get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0]!.trim();

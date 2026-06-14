@@ -25,7 +25,10 @@ import { SearchBar } from "./SearchBar";
 import { DeepLinkResolver } from "./DeepLinkResolver";
 import { AutoLocate } from "./AutoLocate";
 import { FlyToWatcher } from "./FlyToWatcher";
-import type { Toilet } from "@/types/toilet";
+import { AddModeWatcher } from "./AddModeWatcher";
+import { PendingMarkers } from "./PendingMarkers";
+import { AddToiletFlow } from "./AddToiletFlow";
+import type { Toilet, ToiletSubmission } from "@/types/toilet";
 
 // 博多駅(福岡市シード対象に合わせたフォールバック)
 const HAKATA_STATION: [number, number] = [33.5904, 130.4204];
@@ -118,6 +121,21 @@ async function fetchToilets(bounds: L.LatLngBounds): Promise<Toilet[]> {
   return [];
 }
 
+// pending 申請(薄色ピン)。非クリティカルなので失敗してもメイン表示を止めず空配列を返す。
+async function fetchPending(bounds: L.LatLngBounds): Promise<ToiletSubmission[]> {
+  const sw = bounds.getSouthWest();
+  const ne = bounds.getNorthEast();
+  const bbox = `${sw.lng},${sw.lat},${ne.lng},${ne.lat}`;
+  try {
+    const res = await fetch(`/api/submissions?bbox=${bbox}`, { cache: "no-store" });
+    if (!res.ok) return [];
+    const json = (await res.json()) as { submissions?: ToiletSubmission[] };
+    return json.submissions ?? [];
+  } catch {
+    return [];
+  }
+}
+
 export default function ToiletMap() {
   const tm = useTranslations("map");
   const setToilets = useMapStore((s) => s.setToilets);
@@ -128,8 +146,11 @@ export default function ToiletMap() {
   const favorites = useMapStore((s) => s.favorites);
   const setLoading = useMapStore((s) => s.setLoading);
   const selectedId = useMapStore((s) => s.selectedId);
+  const setPendingSubmissions = useMapStore((s) => s.setPendingSubmissions);
+  const dataVersion = useMapStore((s) => s.dataVersion);
   const [error, setError] = useState<string | null>(null);
   const [hasFetched, setHasFetched] = useState(false);
+  const lastBounds = useRef<L.LatLngBounds | null>(null);
 
   const initial = useMemo(() => {
     const saved = readSavedView();
@@ -137,28 +158,41 @@ export default function ToiletMap() {
     return { center: HAKATA_STATION, zoom: 15 };
   }, []);
 
-  const refetch = useRef(
-    debounce(async (bounds: L.LatLngBounds) => {
-      setLoading(true);
-      try {
-        const t = await fetchToilets(bounds);
-        setToilets(t);
-        setHasFetched(true);
-        setError(null);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : "fetch failed");
-      } finally {
-        setLoading(false);
-      }
-    }, 500)
-  ).current;
+  // 1 度だけ生成する debounce 済み fetch。zustand setter は安定なので deps は実質固定。
+  const refetch = useMemo(
+    () =>
+      debounce(async (bounds: L.LatLngBounds) => {
+        setLoading(true);
+        try {
+          const [t, pending] = await Promise.all([
+            fetchToilets(bounds),
+            fetchPending(bounds),
+          ]);
+          setToilets(t);
+          setPendingSubmissions(pending);
+          setHasFetched(true);
+          setError(null);
+        } catch (e) {
+          setError(e instanceof Error ? e.message : "fetch failed");
+        } finally {
+          setLoading(false);
+        }
+      }, 500),
+    [setLoading, setToilets, setPendingSubmissions]
+  );
 
   const onBoundsChange = useCallback(
     (b: L.LatLngBounds) => {
+      lastBounds.current = b;
       void refetch(b);
     },
     [refetch]
   );
+
+  // 申請/追認の成功後(dataVersion 増加)に現在の bbox を再取得する
+  useEffect(() => {
+    if (dataVersion > 0 && lastBounds.current) void refetch(lastBounds.current);
+  }, [dataVersion, refetch]);
 
   const visible = useMemo(
     () => applyFilters(toilets, filters, favorites),
@@ -185,6 +219,8 @@ export default function ToiletMap() {
         <DeepLinkResolver />
         <AutoLocate />
         <FlyToWatcher />
+        <AddModeWatcher />
+        <PendingMarkers />
         <SearchBar />
         <LocateControl />
         {userPos && (
@@ -206,6 +242,7 @@ export default function ToiletMap() {
       <PinLegend />
       {showEmpty && <EmptyState filtered={filterActive} />}
       <PinSheet />
+      <AddToiletFlow />
       {error && (
         <div className="absolute left-4 top-20 z-1000 rounded-lg bg-red-500/90 px-3 py-2 text-sm text-white shadow">
           {tm("loadError", { message: error })}
