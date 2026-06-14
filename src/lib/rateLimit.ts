@@ -62,9 +62,12 @@ export function makeCoordKey(lat: number, lng: number): string {
 }
 
 export function extractIp(req: Request): string {
+  // Vercel など信頼できるプロキシが付与する x-real-ip(接続元 IP, クライアント詐称不可)を優先する。
+  // クライアント供給の x-forwarded-for 先頭は詐称できるため後順位(これに依存した distinct-ip confirm の
+  // 水増しを緩和)。完全な Sybil 耐性は Phase 3 の Auth で担保する(PROGRESS 未解決課題 #3)。
+  const real = req.headers.get("x-real-ip");
+  if (real) return real.trim();
   const fwd = req.headers.get("x-forwarded-for");
   if (fwd) return fwd.split(",")[0]!.trim();
-  const real = req.headers.get("x-real-ip");
-  if (real) return real;
   return "0.0.0.0";
 }

@@ -180,19 +180,22 @@ declare
   v_count int;
   v_inserted boolean;
   v_new_toilet uuid;
-  -- advisory lock 用グリッド。cell=0.001 度(≈111m)、pad=0.0005 度(≈46-55m > 30m radius)。
+  -- advisory lock 用グリッド。cell=0.001 度(≈111m)。pad はメートル等価で 30m radius をカバー。
   v_cell constant double precision := 0.001;
-  v_pad constant double precision := 0.0005;
+  v_lat_pad constant double precision := 0.0005; -- ≈55m(緯度方向の度数は一定)
+  v_lng_pad double precision;                    -- 経度方向は緯度補正(高緯度で度数を拡大)
   v_la int;
   v_lo int;
 begin
   -- ① 並行申請の直列化。単一の丸めバケットだと境界付近で 30m 以内でも別バケットに丸まり、
   --    別ロックを取得して両者が ST_DWithin pending チェックを通過 → pending 重複が起きうる(Codex 2-b)。
-  --    そこで point±pad の bbox が触れる全セル(最大 2×2)をロックする。30m 以内の 2 点は
-  --    互いの pad 範囲に入るため必ず最低 1 セルを共有し、確実に直列化される。
-  --    取得順は (la 昇順, lo 昇順)で全 tx 共通なのでデッドロックしない。
-  for v_la in floor((p_lat - v_pad) / v_cell)::int .. floor((p_lat + v_pad) / v_cell)::int loop
-    for v_lo in floor((p_lng - v_pad) / v_cell)::int .. floor((p_lng + v_pad) / v_cell)::int loop
+  --    そこで point±pad の bbox が触れる全セルをロックする。30m 以内の 2 点は互いの pad 範囲に
+  --    入るため必ず最低 1 セルを共有し、確実に直列化される。取得順は (la,lo 昇順)で全 tx 共通=デッドロック無し。
+  -- ⚠️ 経度 1 度の距離は cos(lat) で縮むため、固定 0.0005 度だと高緯度で 30m 未満になりロックを
+  --    取りこぼす(Codex 3-b)。メートル等価になるよう緯度補正する(極付近は greatest でガード)。
+  v_lng_pad := 0.0005 / greatest(cos(radians(p_lat)), 0.01);
+  for v_la in floor((p_lat - v_lat_pad) / v_cell)::int .. floor((p_lat + v_lat_pad) / v_cell)::int loop
+    for v_lo in floor((p_lng - v_lng_pad) / v_cell)::int .. floor((p_lng + v_lng_pad) / v_cell)::int loop
       perform pg_advisory_xact_lock(hashtext(v_la::text || ':' || v_lo::text)::bigint);
     end loop;
   end loop;
