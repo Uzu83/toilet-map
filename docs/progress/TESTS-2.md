@@ -41,7 +41,7 @@
 | E4 | 同一 IP が同一 submission を2回 confirm | `UNIQUE(submission_id, ip_hash)` で2件目拒否、confirm_count 増えない | distinct-ip 水増し除外（Codex #3） |
 | E5 | 同地点に 5分以内の連投 | スロットルで拒否（DB側 created_at 判定） | フラッディング遮断（覇王案） |
 | E6 | 同座標・同時刻の並行2申請(concurrent) | advisory lock で直列化、double-promotion せず（toilets 1行のみ） | 競合二重昇格防止（Codex #2） |
-| E7 | `not_a_toilet_count>=5` 座標近傍への申請 | 抑止/自動却下 | 既存自己修正との連動 |
+| E7 | `not_a_toilet_count>=5`(非表示)の座標近傍への申請 | dup にならず**新規 pending として受理** | 隠れた偽陽性が正当な再登録を妨げない(Codex 2-a。`nearby_toilet` は `<5` の可視トイレのみ dup 判定) |
 
 ### 境界値
 | ID | シナリオ | 期待 | 意図 |

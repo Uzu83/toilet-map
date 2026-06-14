@@ -114,6 +114,8 @@ as $$
 $$;
 
 -- dedup ヘルパ: 指定座標の radius(m)以内に既存 toilets があればその id を返す(最近接 1 件)。
+-- ⚠️ not_a_toilet_count>=5 で非表示(偽陽性)のトイレは dup 対象から除外する(toilets_in_bbox と同じ
+--    可視性述語)。除外しないと、隠れた偽陽性の近くに本物を追加しようとした申請が永久に dup で弾かれる(Codex 2-a)。
 create or replace function nearby_toilet(
   p_lat double precision,
   p_lng double precision,
@@ -127,11 +129,13 @@ set search_path = public
 as $$
   select t.id
   from toilets t
-  where st_dwithin(
-    t.location,
-    st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
-    p_radius
-  )
+  left join toilet_stats s on s.id = t.id
+  where coalesce(s.not_a_toilet_count, 0) < 5
+    and st_dwithin(
+      t.location,
+      st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
+      p_radius
+    )
   order by st_distance(
     t.location,
     st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography
@@ -176,11 +180,22 @@ declare
   v_count int;
   v_inserted boolean;
   v_new_toilet uuid;
+  -- advisory lock 用グリッド。cell=0.001 度(≈111m)、pad=0.0005 度(≈46-55m > 30m radius)。
+  v_cell constant double precision := 0.001;
+  v_pad constant double precision := 0.0005;
+  v_la int;
+  v_lo int;
 begin
-  -- ① 座標バケット(小数 3 桁 ≈ 111m)で advisory lock。同一地点への並行申請を直列化する。
-  perform pg_advisory_xact_lock(
-    hashtext(round(p_lat::numeric, 3)::text || ',' || round(p_lng::numeric, 3)::text)::bigint
-  );
+  -- ① 並行申請の直列化。単一の丸めバケットだと境界付近で 30m 以内でも別バケットに丸まり、
+  --    別ロックを取得して両者が ST_DWithin pending チェックを通過 → pending 重複が起きうる(Codex 2-b)。
+  --    そこで point±pad の bbox が触れる全セル(最大 2×2)をロックする。30m 以内の 2 点は
+  --    互いの pad 範囲に入るため必ず最低 1 セルを共有し、確実に直列化される。
+  --    取得順は (la 昇順, lo 昇順)で全 tx 共通なのでデッドロックしない。
+  for v_la in floor((p_lat - v_pad) / v_cell)::int .. floor((p_lat + v_pad) / v_cell)::int loop
+    for v_lo in floor((p_lng - v_pad) / v_cell)::int .. floor((p_lng + v_pad) / v_cell)::int loop
+      perform pg_advisory_xact_lock(hashtext(v_la::text || ':' || v_lo::text)::bigint);
+    end loop;
+  end loop;
 
   -- ② 同一地点 5 分スロットル(地点グローバル / 全 status)。フラッディング遮断。
   if exists (
