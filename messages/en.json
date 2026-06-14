@@ -301,5 +301,35 @@
     "q_operator": "Who operates this?",
     "a_operator": "Operated by TosaGiken. Please contact us via the feedback form."
   },
-  "compass": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"]
+  "compass": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
+  "addToilet": {
+    "entry": "Add a toilet",
+    "title": "Suggest a new toilet",
+    "hint": "Pan the map so the centre pin sits on the toilet you want to add",
+    "confirmLocation": "Use this location",
+    "back": "Pick location again",
+    "name": "Name (optional)",
+    "namePlaceholder": "e.g. ○○ Park restroom, △△ Bldg 1F",
+    "access": "Access",
+    "isOutdoor": "Outdoor toilet",
+    "isUniversal": "Accessible / universal",
+    "yes": "Yes",
+    "no": "No",
+    "comment": "Notes (optional, up to 500 chars)",
+    "commentPlaceholder": "e.g. open 24h, stroller accessible",
+    "warning": "Submissions go live once other users confirm them. Please don't submit false or prank entries.",
+    "submit": "Submit",
+    "submitting": "Submitting…",
+    "errAccess": "Please select an access level",
+    "errLocation": "Please choose a location",
+    "errSubmit": "Submission failed",
+    "thanksPending": "Thanks! Your submission was received and will go live once other users confirm it.",
+    "thanksPromoted": "Thanks! This toilet is now public.",
+    "dup": "A toilet is already registered near here.",
+    "throttled": "Too many submissions for this spot right now. Please try again shortly.",
+    "pendingBadge": "Pending",
+    "pendingConfirm": "There's a toilet here",
+    "cancel": "Cancel",
+    "close": "Close"
+  }
 }

@@ -301,5 +301,35 @@
     "q_operator": "运营方是谁？",
     "a_operator": "由 TosaGiken（东佐技研）运营。咨询请通过意见反馈表单。"
   },
-  "compass": ["北", "东北", "东", "东南", "南", "西南", "西", "西北"]
+  "compass": ["北", "东北", "东", "东南", "南", "西南", "西", "西北"],
+  "addToilet": {
+    "entry": "添加厕所",
+    "title": "申请新增厕所",
+    "hint": "移动地图，让中心图钉对准要添加的厕所位置",
+    "confirmLocation": "使用此位置",
+    "back": "重新选择位置",
+    "name": "名称（可选）",
+    "namePlaceholder": "例：○○公园厕所、△△大厦1层",
+    "access": "使用权限",
+    "isOutdoor": "户外厕所",
+    "isUniversal": "多功能·无障碍",
+    "yes": "是",
+    "no": "否",
+    "comment": "补充说明（可选·500字以内）",
+    "commentPlaceholder": "例：24小时开放、可推婴儿车进入 等",
+    "warning": "申请经其他用户确认后才会公开。请勿提交虚假或恶作剧信息。",
+    "submit": "提交申请",
+    "submitting": "提交中…",
+    "errAccess": "请选择使用权限",
+    "errLocation": "请选择位置",
+    "errSubmit": "提交失败",
+    "thanksPending": "已收到您的申请！经其他用户确认后即可公开。",
+    "thanksPromoted": "感谢您的申请！该厕所已公开。",
+    "dup": "附近已登记有厕所。",
+    "throttled": "该地点的申请过于频繁，请稍后再试。",
+    "pendingBadge": "申请中",
+    "pendingConfirm": "这里有厕所",
+    "cancel": "取消",
+    "close": "关闭"
+  }
 }

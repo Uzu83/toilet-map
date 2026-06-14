@@ -1,7 +1,7 @@
 "use client";
 
 import { create } from "zustand";
-import type { Toilet } from "@/types/toilet";
+import type { Toilet, ToiletSubmission } from "@/types/toilet";
 
 export type Filters = {
   washlet: boolean;
@@ -45,6 +45,22 @@ type MapState = {
   favorites: Set<string>;
   loadFavorites: () => void;
   toggleFavorite: (id: string) => void;
+
+  // トイレ追加申請フロー(Phase 2): 中央ピン方式
+  addMode: boolean;
+  setAddMode: (b: boolean) => void;
+  // addMode 中の地図中心(中央ピンの指す座標)。AddModeWatcher が moveend で更新する
+  addDraft: { lat: number; lng: number } | null;
+  setAddDraft: (d: { lat: number; lng: number } | null) => void;
+  // bbox 内の pending 申請(薄色ピン)
+  pendingSubmissions: ToiletSubmission[];
+  setPendingSubmissions: (s: ToiletSubmission[]) => void;
+  // pending ピンの追認(「ここにトイレがある」)対象。set されると確認モーダルを出す
+  confirmTarget: { id: string; lat: number; lng: number; name: string | null } | null;
+  setConfirmTarget: (t: { id: string; lat: number; lng: number; name: string | null } | null) => void;
+  // 申請/追認の成功後にトイレ・pending を再取得させるトークン
+  dataVersion: number;
+  bumpData: () => void;
 };
 
 const FAV_KEY = "toilet-map.favorites";
@@ -137,6 +153,18 @@ export const useMapStore = create<MapState>((set, get) => ({
     persistFavorites(next);
     set({ favorites: next });
   },
+
+  addMode: false,
+  // addMode を切り替えると下書き位置はリセットする(入りも抜けも clean な状態から)
+  setAddMode: (addMode) => set({ addMode, addDraft: null }),
+  addDraft: null,
+  setAddDraft: (addDraft) => set({ addDraft }),
+  pendingSubmissions: [],
+  setPendingSubmissions: (pendingSubmissions) => set({ pendingSubmissions }),
+  confirmTarget: null,
+  setConfirmTarget: (confirmTarget) => set({ confirmTarget }),
+  dataVersion: 0,
+  bumpData: () => set((s) => ({ dataVersion: s.dataVersion + 1 })),
 }));
 
 export function applyFilters(toilets: Toilet[], filters: Filters, favorites: Set<string>): Toilet[] {

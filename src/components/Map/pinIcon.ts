@@ -53,3 +53,40 @@ export function makePinIcon(opts: {
     popupAnchor: [0, -h + 8],
   });
 }
+
+// pending(ユーザー申請・未承認)ピン。
+// inferred(破線 + access 色 + 半透明 + 星)とは別の視覚語彙にする:
+//   - 色: indigo(#6366F1) — access 色(青/黄/赤)とも inferred ともグレーとも違う固有色
+//   - ストローク: 点線(dotted "1 3")— inferred の破線("3 2")と区別
+//   - グリフ: 星ではなく「+」(=これから追加される提案)
+//   - confirm_count バッジ(右上の小円)で追認の進捗を示す
+export function makePendingPinIcon(opts: { confirmCount?: number }): L.DivIcon {
+  const color = "#6366F1";
+  const w = 32;
+  const h = 42;
+  const count = opts.confirmCount ?? 0;
+
+  const badge =
+    count > 0
+      ? `<g transform="translate(24 6)">
+           <circle cx="0" cy="0" r="7" fill="#fff" stroke="${color}" stroke-width="1.5"/>
+           <text x="0" y="3.5" text-anchor="middle" font-size="9" font-weight="700" fill="${color}">${count > 9 ? "9+" : count}</text>
+         </g>`
+      : "";
+
+  const svg = `
+<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}" viewBox="0 0 36 46" style="filter: drop-shadow(0 2px 3px rgba(0,0,0,.3));">
+  <path d="M18 1c-9.4 0-17 7.4-17 16.5 0 12 17 27.5 17 27.5s17-15.5 17-27.5C35 8.4 27.4 1 18 1z"
+        fill="${color}" fill-opacity="0.55" stroke="${color}" stroke-width="2" stroke-dasharray="1 3"/>
+  <path d="M18 10.5 v13 M11.5 17 h13" stroke="#fff" stroke-width="3.2" stroke-linecap="round"/>
+  ${badge}
+</svg>`;
+
+  return L.divIcon({
+    html: svg,
+    className: "toilet-pin toilet-pin-pending",
+    iconSize: [w, h],
+    iconAnchor: [Math.round(w / 2), h - 2],
+    popupAnchor: [0, -h + 8],
+  });
+}

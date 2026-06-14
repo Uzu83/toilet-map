@@ -201,6 +201,63 @@ describe("isToiletIndexable — canonical predicate (設計書 §5.1)", () => {
     });
   });
 
+  // Phase 2 / Issue #2: ユーザー投稿(source='user')の indexable 挙動。
+  // 設計判断「user もレビュー1件以上で indexable に昇格」は review_count>0 ブランチ(source 非依存)で
+  // 既に成立する(009 で述語変更なし)。SQL(007) と同一真理値表であること(SQL1 パリティ)を TS 側で固定する。
+  describe("Phase 2: source='user' パリティ (TESTS-2.md §5)", () => {
+    it("N8: user・named・review=1 → true (レビュー1件で昇格 = 既存ルール踏襲)", () => {
+      expect(
+        isToiletIndexable(
+          makeToilet({
+            source: "user",
+            name: "○○ビルトイレ",
+            review_count: 1,
+            not_a_toilet_count: 0,
+          }),
+        ),
+      ).toBe(true);
+    });
+
+    it("E15: user・無名・review=0 → false (未レビュー user は inferred と同じ品質ゲートで除外)", () => {
+      expect(
+        isToiletIndexable(
+          makeToilet({
+            source: "user",
+            name: null,
+            review_count: 0,
+            not_a_toilet_count: 0,
+          }),
+        ),
+      ).toBe(false);
+    });
+
+    it("E15': user・named・review=0 → false (named でも user は osm の named 経路に乗らない)", () => {
+      expect(
+        isToiletIndexable(
+          makeToilet({
+            source: "user",
+            name: "○○ビルトイレ",
+            review_count: 0,
+            not_a_toilet_count: 0,
+          }),
+        ),
+      ).toBe(false);
+    });
+
+    it("user・review=2・not_a_toilet=5 → false (昇格後も not_a_toilet>=5 で除外 = 自己修正)", () => {
+      expect(
+        isToiletIndexable(
+          makeToilet({
+            source: "user",
+            name: "○○ビルトイレ",
+            review_count: 2,
+            not_a_toilet_count: 5,
+          }),
+        ),
+      ).toBe(false);
+    });
+  });
+
   describe("回帰 (AC4: 既存公開対象が落ちない)", () => {
     it("R1: inferred・無名・review=3 → true (旧 review_count>0 対象の維持 = 最重要退行)", () => {
       expect(
