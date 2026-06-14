@@ -334,9 +334,14 @@ function ConfirmPendingModal({
       <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl dark:bg-zinc-900">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50">
-              {t("pendingConfirm")}
-            </h3>
+            <div className="mb-1 flex items-center gap-2">
+              <span className="inline-flex rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-200">
+                {t("pendingBadge")}
+              </span>
+              <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50">
+                {t("pendingConfirm")}
+              </h3>
+            </div>
             <p className="text-xs text-zinc-500">{target.name ?? tp("unnamed")}</p>
           </div>
           <button
