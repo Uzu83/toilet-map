@@ -2,7 +2,7 @@ import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
 import { absUrl, languageAlternates } from "@/lib/urls";
 import { areaSlugs } from "@/lib/areas";
-import { getToiletIdsPage } from "@/lib/toilets";
+import { getIndexableToiletIdsPage } from "@/lib/toilets";
 import { SITEMAP_CHUNK_TOILETS, sitemapChunkCount } from "@/lib/sitemapChunks";
 
 // コード版 sitemap は既定でキャッシュされる。Supabase のデータ変化を取り込むため日次で再生成。
@@ -10,12 +10,11 @@ export const revalidate = 86400;
 
 const STATIC_PATHS = ["", "/about", "/contact", "/privacy", "/terms"] as const;
 
-// 現状 sitemap は id 0(静的ページ + 全エリアページ)のみ。
-// 個別トイレページ(/toilet/[id])はレビュー 0 件が大半で noindex,follow にしているため sitemap には載せない
-// (理由は sitemapChunks.ts 参照)。レビュー付きトイレが増えたらサブセットのチャンクを足す。
-// 下の id >= 1 ブランチはその再開時用に残してあるが、現在は到達しない。
+// sitemap は id 0(静的ページ + 全エリアページ)+ id 1..(indexable トイレ個別ページ)で構成。
+// indexable サブセット(canonical predicate, 設計書 §5.1)だけを掲載する(noindex のトイレは載せない)。
+// チャンク数は indexable 件数から動的算出(sitemapChunks.ts)。generateSitemaps はビルド時に確定。
 export async function generateSitemaps() {
-  const n = await sitemapChunkCount(); // 現状は常に 1
+  const n = await sitemapChunkCount();
   return Array.from({ length: n }, (_, i) => ({ id: i }));
 }
 
@@ -54,10 +53,10 @@ export default async function sitemap(props: {
     return entries;
   }
 
-  // チャンク N(>=1): トイレ個別ページ。ファイルサイズを抑えるため hreflang は省略
+  // チャンク N(>=1): indexable トイレ個別ページのみ。ファイルサイズを抑えるため hreflang は省略
   //   (各ページの <link rel="alternate"> でロケール変種は発見できる)。
   const offset = (id - 1) * SITEMAP_CHUNK_TOILETS;
-  const rows = await getToiletIdsPage(offset, SITEMAP_CHUNK_TOILETS).catch(() => []);
+  const rows = await getIndexableToiletIdsPage(offset, SITEMAP_CHUNK_TOILETS).catch(() => []);
   return rows.flatMap((r) => {
     const path = `/toilet/${r.id}`;
     const lastModified = r.created_at ? new Date(r.created_at) : now;

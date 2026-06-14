@@ -18,7 +18,7 @@ const BLOCKED_BOTS = [
 
 export default async function robots(): Promise<MetadataRoute.Robots> {
   const base = siteUrl();
-  const n = await sitemapChunkCount(); // 現状は 1(個別トイレページは sitemap 非掲載)
+  const n = await sitemapChunkCount(); // 動的: 1(静的+area) + indexable トイレチャンク数(sitemapChunks.ts)
   return {
     rules: [
       { userAgent: BLOCKED_BOTS, disallow: "/" },
