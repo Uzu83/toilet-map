@@ -33,6 +33,23 @@ export function checkAndRecord(ipHash: string, toiletId: string): RateLimitResul
   return { ok: true };
 }
 
+// 記録せずに現在の制限状態だけを見る(非破壊)。
+// 申請フローのように「成功時のみ枠を消費したい」ケースで peekLimit → (RPC) → recordHit と分けて使う。
+export function peekLimit(ipHash: string, key: string): RateLimitResult {
+  const now = Date.now();
+  purge(now);
+  const last = cache.get(`${ipHash}:${key}`);
+  if (last && now - last < WINDOW_MS) {
+    return { ok: false, retryAfterSec: Math.ceil((WINDOW_MS - (now - last)) / 1000) };
+  }
+  return { ok: true };
+}
+
+// 制限枠を消費する(成功した申請/追認の後にだけ呼ぶ)。
+export function recordHit(ipHash: string, key: string): void {
+  cache.set(`${ipHash}:${key}`, Date.now());
+}
+
 // トイレ申請(Phase 2)用の座標バケットキー。緯度経度を小数 3 桁(≈111m 格子)に丸めて
 // 「同一 IP × 同一地点バケット」を checkAndRecord の key に使う(IP rate limit, 多層防御の第 1 層)。
 // ※同一地点 5 分スロットル(地点グローバル)は in-memory ではサーバーレスで甘いため DB 側(submit_toilet RPC)に置く。

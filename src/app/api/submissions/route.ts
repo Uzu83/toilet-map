@@ -3,7 +3,7 @@ import {
   getServerSupabasePublishable,
   getServerSupabaseSecret,
 } from "@/lib/supabase/server";
-import { checkAndRecord, extractIp, hashIp, makeCoordKey } from "@/lib/rateLimit";
+import { extractIp, hashIp, makeCoordKey, peekLimit, recordHit } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -108,7 +108,11 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: "invalid coordinates" }, { status: 400 });
   }
-  const limit = checkAndRecord(ipHash, `submission:${coordKey}`);
+  // 非破壊チェック。実際の枠消費(recordHit)は RPC が成功(pending/promoted)した時だけ行う。
+  // dup/throttled で枠を消費すると、DB スロットルの「300秒後に再試行」案内が
+  // 1時間 IP 制限に阻まれて成立しなくなる(Codex P2)。
+  const rlKey = `submission:${coordKey}`;
+  const limit = peekLimit(ipHash, rlKey);
   if (!limit.ok) {
     return NextResponse.json(
       { error: "同じ地点への申請は一定時間に1回までです" },
@@ -144,11 +148,13 @@ export async function POST(request: NextRequest) {
 
     switch (row?.result) {
       case "promoted":
+        recordHit(ipHash, rlKey); // 成功時のみ 1時間枠を消費
         return NextResponse.json(
           { result: "promoted", toiletId: row.toilet_id ?? null },
           { status: 201 }
         );
       case "pending":
+        recordHit(ipHash, rlKey); // 成功時のみ 1時間枠を消費
         return NextResponse.json(
           {
             result: "pending",

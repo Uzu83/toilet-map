@@ -92,3 +92,30 @@ describe("POST /api/submissions — RPC 結果→HTTP マッピング", () => {
     expect(res.status).toBe(500);
   });
 });
+
+describe("POST /api/submissions — IP rate limit は成功時のみ消費 (Codex P2 / E11)", () => {
+  it("E11: 同 IP×同地点で連続成功 → 2回目は 429(枠消費後)", async () => {
+    const ip = "10.2.1.1";
+    const body = { ...baseBody, lat: 33.701 };
+    rpcMock.mockResolvedValueOnce({
+      data: [{ result: "pending", submission_id: "s", confirm_count: 1 }],
+      error: null,
+    });
+    expect((await POST(postReq(body, ip))).status).toBe(200);
+    // 2回目: peek が limited を返し RPC を呼ばずに 429
+    expect((await POST(postReq(body, ip))).status).toBe(429);
+  });
+
+  it("throttled は枠を消費しない → 解消後に再申請できる", async () => {
+    const ip = "10.2.2.1";
+    const body = { ...baseBody, lat: 33.702 };
+    rpcMock.mockResolvedValueOnce({ data: [{ result: "throttled" }], error: null });
+    expect((await POST(postReq(body, ip))).status).toBe(429);
+    // 枠未消費なので次は通る
+    rpcMock.mockResolvedValueOnce({
+      data: [{ result: "pending", submission_id: "s", confirm_count: 1 }],
+      error: null,
+    });
+    expect((await POST(postReq(body, ip))).status).toBe(200);
+  });
+});

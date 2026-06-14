@@ -267,5 +267,12 @@ grant select, insert on submission_confirmations to service_role;
 
 grant execute on function pending_submissions_in_bbox(double precision, double precision, double precision, double precision, int) to anon, authenticated, service_role;
 grant execute on function nearby_toilet(double precision, double precision, double precision) to anon, authenticated, service_role;
+
 -- submit_toilet は API ルート(secret key = service_role)からのみ呼ぶ。
+-- ⚠️ PostgreSQL は新規 function の EXECUTE を既定で PUBLIC に付与する。GRANT だけでは
+--    anon/authenticated も呼べてしまい(Supabase は anon key で RPC 直叩き可)、API の
+--    バリデーション/rate limit を迂回し任意の p_ip_hash で confirm 水増し・自動昇格できる。
+--    まず PUBLIC から剥がしてから service_role のみに付与する(Codex P1)。
+revoke execute on function submit_toilet(double precision, double precision, access_level, text, text, boolean, boolean, text) from public;
+revoke execute on function submit_toilet(double precision, double precision, access_level, text, text, boolean, boolean, text) from anon, authenticated;
 grant execute on function submit_toilet(double precision, double precision, access_level, text, text, boolean, boolean, text) to service_role;
