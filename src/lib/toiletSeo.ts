@@ -22,12 +22,23 @@ export function isToiletUnconfirmed(t: Toilet): boolean {
   return t.review_count < 10 || t.source === "inferred";
 }
 
-// 個別トイレページを検索エンジンに index させるか。
-// レビューが 1 件も無いトイレページは「名前 + amenity タグ + 地図リンク」だけの薄いページなので
-// noindex,follow とし、sitemap にも載せない(クローラ巡回コストと thin-content リスクの回避)。
-// レビューが付けば自動で indexable に昇格する。
+// 個別トイレページを検索エンジンに index させるか(canonical predicate, 設計書 §5.1)。
+//
+//   INDEXABLE(t) := not_a_toilet_count < 5
+//                AND ( review_count > 0
+//                      OR ( source = 'osm' AND NAMED(t) ) )
+//   NAMED(t) := name に空白以外の文字が 1 つ以上ある((name?.trim().length ?? 0) > 0)
+//
+// 「ない」報告が 5 件以上のトイレ(=ページが notFound 扱い)は除外。
+// review が 1 件でも付けば従来通り indexable に昇格(AC4 退行防止)。加えて source='osm' で
+// 名称ありのトイレを新シグナルとして index 化する(名前 + amenity + 地図リンクより情報量が多く
+// thin-content リスクが低い)。inferred(駅/モール等)は実物トイレ非特定の UX 問題があるため除外。
+// この述語は sitemap 用 RPC(migration 007)の WHERE と同一の真理値表を満たす(§5.2)。
 export function isToiletIndexable(t: Toilet): boolean {
-  return t.review_count > 0;
+  if (t.not_a_toilet_count >= 5) return false;
+  if (t.review_count > 0) return true;
+  const named = (t.name?.trim().length ?? 0) > 0;
+  return t.source === "osm" && named;
 }
 
 export function toiletAmenityKeys(t: Toilet): ("washlet" | "diaperTable" | "universal")[] {

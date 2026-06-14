@@ -40,6 +40,9 @@ Supabase ダッシュボード **SQL Editor** で以下を順に貼り付けて 
 2. `supabase/migrations/002_inferred_access.sql` — 推定アクセス + 営業時間カラム
 3. `supabase/migrations/003_not_a_toilet_reports.sql` — 「ない」報告 + 5件以上で非表示
 4. `supabase/migrations/004_toilet_by_id.sql` — 単一トイレ取得 RPC(deep link 用)
+5. `supabase/migrations/005_seo_rpcs.sql` — プログラマティック SEO 用 RPC(id ページャ / 件数 / area)
+6. `supabase/migrations/006_seo_rpcs_fast.sql` — SEO RPC 高速化(toilet_stats join 除去 + created_at index)
+7. `supabase/migrations/007_seo_indexable.sql` — sitemap の indexable 部分集合 RPC(Issue #1。**deploy 前に apply 必須**)
 
 すべて IF NOT EXISTS / CREATE OR REPLACE で冪等。
 
@@ -109,6 +112,20 @@ Vercel デプロイ:
 4. デプロイ — `npm run build` がそのまま走る
 
 ---
+
+## SEO: indexable ゲートと ISR 予算 (Issue #1)
+
+個別トイレページ(`/toilet/[id]`)は thin-content とクローラ負荷を避けるため、**品質シグナルを満たすものだけ** indexable + sitemap 掲載にしている(canonical predicate):
+
+```
+INDEXABLE(t) := not_a_toilet_count < 5
+             AND ( review_count > 0 OR ( source='osm' AND 名前あり ) )
+```
+
+- TS 側 `src/lib/toiletSeo.ts` の `isToiletIndexable` と SQL 側 `007_seo_indexable.sql` の RPC が**同一述語**(真理値表一致、`src/lib/toiletSeo.test.ts` で固定)。
+- **ISR Writes 予算(Vercel Hobby 200K/月)**: 2026-06-14 prod 実測で indexable = **1,434 件**。月間 ISR Writes(toilet) ≈ N × 4 locale × max(D,1) = **5,736(D=1) 〜 22,944(D=4)** で予算内(toilet 枠 120K に対しても余裕)。
+- **sitemap チャンク**: `chunk_count = 1 + ceil(N / 11,000) = 2`(チャンク0=静的+area / チャンク1=トイレ)。閾値 **11,000** の根拠 = Google 上限 50,000 URL ÷ 4 locale = 12,500 に余裕を見た値。
+- `generateSitemaps` はビルド時にチャンク数確定。**大規模シード後はチャンク数再計算のため再デプロイが必要**。007 は **deploy 前に手動 apply**(未適用だと RPC 未定義 → 0 fallback → sitemap 1 チャンク固定の退行、自動回復しない)。
 
 ## ディレクトリ構成
 

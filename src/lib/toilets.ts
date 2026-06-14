@@ -89,6 +89,19 @@ export async function getToiletCount(): Promise<number> {
   }
 }
 
+// indexable サブセット(canonical predicate, 設計書 §5.1)の件数。
+// sitemap のチャンク数算出(sitemapChunkCount)が依存する。失敗時は 0 フォールバック。
+export async function getIndexableToiletCount(): Promise<number> {
+  try {
+    const supabase = getServerSupabasePublishable();
+    const { data, error } = await supabase.rpc("toilet_indexable_count");
+    if (error || data == null) return 0;
+    return Number(Array.isArray(data) ? data[0] : data) || 0;
+  } catch {
+    return 0;
+  }
+}
+
 // PostgREST(Supabase API)は 1 レスポンス最大 1000 行なので、RPC に p_limit を大きく渡しても
 // 1000 行で切れる。よって 1000 行ずつ内部ページングして `limit` 行まで集める。
 const PG_MAX_ROWS = 1000;
@@ -103,6 +116,36 @@ export async function getToiletIdsPage(
     while (out.length < limit) {
       const batch = Math.min(PG_MAX_ROWS, limit - out.length);
       const { data, error } = await supabase.rpc("toilet_ids_page", {
+        p_offset: offset + out.length,
+        p_limit: batch,
+      });
+      if (error || !Array.isArray(data) || data.length === 0) break;
+      for (const r of data) {
+        out.push({
+          id: String((r as Record<string, unknown>).id),
+          created_at: ((r as Record<string, unknown>).created_at as string | null) ?? null,
+        });
+      }
+      if (data.length < batch) break; // データを取り切った
+    }
+  } catch {
+    // 取れた分だけ返す(部分 sitemap)
+  }
+  return out;
+}
+
+// indexable サブセット(canonical predicate, 設計書 §5.1)の id ページ。sitemap の id>=1 チャンクが使う。
+// getToiletIdsPage と同様に PostgREST の 1000 行上限を内部ページングで越える(RPC 名のみ差し替え)。
+export async function getIndexableToiletIdsPage(
+  offset: number,
+  limit: number
+): Promise<{ id: string; created_at: string | null }[]> {
+  const out: { id: string; created_at: string | null }[] = [];
+  try {
+    const supabase = getServerSupabasePublishable();
+    while (out.length < limit) {
+      const batch = Math.min(PG_MAX_ROWS, limit - out.length);
+      const { data, error } = await supabase.rpc("toilet_ids_indexable_page", {
         p_offset: offset + out.length,
         p_limit: batch,
       });
