@@ -31,7 +31,13 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
 
   const submit = async () => {
     if (!isReport && (rating === 0 || !accessLevel)) {
-      setError(t("errStarAccess"));
+      if (rating === 0 && !accessLevel) {
+        setError(t("errBoth"));
+      } else if (rating === 0) {
+        setError(t("errStarOnly"));
+      } else {
+        setError(t("errAccessOnly"));
+      }
       return;
     }
     setSubmitting(true);
