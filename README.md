@@ -3,7 +3,7 @@
 近くの公衆トイレを **ピン色(青/黄/赤)** と **星 1-5 の清潔度** で 3 タップ以内に探せる Web アプリ。
 表示名 **Loo map**(2026-05-09 商標調査により旧名「ピットイン」から改名)、リポ名は機能直結の `toilet-map` を維持。
 
-- 本番: https://toilet-map-beta.vercel.app/
+- 本番: https://toilet-map-six.vercel.app/
 - 親ハブ: [🔵 Vercelプロジェクト管理 (Notion)](https://www.notion.so/35a1ef8488d581daba0ef47ff15003c2)
 - 商標調査ログ: [⚖️ 商標調査ログ](https://www.notion.so/35b1ef8488d58132b7baed8b6830a823)
 
