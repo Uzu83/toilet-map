@@ -81,7 +81,7 @@
 | 4.1 | セルフレビュー + lint/build/test | ✅ | clean / 成功 / 39/39 |
 | 4.2 | /codex:review（実装差分） | ✅ | **APPROVE**（1サイクルで収束、指摘ゼロ）。受入条件・report スキップ維持・スコープ最小をすべて PASS |
 | 4.3 | PR 作成 | ✅ | [PR #6](https://github.com/Uzu83/toilet-map/pull/6) — `Closes #5`、自動生成マーク、lint/build/test PASS + Codex APPROVE を記載 |
-| 4.4 | マージ → 進捗表更新 | ⬜ | 人間レビュー待ち。**migration 非依存**なので通常デプロイで反映可（008/009/010 のような手動適用不要） |
+| 4.4 | マージ → デプロイ → 進捗表更新 | ✅ | PR #6 を squash マージ(main=`38acc50`)→ `vercel --prod` で本番手動デプロイ(READY, dpl_9WzGW2uhK4cEPCBgpiox6FaEWMfS)→ スモーク合格。**migration 非依存**のため SQL 適用なし |
 
 ---
 
@@ -106,16 +106,21 @@
 - **進捗サマリ**: 実装・テスト・Codex レビュー・ドキュメント完了。PR 提出。
 - **ブロッカー**: なし
 
+### 2026-06-15 (マージ → 本番デプロイ)
+- **実施**: PR #6 を squash マージ + ブランチ削除(main=`38acc50`)。Vercel git 統合の preview ビルドは SUCCESS 済。main は自動デプロイ OFF のため `vercel --prod`(CLI, scope `uzu83s-projects`)で**手動本番デプロイ**。
+- **デプロイ**: READY / target=production / `dpl_9WzGW2uhK4cEPCBgpiox6FaEWMfS` / alias `toilet-map-six.vercel.app`。ビルド 26s。
+- **スモーク**: トップ 200 / `/api/toilets?bbox=` 200(地図回帰なし) / 本番 HTML に新文言「清潔度 と 利用許可」反映・`errStarAccess` 消滅。
+- **migration**: 非依存のため SQL 適用なし(008/009/010 のような事前手動適用は不要)。
+- **進捗サマリ**: Issue #5 完了。PR #6 マージ・本番反映済。
+- **ブロッカー**: なし
+
 ---
 
 ## 作業再開ガイド
 
-- **最終作業タスク**: 実装 + lint/build/test + Codex レビュー(APPROVE) + 進捗表記録。PR 提出。
-- **中断理由**: PR レビュー/マージ待ち（人間）。AI 側フローは完了。
-- **次のアクション(人間/マージ後)**:
-  1. PR をレビュー・マージ（`Closes #5` で Issue 自動クローズ）
-  2. **migration 非依存**のため通常の手動デプロイで反映可（008/009/010 のような事前 SQL 適用は不要）
-  3. 必要なら本番でバリデーション3パターンを目視確認
+- **最終作業タスク**: PR #6 マージ → `vercel --prod` 本番デプロイ → スモーク合格。**Issue #5 完了。**
+- **中断理由**: なし。Issue #5 はクローズ可能（`Closes #5` でマージ時に自動クローズ済の見込み、要確認）。
+- **次のアクション(任意)**: 必要なら本番でバリデーション3パターン(両方/星のみ/許可のみ未選択)を目視確認。notion-sync は別途。
 
 ### 再開コマンド
 ```bash
