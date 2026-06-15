@@ -80,7 +80,7 @@
 |---|---|---|---|
 | 4.1 | セルフレビュー + lint/build/test | ✅ | clean / 成功 / 39/39 |
 | 4.2 | /codex:review（実装差分） | ✅ | **APPROVE**（1サイクルで収束、指摘ゼロ）。受入条件・report スキップ維持・スコープ最小をすべて PASS |
-| 4.3 | PR 作成 | ✅ | `Closes #5`、自動生成マーク、lint/build/test PASS を記載 |
+| 4.3 | PR 作成 | ✅ | [PR #6](https://github.com/Uzu83/toilet-map/pull/6) — `Closes #5`、自動生成マーク、lint/build/test PASS + Codex APPROVE を記載 |
 | 4.4 | マージ → 進捗表更新 | ⬜ | 人間レビュー待ち。**migration 非依存**なので通常デプロイで反映可（008/009/010 のような手動適用不要） |
 
 ---
