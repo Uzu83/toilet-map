@@ -33,6 +33,54 @@ export function checkAndRecord(ipHash: string, toiletId: string): RateLimitResul
   return { ok: true };
 }
 
+// ---------------------------------------------------------------------------
+// カウンタ式 limiter(窓内 N 回まで許容)
+// ---------------------------------------------------------------------------
+// WHY checkAndRecord と別物が要るか: checkAndRecord は「窓内 1 回」セマンティクス(= reviews 用:
+//   同一 IP × 同一トイレ = 1 時間 1 件)。これをログインに流用すると「1 時間に 1 回しか試行できない」
+//   になり、パスワード 1 回打ち間違え or cookie 失効後の再ログインが ~1 時間ブロックされる
+//   = ソロ admin ツールの自己ロックアウト(可用性回帰)。ログインは「失敗を数回までは許す」スロットルが正しい。
+// なので「窓内 max 回まで ok、超過で 429」のカウンタ式を別途用意する(in-memory・per-instance は
+//   checkAndRecord と同じ制約を持つ = サーバーレスではインスタンス境界で甘くなる。完全な耐性は Phase 2 で DB 化)。
+type AttemptRecord = { count: number; windowStart: number };
+const attemptCache = new Map<string, AttemptRecord>();
+
+export type AttemptOptions = { max: number; windowMs: number };
+
+// カウンタ式の現在状態だけを見る(非破壊)。記録は recordAttempt 側で行う。
+// WHY 分離: login は「すでに上限なら成否判定前に弾く(peekAttempts)」「パスワード照合に失敗したときだけ枠を消費する
+//   (recordAttempt)」と分けたい(成功ログインで枠を食わない設計)。
+export function peekAttempts(
+  ipHash: string,
+  key: string,
+  opts: AttemptOptions,
+): RateLimitResult {
+  const now = Date.now();
+  const rec = attemptCache.get(`${ipHash}:${key}`);
+  if (!rec || now - rec.windowStart >= opts.windowMs) return { ok: true };
+  if (rec.count >= opts.max) {
+    const retryAfterSec = Math.ceil((opts.windowMs - (now - rec.windowStart)) / 1000);
+    return { ok: false, retryAfterSec: Math.max(retryAfterSec, 1) };
+  }
+  return { ok: true };
+}
+
+// 失敗試行を 1 回だけ記録する(窓を跨いだらリセット)。login route が「照合失敗」のときだけ呼ぶ。
+export function recordAttempt(ipHash: string, key: string, opts: AttemptOptions): void {
+  const now = Date.now();
+  const cacheKey = `${ipHash}:${key}`;
+  // 期限切れエントリを掃除(再来訪されないキーがメモリに残り続けるのを防ぐ)。記録時にだけ走らせる。
+  for (const [k, r] of attemptCache) {
+    if (now - r.windowStart >= opts.windowMs) attemptCache.delete(k);
+  }
+  const rec = attemptCache.get(cacheKey);
+  if (!rec || now - rec.windowStart >= opts.windowMs) {
+    attemptCache.set(cacheKey, { count: 1, windowStart: now });
+    return;
+  }
+  rec.count += 1;
+}
+
 // 記録せずに現在の制限状態だけを見る(非破壊)。
 // 申請フローのように「成功時のみ枠を消費したい」ケースで peekLimit → (RPC) → recordHit と分けて使う。
 export function peekLimit(ipHash: string, key: string): RateLimitResult {
