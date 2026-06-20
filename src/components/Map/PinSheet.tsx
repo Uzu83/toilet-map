@@ -2,11 +2,22 @@
 
 import { useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { AlertTriangle, ExternalLink, Heart, MessageSquarePlus, Share2, Star, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Clock,
+  ExternalLink,
+  Heart,
+  Info,
+  MessageSquarePlus,
+  Share2,
+  Star,
+  X,
+} from "lucide-react";
 import { routing } from "@/i18n/routing";
 import { useMapStore } from "@/store/mapStore";
 import { ACCESS_COLORS, effectiveAccess, isUnconfirmed } from "@/types/toilet";
 import { bearingDeg, bearingIndex, formatDistance, haversineMeters } from "@/lib/geo";
+import { is24h } from "@/lib/openingHours";
 import { trackEvent } from "@/lib/analytics";
 import { ReviewForm } from "../ReviewForm";
 
@@ -14,6 +25,10 @@ export function PinSheet() {
   const t = useTranslations("pinSheet");
   const ta = useTranslations("access");
   const tc = useTranslations("compass");
+  // 使い方ガイドのコピーは onboarding.etiquette* を再利用する。
+  // WHY: 既に ja/en/ko/zh の 4 言語に翻訳済みの単一ソース。pinSheet 側に複製すると
+  //      将来どちらかだけ直されて文言がドリフトするので、新規キーを作らず流用する。
+  const to = useTranslations("onboarding");
   const locale = useLocale();
   const selectedId = useMapStore((s) => s.selectedId);
   const select = useMapStore((s) => s.select);
@@ -23,6 +38,16 @@ export function PinSheet() {
   const toggleFavorite = useMapStore((s) => s.toggleFavorite);
   const [reviewMode, setReviewMode] = useState<"normal" | "report" | null>(null);
   const [shared, setShared] = useState(false);
+  // 使い方ガイド <details> の開閉状態。
+  // WHY (初期値が「非 ja のとき open」の根拠):
+  //   日本在住(ja)はトイレのマナーが既知なので畳んでノイズを減らす。
+  //   訪日外国人想定(en/ko/zh)は LIXIL 調査で約 47% が操作ボタンを理解できないため、
+  //   既定で開いて摩擦を下げる。既に開いた詳細シート内の付加情報なので 3 タップ動線は阻害しない。
+  // WHY (open を prop で毎レンダー渡しせず state にする理由):
+  //   native <details> に open prop を毎レンダー渡すと、お気に入り/共有などの state 変更で
+  //   PinSheet が再レンダーされたとき、ユーザーが一度閉じたガイドが再び開いてしまう。
+  //   onToggle で DOM の開閉を state に同期し、ユーザー操作を尊重する(初期値のみ上記ロジック)。
+  const [guideOpen, setGuideOpen] = useState(locale !== routing.defaultLocale);
 
   const toilet = useMemo(
     () => toilets.find((t) => t.id === selectedId) ?? null,
@@ -44,6 +69,10 @@ export function PinSheet() {
   const unconfirmed = isUnconfirmed(toilet);
   const isInferred = toilet.source === "inferred" && toilet.review_count === 0;
   const fav = favorites.has(toilet.id);
+  // WHY (なぜ &origin= を付けないのか / 将来 AI への警告):
+  //   Google Maps の dir/?api=1 は origin 未指定だとデバイスのライブ現在地を起点に採用する。
+  //   ここで Loo map の userPos(GPS 取得時点で固定され、移動すると陳腐化しうる)を &origin= に
+  //   注入すると、かえって古い起点のルートになり改悪になる。親切心で origin を足さないこと。
   const mapsHref = `https://www.google.com/maps/dir/?api=1&destination=${toilet.lat},${toilet.lng}`;
   const name = toilet.name ?? t("unnamed");
 
@@ -78,7 +107,14 @@ export function PinSheet() {
 
   return (
     <>
-      <div className="absolute inset-x-0 bottom-0 z-1000 mx-auto w-full max-w-md rounded-t-2xl bg-white p-4 pb-6 shadow-2xl ring-1 ring-black/10 dark:bg-zinc-900 dark:ring-white/10">
+      {/*
+        WHY (max-h-[85vh] overflow-y-auto):
+          営業時間行 + 使い方ガイド(非 ja は既定オープン)で内容が増え、小型モバイルでは
+          ボトムシートが画面外へ伸びて上部見出しや操作ボタン(ここに行く/評価)が見切れる。
+          シートを画面高の 85% に制限し、超過分はシート内スクロールにすることで、
+          詳細量に依らず「ピンタップ → 詳細 → 行動」の 3 タップ動線を常に維持する。
+      */}
+      <div className="absolute inset-x-0 bottom-0 z-1000 mx-auto max-h-[85vh] w-full max-w-md overflow-y-auto rounded-t-2xl bg-white p-4 pb-6 shadow-2xl ring-1 ring-black/10 dark:bg-zinc-900 dark:ring-white/10">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div className="min-w-0">
             <h2 className="truncate text-base font-bold text-zinc-900 dark:text-zinc-50">{name}</h2>
@@ -153,6 +189,17 @@ export function PinSheet() {
               {t("universal")}
             </span>
           )}
+          {/*
+            24時間バッジ。is24h は正準形 `24/7` のみ true(接尾辞・例外付きは false → 営業時間行で生表示)。
+            色は sky 系で washlet(emerald)/diaper(pink)/universal(violet)と視覚的に区別する。
+            推定ピン(isInferred)でも 24h なら従来の警告は別途出るが、24h はバッジで足りる
+            ため重複しない(営業時間「行」は下で isInferred を除外している)。
+          */}
+          {is24h(toilet.opening_hours) && (
+            <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-medium text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">
+              {t("open24h")}
+            </span>
+          )}
         </div>
 
         {isInferred && (
@@ -176,6 +223,26 @@ export function PinSheet() {
             {unconfirmed && toilet.review_count > 0 ? ` · ${t("ratingNote")}` : ""})
           </span>
         </div>
+
+        {/*
+          営業時間行。表示条件 = !isInferred && opening_hours あり && !is24h。
+          WHY (!isInferred ガード):
+            isInferred =(source==="inferred" && review_count===0)。このピンは上の推定警告
+            ブロック(inferredNoteWithHours)内で既に営業時間を表示済みなので、ここで再掲すると
+            二重表示になる。「非推定」は単なる source!=="inferred" ではなく isInferred が false の意。
+          WHY (!is24h ガード):
+            24h のときは上のバッジで「24時間」と示しており、'24/7' を営業時間行に出しても情報量がない。
+          break-words / [overflow-wrap:anywhere]: OSM の opening_hours は長い構文文字列(例
+            'Mo-Fr 09:00-17:00; Sa 10:00-15:00')になり得るため、シート幅を超えないよう折り返す。
+        */}
+        {!isInferred && toilet.opening_hours && !is24h(toilet.opening_hours) && (
+          <div className="mb-4 flex items-start gap-1.5 text-xs text-zinc-600 dark:text-zinc-400">
+            <Clock className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span className="break-words [overflow-wrap:anywhere]">
+              {t("openingHoursLabel")}: {toilet.opening_hours}
+            </span>
+          </div>
+        )}
 
         <div className="grid grid-cols-2 gap-2">
           <a
@@ -204,6 +271,29 @@ export function PinSheet() {
         >
           {t("report")}
         </button>
+
+        {/*
+          日本のトイレ使い方ガイド(折り畳み)。
+          コピーは onboarding.etiquette* を再利用(上の to フックの WHY 参照)。
+          open は state(guideOpen)制御で、onToggle で DOM 開閉を state に同期する
+          (再レンダーでユーザーが閉じたガイドが勝手に開かないように。guideOpen の WHY 参照)。
+        */}
+        <details
+          open={guideOpen}
+          onToggle={(e) => setGuideOpen((e.currentTarget as HTMLDetailsElement).open)}
+          className="mt-3 border-t border-zinc-100 pt-3 dark:border-zinc-800"
+        >
+          <summary className="flex cursor-pointer list-none items-center gap-1.5 rounded text-xs font-medium text-zinc-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 dark:text-zinc-300">
+            <Info className="h-3.5 w-3.5 shrink-0" />
+            {to("etiquetteTitle")}
+          </summary>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-xs text-zinc-600 dark:text-zinc-400">
+            <li>{to("etiquetteSit")}</li>
+            <li>{to("etiquettePaper")}</li>
+            <li>{to("etiquetteFlush")}</li>
+            <li>{to("etiquetteNoStand")}</li>
+          </ul>
+        </details>
       </div>
 
       {reviewMode && (

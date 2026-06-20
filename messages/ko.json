@@ -53,6 +53,8 @@
     "unnamed": "이름 없는 화장실",
     "directionSuffix": "쪽",
     "unconfirmed": "미확인 (추정)",
+    "open24h": "24시간",
+    "openingHoursLabel": "영업시간",
     "washlet": "비데",
     "diaperTable": "기저귀 교환대",
     "universal": "장애인용",

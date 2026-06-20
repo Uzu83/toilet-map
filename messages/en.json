@@ -53,6 +53,8 @@
     "unnamed": "Unnamed toilet",
     "directionSuffix": "",
     "unconfirmed": "Unverified (estimated)",
+    "open24h": "24 hours",
+    "openingHoursLabel": "Hours",
     "washlet": "Washlet",
     "diaperTable": "Diaper table",
     "universal": "Accessible",
