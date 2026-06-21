@@ -2,7 +2,13 @@ import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/adminSession";
 import { getServerSupabaseSecret } from "@/lib/supabase/server";
 import { EDITABLE_FIELDS, type EditableField } from "@/lib/adminAuth";
-import { AdminDashboard, type AdminReview, type AdminToilet, type AdminEditLog } from "./Dashboard";
+import {
+  AdminDashboard,
+  type AdminReview,
+  type AdminToilet,
+  type AdminEditLog,
+  type AdminSuggestion,
+} from "./Dashboard";
 
 // secret(SUPABASE_SECRET_KEY / ADMIN_SESSION_SECRET)を読むため Node ランタイム固定。
 export const runtime = "nodejs";
@@ -18,6 +24,10 @@ const MAX_REVIEWS = 100;
 //   多すぎると古い edit が並ぶが、取消は各トイレの「最新 edit のみ」しか効かない(admin_undo_edit の不変条件)ので
 //   履歴を深く出しても操作性は上がらず、描画と DB スキャンが重くなるだけ。完全な監査閲覧は Supabase dashboard 側で行う。
 const MAX_EDIT_LOG = 30;
+// AI 提案キュー(status='pending')に出す件数。承認/却下を 1 セッションで捌ける現実的上限。
+//   B1 は「全件 pending に積んで人が全ループ内で観察」する段階なので、溜まりすぎたらここで打ち切り
+//   (それ以上は Supabase dashboard で確認 / B2 の自動反映で母数を減らす)。MAX_REVIEWS と同思想で 50。
+const MAX_SUGGESTIONS = 50;
 
 // /admin ダッシュボード(Server Component)。
 // WHY サーバ側で直接 Supabase を引く(API を fetch しない): Server Component は同一プロセスで
@@ -53,8 +63,34 @@ export default async function AdminPage() {
     createdAt: r.created_at as string,
   }));
 
-  // 関連トイレの現在値(編集フォーム初期値)。
-  const toiletIds = Array.from(new Set(reviews.map((r) => r.toiletId)));
+  // AI 提案キュー(status='pending')を新しい順に取得する(B1: 手動 approve/reject の材料)。
+  //   ★ order by seq desc(created_at desc では駄目)— admin_edits と同思想。seq は挿入順に厳密単調・タイ無し
+  //     なので「最新の pending が先頭」が決定的。created_at は default now() でタイ非決定なので順序に使わない。
+  const { data: suggestionRows } = await supabase
+    .from("ai_suggestions")
+    .select("id, toilet_id, review_id, field, value, confidence, evidence, created_at")
+    .eq("status", "pending")
+    .order("seq", { ascending: false })
+    .limit(MAX_SUGGESTIONS);
+
+  const suggestions: AdminSuggestion[] = (suggestionRows ?? []).map((s) => ({
+    id: s.id as string,
+    toiletId: s.toilet_id as string,
+    reviewId: (s.review_id as string | null) ?? null,
+    field: s.field as EditableField,
+    // value は jsonb(string | boolean)。表示は文字列化して扱う(approve は id を送るだけなので値は表示専用)。
+    value: s.value as string | boolean | null,
+    confidence: (s.confidence as number | null) ?? null,
+    evidence: (s.evidence as string | null) ?? null,
+    createdAt: s.created_at as string,
+  }));
+
+  // 関連トイレの現在値(編集フォーム初期値 + 提案の「現在値 → 提案値」表示)。
+  //   レビュー由来トイレ + 提案由来トイレの両方を union して 1 回でまとめて引く(提案が参照するトイレが
+  //   レビュー一覧に無いケースに備える)。
+  const toiletIds = Array.from(
+    new Set([...reviews.map((r) => r.toiletId), ...suggestions.map((s) => s.toiletId)]),
+  );
   const toilets: Record<string, AdminToilet> = {};
   if (toiletIds.length > 0) {
     const { data: toiletRows } = await supabase
@@ -101,5 +137,7 @@ export default async function AdminPage() {
     createdAt: e.created_at as string,
   }));
 
-  return <AdminDashboard reviews={reviews} toilets={toilets} edits={edits} />;
+  return (
+    <AdminDashboard reviews={reviews} toilets={toilets} edits={edits} suggestions={suggestions} />
+  );
 }
