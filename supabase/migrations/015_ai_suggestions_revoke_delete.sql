@@ -1,0 +1,23 @@
+-- 015_ai_suggestions_revoke_delete.sql — ai_suggestions の DELETE/TRUNCATE を service_role から明示 REVOKE
+--
+-- ⚠️ デプロイ前手動 apply(005-014 と同様、main 自動デプロイ OFF)。本番(ijsftemvtnfvqemjbrxc)には
+--    014 直後に適用済み(2026-06-21)。grant 検証済み: service_role の has_table_privilege(delete)=false。
+--
+-- WHY 014 だけでは足りなかったか(後任 AI への教訓):
+--   014 は `grant select, insert, update on ai_suggestions to service_role` で「delete は付与しない=最小権限」を
+--   意図した。しかし Supabase は `ALTER DEFAULT PRIVILEGES` で service_role(及び anon/authenticated)に
+--   public スキーマ全テーブルの権限を既定付与する。よって「grant を足すだけ」では DELETE/TRUNCATE は既定で
+--   付いたまま残る。014 適用後の本番 live smoke(information_schema.role_table_grants)で
+--   service_role:DELETE / service_role:TRUNCATE を実際に検出した(モック/静的レビューでは見えない=live smoke の価値)。
+--
+-- ★ Supabase の鉄則: 「grant しない = 権限なし」ではない。外したい権限は必ず明示 REVOKE する。
+--   012 が toilets の DELETE を service_role から revoke した先例と同じ最小権限ハードニング。
+--
+-- なぜ ai_suggestions の物理削除を防ぎたいか:
+--   no_op / rejected / approved / auto_applied は「終端マーカー」で、analyze が同一 review×field の再分析を
+--   冪等にスキップする根拠に使う(部分 UNIQUE は pending のみ・終端行は再分析の重複抑止に効く)。行を物理削除
+--   すると「AI が見て処理した」履歴が消え、同一コメントを無限に再分析しうる。最小権限で delete/truncate を外す。
+--
+-- 機能影響なし: app は ai_suggestions に対し service_role で select/insert/update のみ使う
+--   (analyze=insert / approve・reject=status update)。DELETE/TRUNCATE はどのコード経路も使わない。
+revoke delete, truncate on ai_suggestions from service_role;
