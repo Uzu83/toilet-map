@@ -1,18 +1,22 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getServerSupabasePublishable } from "@/lib/supabase/server";
+import { parseBbox } from "@/lib/geo";
 
 export const runtime = "nodejs";
 
 export async function GET(request: NextRequest) {
-  const bbox = request.nextUrl.searchParams.get("bbox");
-  if (!bbox) {
+  // bbox 欠落と「フォーマット不正」で 400 メッセージを出し分ける(リファクタ前の挙動を厳密維持)。
+  // parseBbox は欠落・不正の両ケースで null を返すため、まず raw の有無で "bbox required" を、
+  // 値はあるがパース不能な場合だけ "bbox format:..." を返す(2 種のレスポンス body を保つ)。
+  const raw = request.nextUrl.searchParams.get("bbox");
+  if (!raw) {
     return NextResponse.json({ error: "bbox required" }, { status: 400 });
   }
-  const parts = bbox.split(",").map(Number);
-  if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n))) {
+  const parsed = parseBbox(raw);
+  if (!parsed) {
     return NextResponse.json({ error: "bbox format: minLng,minLat,maxLng,maxLat" }, { status: 400 });
   }
-  const [minLng, minLat, maxLng, maxLat] = parts as [number, number, number, number];
+  const [minLng, minLat, maxLng, maxLat] = parsed;
 
   try {
     const supabase = getServerSupabasePublishable();

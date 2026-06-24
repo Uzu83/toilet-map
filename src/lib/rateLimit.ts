@@ -14,6 +14,13 @@ function purge(now: number) {
   }
 }
 
+// [D7] WHY `IP_HASH_SALT ?? "toilet-map"` のフォールバック値 "toilet-map" はセキュリティ上のリスクがある:
+//   IP_HASH_SALT は「IP アドレスを SHA-256 でハッシュする際の salt」。
+//   salt が未設定のまま本番稼働すると、攻撃者が "toilet-map" を既知 salt として
+//   IPv4 全空間(約 43 億アドレス)を total-preimage attack できる。
+//   その結果、reviews.ip_hash から実 IP アドレスが逆引きされうる(pseudonymous PII の漏洩)。
+//   ⚠️ 本番環境では必ず NEXT_PUBLIC を付けず secret として IP_HASH_SALT を設定すること。
+//   フォールバック値は「env 未設定でも動く」ためだけに存在し、ハッシュの強度を保証しない。
 export function hashIp(ip: string): string {
   const salt = process.env.IP_HASH_SALT ?? "toilet-map";
   return createHash("sha256").update(`${salt}:${ip}`).digest("hex").slice(0, 32);

@@ -1,10 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getServerSupabaseSecret } from "@/lib/supabase/server";
 import { checkAndRecord, extractIp, hashIp } from "@/lib/rateLimit";
+import { ACCESS_SET } from "@/types/toilet";
 
 export const runtime = "nodejs";
-
-const ACCESS_VALUES = new Set(["open", "ask", "permission"]);
 
 type ReviewBody = {
   toiletId?: unknown;
@@ -46,7 +45,7 @@ export async function POST(request: NextRequest) {
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
     return NextResponse.json({ error: "rating must be integer 1-5" }, { status: 400 });
   }
-  if (!ACCESS_VALUES.has(accessLevel)) {
+  if (!ACCESS_SET.has(accessLevel as "open" | "ask" | "permission")) {
     return NextResponse.json({ error: "invalid accessLevel" }, { status: 400 });
   }
 

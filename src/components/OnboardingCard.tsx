@@ -16,7 +16,17 @@ const getClient = () => {
   }
 };
 
-// 太字 <b>...</b> を含む文言を React ノードに変換(t.rich は messages 側のタグ宣言が要るので簡易版)
+// 太字 <b>...</b> を含む文言を React ノードに変換。
+//
+// [B5] WHY t.rich() でなく独自 renderBold を使うか:
+//   next-intl の t.rich() は messages/*.json の対応キーに `<b>` タグ宣言が必要
+//   (例: `"colorLine": "<b>青</b> = 声かけ不要..."`)。しかし次の問題がある:
+//     1. ja/en/ko/zh の 4 ファイル全てで同じタグを宣言する必要があり、翻訳者が
+//        タグを省略・変換すると実行時エラー(Missing rich text tag)になる。
+//     2. "colorLine" は他のページが t() で単純文字列として参照する可能性があり、
+//        <b> タグ埋め込みに変えると後方互換が壊れる。
+//   renderBold は「messages 側の変更なし」で動く軽量な代替。
+//   colorLine の太字は 1 行のみ・UI 変更なしが前提なので、ここでの簡易実装で十分。
 function renderBold(text: string) {
   const parts = text.split(/(<b>.*?<\/b>)/g);
   return parts.map((p, i) => {

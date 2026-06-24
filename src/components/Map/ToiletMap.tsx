@@ -29,9 +29,11 @@ import { AddModeWatcher } from "./AddModeWatcher";
 import { PendingMarkers } from "./PendingMarkers";
 import { AddToiletFlow } from "./AddToiletFlow";
 import type { Toilet, ToiletSubmission } from "@/types/toilet";
+import { HAKATA_STATION } from "@/lib/geo";
 
-// 博多駅(福岡市シード対象に合わせたフォールバック)
-const HAKATA_STATION: [number, number] = [33.5904, 130.4204];
+// WHY VIEW_KEY をローカル定数にしたままにするか:
+//   HAKATA_STATION は geo.ts に集中させたが、VIEW_KEY は localStorage のキー名で
+//   ToiletMap 専用かつ変更頻度が低い。他のファイルが参照しないため、ここに残す。
 const VIEW_KEY = "toilet-map.view";
 
 type SavedView = { lat: number; lng: number; zoom: number };
@@ -155,7 +157,7 @@ export default function ToiletMap() {
   const initial = useMemo(() => {
     const saved = readSavedView();
     if (saved) return { center: [saved.lat, saved.lng] as [number, number], zoom: saved.zoom };
-    return { center: HAKATA_STATION, zoom: 15 };
+    return { center: [HAKATA_STATION.lat, HAKATA_STATION.lng] as [number, number], zoom: 15 };
   }, []);
 
   // 1 度だけ生成する debounce 済み fetch。zustand setter は安定なので deps は実質固定。

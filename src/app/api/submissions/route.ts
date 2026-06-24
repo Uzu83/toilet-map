@@ -4,10 +4,10 @@ import {
   getServerSupabaseSecret,
 } from "@/lib/supabase/server";
 import { extractIp, hashIp, makeCoordKey, peekLimit, recordHit } from "@/lib/rateLimit";
+import { ACCESS_SET } from "@/types/toilet";
+import { parseBbox } from "@/lib/geo";
 
 export const runtime = "nodejs";
-
-const ACCESS_VALUES = new Set(["open", "ask", "permission"]);
 
 type SubmissionBody = {
   lat?: unknown;
@@ -22,18 +22,20 @@ type SubmissionBody = {
 // GET /api/submissions?bbox=minLng,minLat,maxLng,maxLat — bbox 内の pending 申請(薄色ピン用, task 2.9)
 // pending_submissions_in_bbox(008) は明示列のみ返す(ip_hash 非返却 / Codex #8)。anon 公開 RPC なので publishable で呼ぶ。
 export async function GET(request: NextRequest) {
-  const bbox = request.nextUrl.searchParams.get("bbox");
-  if (!bbox) {
+  // bbox 欠落と「フォーマット不正」で 400 メッセージを出し分ける(リファクタ前の挙動を厳密維持)。
+  // parseBbox は両ケースとも null を返すので、raw の有無で "bbox required" を先に判定する。
+  const raw = request.nextUrl.searchParams.get("bbox");
+  if (!raw) {
     return NextResponse.json({ error: "bbox required" }, { status: 400 });
   }
-  const parts = bbox.split(",").map(Number);
-  if (parts.length !== 4 || parts.some((n) => !Number.isFinite(n))) {
+  const parsed = parseBbox(raw);
+  if (!parsed) {
     return NextResponse.json(
       { error: "bbox format: minLng,minLat,maxLng,maxLat" },
       { status: 400 }
     );
   }
-  const [minLng, minLat, maxLng, maxLat] = parts as [number, number, number, number];
+  const [minLng, minLat, maxLng, maxLat] = parsed;
 
   try {
     const supabase = getServerSupabasePublishable();
@@ -97,7 +99,7 @@ export async function POST(request: NextRequest) {
   ) {
     return NextResponse.json({ error: "lat/lng out of range" }, { status: 400 });
   }
-  if (!ACCESS_VALUES.has(accessLevel)) {
+  if (!ACCESS_SET.has(accessLevel as "open" | "ask" | "permission")) {
     return NextResponse.json({ error: "invalid accessLevel" }, { status: 400 });
   }
 

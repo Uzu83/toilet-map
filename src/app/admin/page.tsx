@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/adminSession";
 import { getServerSupabaseSecret } from "@/lib/supabase/server";
 import { EDITABLE_FIELDS, type EditableField } from "@/lib/adminAuth";
+import { ADMIN_MAX_REVIEWS } from "@/lib/adminConstants";
 import {
   AdminDashboard,
   type AdminReview,
@@ -14,12 +15,6 @@ import {
 export const runtime = "nodejs";
 // 管理 HTML を静的生成・キャッシュさせない(layout と同方針 / proxy すり抜け時の漏洩防止)。
 export const dynamic = "force-dynamic";
-
-// ★ /api/admin/reviews route の MAX_REVIEWS(=100)と同値に保つこと。
-//   Server Component の初期表示(ここ)と、編集後にクライアントが叩く再取得 API で件数がズレると、
-//   保存→reload 後に一覧の見え方が変わって運営が混乱する。100 の根拠は reviews route のコメント参照
-//   (ソロ運営が 1 セッションで目視→編集に回せる現実的上限。無制限はレスポンス肥大、小さすぎは取りこぼし)。
-const MAX_REVIEWS = 100;
 // 「直近の編集履歴」に出す件数。取消ボタンの材料 = 直近の操作だけ見えれば十分なので浅く 30 件で打ち切る。
 //   多すぎると古い edit が並ぶが、取消は各トイレの「最新 edit のみ」しか効かない(admin_undo_edit の不変条件)ので
 //   履歴を深く出しても操作性は上がらず、描画と DB スキャンが重くなるだけ。完全な監査閲覧は Supabase dashboard 側で行う。
@@ -50,7 +45,7 @@ export default async function AdminPage() {
     .not("comment", "is", null)
     .neq("comment", "")
     .order("created_at", { ascending: false })
-    .limit(MAX_REVIEWS);
+    .limit(ADMIN_MAX_REVIEWS);
 
   const reviews: AdminReview[] = (reviewRows ?? []).map((r) => ({
     id: r.id as string,

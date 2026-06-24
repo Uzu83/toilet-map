@@ -7,7 +7,7 @@ import "leaflet.markercluster";
 import "leaflet.markercluster/dist/MarkerCluster.css";
 import "leaflet.markercluster/dist/MarkerCluster.Default.css";
 
-import { effectiveAccess, isUnconfirmed, type Toilet } from "@/types/toilet";
+import { effectiveAccess, isUnconfirmed, isInferredPin, type Toilet } from "@/types/toilet";
 import { makePinIcon } from "./pinIcon";
 
 type Props = {
@@ -66,7 +66,7 @@ export function ClusteredMarkers({ toilets, selectedId, onSelect }: Props) {
         icon: makePinIcon({
           access: effectiveAccess(t),
           isUnranked: isUnconfirmed(t),
-          isInferred: t.source === "inferred" && t.review_count === 0,
+          isInferred: isInferredPin(t),
           isSelected,
         }),
         zIndexOffset: isSelected ? 1000 : 0,

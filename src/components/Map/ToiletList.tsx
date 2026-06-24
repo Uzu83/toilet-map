@@ -2,18 +2,18 @@
 
 import { useMemo } from "react";
 import { useTranslations } from "next-intl";
-import { Heart, MapPin, Star } from "lucide-react";
+import { Heart, MapPin } from "lucide-react";
 import {
   ACCESS_COLORS,
   effectiveAccess,
   isUnconfirmed,
+  isInferredPin,
   type Toilet,
 } from "@/types/toilet";
 import { applyFilters, useMapStore } from "@/store/mapStore";
-import { bearingDeg, bearingIndex, formatDistance, haversineMeters } from "@/lib/geo";
+import { bearingDeg, bearingIndex, formatDistance, haversineMeters, HAKATA_STATION } from "@/lib/geo";
 import { FilterBar } from "./FilterBar";
-
-const HAKATA_STATION = { lat: 33.5904, lng: 130.4204 };
+import { Stars } from "./Stars";
 
 export function ToiletList() {
   const t = useTranslations("list");
@@ -85,7 +85,7 @@ export function ToiletList() {
               const access = effectiveAccess(toilet);
               const accessColor = access ? ACCESS_COLORS[access] : null;
               const accessLabel = access ? ta(`${access}.label`) : null;
-              const inferred = toilet.source === "inferred" && toilet.review_count === 0;
+              const inferred = isInferredPin(toilet);
               const fav = favorites.has(toilet.id);
               const dir = tc(String(bearingIndex(bearing)));
               return (
@@ -115,7 +115,7 @@ export function ToiletList() {
                         {inferred && <> ・ {t("unconfirmedShort")}</>}
                       </p>
                       <div className="mt-0.5 flex items-center gap-1">
-                        <Stars value={toilet.avg_rating ?? 0} />
+                        <Stars value={toilet.avg_rating ?? 0} size="sm" />
                         <span className="text-[10px] text-zinc-500 tabular-nums">
                           {toilet.avg_rating ? toilet.avg_rating.toFixed(1) : "—"}
                           ({toilet.review_count})
@@ -159,19 +159,3 @@ export function ToiletList() {
   );
 }
 
-function Stars({ value }: { value: number }) {
-  return (
-    <div className="flex">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          className={
-            i <= Math.round(value)
-              ? "h-3 w-3 fill-amber-400 text-amber-400"
-              : "h-3 w-3 text-zinc-300 dark:text-zinc-600"
-          }
-        />
-      ))}
-    </div>
-  );
-}

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
@@ -21,7 +22,12 @@ export function generateStaticParams(): { region: string }[] {
 
 const LIST_LIMIT = 180;
 
-async function loadArea(
+// WHY cache() でラップするか:
+//   generateMetadata と page の両方が loadArea を呼ぶ。Supabase-js は fetch-memoization の対象外のため、
+//   cache() の per-request memo により同一リクエスト内の二重 DB ラウンドトリップを 1 回に削減する。
+//   出力は変わらない(同じ DB に同じ引数で問い合わせるので結果は同一)。
+//   ⚠️ cache() のスコープは「サーバーリクエスト単位」。Next の ISR キャッシュとは別物。
+const loadArea = cache(async function loadArea(
   region: string
 ): Promise<{ area: Area; count: number; toilets: Toilet[] } | null> {
   const area = findArea(region);
@@ -31,7 +37,7 @@ async function loadArea(
     getToiletsInRegion(area.bbox, LIST_LIMIT),
   ]);
   return { area, count, toilets };
-}
+});
 
 export async function generateMetadata({
   params,

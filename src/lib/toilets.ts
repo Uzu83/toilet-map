@@ -2,6 +2,7 @@
 // すべて publishable key の読み取り(RLS で select は公開)。失敗時は null / [] / 0 にフォールバックする
 // ので、Supabase 障害やビルド時の env 欠落でもページ・ビルドが落ちない。
 
+import { cache } from "react";
 import { getServerSupabasePublishable } from "@/lib/supabase/server";
 import type { Toilet } from "@/types/toilet";
 import { isUuid } from "@/lib/uuid";
@@ -27,7 +28,13 @@ function toToilet(row: Record<string, unknown>): Toilet {
   };
 }
 
-export async function getToiletById(id: string): Promise<Toilet | null> {
+// WHY cache() でラップするか:
+//   /toilet/[id]/page.tsx は generateMetadata と page の両方が getToiletById を呼ぶ。
+//   Supabase-js は fetch ではなく WebSocket/HTTP POST を使うため、Next の fetch-memoization は
+//   適用されない。cache() は React の per-request memo(サーバーリクエスト境界ごとにキャッシュが
+//   破棄される)なので、同一リクエスト内での二重 DB ラウンドトリップを 1 回にできる。
+//   出力は変わらず、DB 負荷と応答時間が減る効果のみ。
+export const getToiletById = cache(async function getToiletById(id: string): Promise<Toilet | null> {
   if (!isUuid(id)) return null;
   try {
     const supabase = getServerSupabasePublishable();
@@ -39,7 +46,7 @@ export async function getToiletById(id: string): Promise<Toilet | null> {
   } catch {
     return null;
   }
-}
+});
 
 type Bbox = [number, number, number, number]; // [southLat, westLng, northLat, eastLng]
 
@@ -78,16 +85,9 @@ export async function getRegionCount(bbox: Bbox): Promise<number> {
   }
 }
 
-export async function getToiletCount(): Promise<number> {
-  try {
-    const supabase = getServerSupabasePublishable();
-    const { data, error } = await supabase.rpc("toilet_count");
-    if (error || data == null) return 0;
-    return Number(Array.isArray(data) ? data[0] : data) || 0;
-  } catch {
-    return 0;
-  }
-}
+// getToiletCount(toilet_count RPC)は削除済み。
+// 呼び出し元が存在しなかった(sitemap は *Indexable* バリアントのみを使う)ため dead code と判定。
+// 件数が必要になったら getIndexableToiletCount を参考に toilet_count RPC で再実装すること。
 
 // indexable サブセット(canonical predicate, 設計書 §5.1)の件数。
 // sitemap のチャンク数算出(sitemapChunkCount)が依存する。失敗時は 0 フォールバック。
@@ -102,40 +102,16 @@ export async function getIndexableToiletCount(): Promise<number> {
   }
 }
 
+// getToiletIdsPage(toilet_ids_page RPC)は削除済み。
+// sitemap は getIndexableToiletIdsPage(toilet_ids_indexable_page)のみを使うため dead code と判定。
+// 非 indexable を含む全件ページングが必要になったら toilet_ids_page RPC で再実装すること。
+
 // PostgREST(Supabase API)は 1 レスポンス最大 1000 行なので、RPC に p_limit を大きく渡しても
 // 1000 行で切れる。よって 1000 行ずつ内部ページングして `limit` 行まで集める。
 const PG_MAX_ROWS = 1000;
 
-export async function getToiletIdsPage(
-  offset: number,
-  limit: number
-): Promise<{ id: string; created_at: string | null }[]> {
-  const out: { id: string; created_at: string | null }[] = [];
-  try {
-    const supabase = getServerSupabasePublishable();
-    while (out.length < limit) {
-      const batch = Math.min(PG_MAX_ROWS, limit - out.length);
-      const { data, error } = await supabase.rpc("toilet_ids_page", {
-        p_offset: offset + out.length,
-        p_limit: batch,
-      });
-      if (error || !Array.isArray(data) || data.length === 0) break;
-      for (const r of data) {
-        out.push({
-          id: String((r as Record<string, unknown>).id),
-          created_at: ((r as Record<string, unknown>).created_at as string | null) ?? null,
-        });
-      }
-      if (data.length < batch) break; // データを取り切った
-    }
-  } catch {
-    // 取れた分だけ返す(部分 sitemap)
-  }
-  return out;
-}
-
 // indexable サブセット(canonical predicate, 設計書 §5.1)の id ページ。sitemap の id>=1 チャンクが使う。
-// getToiletIdsPage と同様に PostgREST の 1000 行上限を内部ページングで越える(RPC 名のみ差し替え)。
+// PostgREST の 1000 行上限を内部ページングで越える(RPC 名のみが特徴、ページング機構は上記の PG_MAX_ROWS 利用と同じ)。
 export async function getIndexableToiletIdsPage(
   offset: number,
   limit: number
@@ -165,8 +141,23 @@ export async function getIndexableToiletIdsPage(
 }
 
 // 指定トイレ周辺の近隣トイレ(自身を除く、距離順)。
+//
+// [I8] WHY d = 0.012 か(≒ 1.3km 四方):
+//   lat/lng の 0.012 度 ≈ 赤道で約 1.34 km、日本では約 1.06 km。
+//   半径 1 〜 1.3 km 圏は「徒歩 10〜15 分以内に行ける近隣」の実用的な目安。
+//   広すぎる(例 0.05)と「近隣」の定義を超え SEO ページの関連リンクが広域化しすぎる。
+//   狭すぎる(例 0.003)と都心部で 0 件になりやすく Near Me 動線が途切れる。
+//   0.012 は福岡市中心部の実データで「0〜8 件程度が安定して返る」と検証して採用。
+//
+// WHY limit = 80 で over-fetch するか:
+//   PostgREST の 1000 行上限はここでは問題にならないが、bbox に入る件数は地域密度次第で
+//   大きく変わる(福岡市中心 = 密、山間部 = 0 件)。
+//   n = 8 件だけ取ろうとしても、DB 側では「自身を除く」「距離ソート」ができないため、
+//   一旦 bbox 全件 (≤80) を取ってアプリ層でフィルタ・距離ソートする。
+//   limit = 80 は「半径 1.3km 圏にトイレが 80 件以上密集する地域は国内ほぼ存在しない」という
+//   経験則的な上限。超えた場合は距離 80 位以降が切れるだけで near-by 候補の品質には影響しない。
 export async function getNearbyToilets(t: Toilet, n = 8): Promise<Toilet[]> {
-  const d = 0.012; // ≒ 1.3km 四方
+  const d = 0.012; // ≒ 1.3km 四方(WHY: 上記コメント参照)
   const bbox: Bbox = [t.lat - d, t.lng - d, t.lat + d, t.lng + d];
   const rows = await getToiletsInRegion(bbox, 80);
   return rows

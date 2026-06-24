@@ -1,6 +1,5 @@
 import type { Toilet } from "@/types/toilet";
-
-type Crumb = { name: string; url: string };
+import { buildBreadcrumbList, type JsonLdCrumb } from "./jsonLdHelpers";
 
 // 個別トイレページの構造化データ。Place/PublicToilet + BreadcrumbList を @graph で注入。
 export function ToiletJsonLd({
@@ -17,7 +16,7 @@ export function ToiletJsonLd({
   inLanguage: string;
   // {washlet,diaperTable,universal} のうち true のものだけ呼び出し側で渡す
   amenityLabels: string[];
-  breadcrumb: Crumb[];
+  breadcrumb: JsonLdCrumb[];
 }) {
   const place: Record<string, unknown> = {
     "@type": ["Place", "PublicToilet"],
@@ -53,15 +52,7 @@ export function ToiletJsonLd({
     "@context": "https://schema.org",
     "@graph": [
       { ...place, inLanguage },
-      {
-        "@type": "BreadcrumbList",
-        itemListElement: breadcrumb.map((c, i) => ({
-          "@type": "ListItem",
-          position: i + 1,
-          name: c.name,
-          item: c.url,
-        })),
-      },
+      buildBreadcrumbList(breadcrumb),
     ],
   };
 

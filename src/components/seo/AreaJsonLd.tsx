@@ -1,4 +1,4 @@
-type Crumb = { name: string; url: string };
+import { buildBreadcrumbList, type JsonLdCrumb } from "./jsonLdHelpers";
 
 // エリアランディングページの構造化データ。CollectionPage + BreadcrumbList。
 export function AreaJsonLd({
@@ -16,7 +16,7 @@ export function AreaJsonLd({
   areaName: string;
   isPrefecture: boolean;
   inLanguage: string;
-  breadcrumb: Crumb[];
+  breadcrumb: JsonLdCrumb[];
 }) {
   const data = {
     "@context": "https://schema.org",
@@ -33,15 +33,7 @@ export function AreaJsonLd({
           name: areaName,
         },
       },
-      {
-        "@type": "BreadcrumbList",
-        itemListElement: breadcrumb.map((c, i) => ({
-          "@type": "ListItem",
-          position: i + 1,
-          name: c.name,
-          item: c.url,
-        })),
-      },
+      buildBreadcrumbList(breadcrumb),
     ],
   };
 

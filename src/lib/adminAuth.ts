@@ -12,6 +12,7 @@
 // 命名: cookie 値のフォーマットは `base64url(payloadJson).base64url(HMAC)`。
 
 import { createHmac, timingSafeEqual } from "node:crypto";
+import { ACCESS_SET } from "@/types/toilet";
 
 // ---------------------------------------------------------------------------
 // 編集 allowlist(toilets テーブルの「admin が更新してよい実カラム」)
@@ -32,11 +33,11 @@ export const EDITABLE_FIELDS = [
 
 export type EditableField = (typeof EDITABLE_FIELDS)[number];
 
-const ACCESS_VALUES = new Set(["open", "ask", "permission"]);
-
 // 文字列列の長さ上限(DoS / 想定外肥大の抑止)。name は表示名相当、opening_hours は OSM 形式の式。
-const MAX_NAME_LEN = 120;
-const MAX_OPENING_HOURS_LEN = 200;
+// WHY export: aiSuggestion.ts が同じ上限を独自に宣言していたが「同値を保つ」コメントで管理していた。
+// 単一定義に統合し、将来どちらか片方だけ変える誤りを構造的に防ぐ。
+export const MAX_NAME_LEN = 120;
+export const MAX_OPENING_HOURS_LEN = 200;
 
 // validateEdit が返す「正規化済みパッチ」。boolean 列は null 可(= 不明)を許容する。
 export type ValidatedEdit = Partial<{
@@ -109,7 +110,7 @@ export function validateEdit(patch: unknown): ValidatedEdit {
   if ("inferred_access" in input) {
     const v = input.inferred_access;
     // enum 検証。null は許容しない(access は色決定の根拠なので、消すなら別 UX を用意する)。
-    if (typeof v !== "string" || !ACCESS_VALUES.has(v)) {
+    if (typeof v !== "string" || !ACCESS_SET.has(v as "open" | "ask" | "permission")) {
       throw new AdminEditValidationError("inferred_access must be one of open/ask/permission");
     }
     out.inferred_access = v as "open" | "ask" | "permission";
