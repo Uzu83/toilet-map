@@ -6,6 +6,10 @@ import { BottomTabBar } from "@/components/BottomTabBar";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { KO_FI_URL } from "@/lib/contact";
+import { findArea, areaLabel } from "@/lib/areas";
+// #40 — FEATURED_AREA_SLUGS は about/page.tsx が正式定義(単一ソース)。
+//   home と about の両方でチップを描画するため export している。
+import { FEATURED_AREA_SLUGS } from "@/app/[locale]/about/page";
 
 export default async function HomePage({
   params,
@@ -15,6 +19,11 @@ export default async function HomePage({
   const { locale } = await params;
   setRequestLocale(locale);
   const t = await getTranslations("nav");
+  const tApp = await getTranslations("app");
+  const tan = await getTranslations("areaNames");
+  const featuredAreas = FEATURED_AREA_SLUGS.map((s) => findArea(s)).filter(
+    (a): a is NonNullable<typeof a> => !!a
+  );
 
   return (
     <div className="flex h-dvh w-full flex-col">
@@ -22,6 +31,14 @@ export default async function HomePage({
         <h1 className="text-base font-bold tracking-tight text-blue-600">
           🚽 Loo map
         </h1>
+        {/* #39 — SSR タグライン。クローラへの最低限のテキストコンテンツを提供する。
+             map が JS で描画されるためトップページのクロール可能 HTML は空に近い。
+             sr-only は使わない(display:none / clip はクローラが読む可能性があるため、
+             意味あるコンテンツには通常 text として置く)。
+             テキスト色を薄く小さくして視覚的に目立たせず、ヘッダ行に収めて 3 タップ UX を守る。 */}
+        <p className="text-xs text-zinc-400 dark:text-zinc-500">
+          {tApp("tagline")}
+        </p>
         <nav className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-zinc-500">
           <Link href="/contact" className="hover:text-zinc-900 dark:hover:text-zinc-200">
             {t("feedback")}
@@ -48,6 +65,22 @@ export default async function HomePage({
       </header>
       <main className="relative flex-1 pb-14">
         <ClientToiletMap />
+        {/* #40 — Popular areas セクション。クローラへのホーム→/area/* クロールパスを作る。
+             sitemap だけでは新規クロールの起点になりにくい; ホームに crawlable <a> を置くことで
+             エリアページへの自然な内部リンクグラフが生まれる。
+             sr-only クラスで視覚的に非表示にしつつ DOM に存在させる。
+             display:none / visibility:hidden にするとクローラが無視するリスクがあるため使わない。
+             BottomTabBar の pb-14 分で隠れる位置に置くことで UX への影響を最小化。 */}
+        <nav className="sr-only" aria-label={tApp("popularAreas")}>
+          <h2>{tApp("popularAreas")}</h2>
+          <ul>
+            {featuredAreas.map((a) => (
+              <li key={a.slug}>
+                <Link href={`/area/${a.slug}`}>{areaLabel(a, tan)}</Link>
+              </li>
+            ))}
+          </ul>
+        </nav>
       </main>
       <BottomTabBar />
       <OnboardingCard />

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
-import { absUrl, languageAlternates } from "@/lib/urls";
+import { absUrl, languageAlternates, baseOpenGraph } from "@/lib/urls";
 import { SITE_TEAM } from "@/lib/contact";
 
 export async function generateMetadata({
@@ -15,8 +15,12 @@ export async function generateMetadata({
   const path = "/privacy";
   return {
     title: t("metaTitle"),
+    // #36 — metaDescription キーを追加(seo-writer が 4 ロケールに投入済み)。
+    description: t("metaDescription"),
     alternates: { canonical: absUrl(locale, path), languages: languageAlternates(path) },
-    robots: { index: true, follow: true },
+    // #34 — og:locale/type/siteName を確保。
+    openGraph: { ...baseOpenGraph(locale), title: t("metaTitle"), description: t("metaDescription"), url: absUrl(locale, path) },
+    // #34 C6 — layout デフォルト { index: true, follow: true } 済み。冗長除去。
   };
 }
 

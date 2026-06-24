@@ -1,7 +1,8 @@
 {
   "app": {
     "name": "Loo map",
-    "tagline": "Find the nearest toilet, fast"
+    "tagline": "Find the nearest toilet, fast",
+    "popularAreas": "Popular areas"
   },
   "metadata": {
     "title": "Loo map - Find the nearest toilet in Japan",
@@ -202,6 +203,7 @@
   },
   "privacy": {
     "metaTitle": "Privacy Policy",
+    "metaDescription": "Loo map's privacy policy: what data we collect (location, reviews, hashed IP), how we use it, our no-third-party-sharing commitment, and how to request data deletion.",
     "title": "Privacy Policy",
     "intro": "Loo map (\"the Service\", operated by {team}) respects your privacy and operates in compliance with Japan's Act on the Protection of Personal Information and related laws.",
     "collectTitle": "Information we collect",
@@ -218,6 +220,7 @@
   },
   "terms": {
     "metaTitle": "Terms of Service",
+    "metaDescription": "Loo map terms of service: prohibited acts (false reviews, spam), our disclaimer of liability, and the OpenStreetMap data licence. Please read before using the service.",
     "title": "Terms of Service",
     "purposeTitle": "1. Purpose of the Service",
     "purpose": "Loo map (\"the Service\", operated by {team}) provides a map and rating features so users can comfortably find nearby public toilets.",
@@ -238,6 +241,7 @@
   },
   "contact": {
     "metaTitle": "Feedback",
+    "metaDescription": "Send bug reports, incorrect toilet info, or feature requests to Loo map via our anonymous Google Form. You can also report individual pins directly inside the app.",
     "title": "Feedback",
     "intro": "Bug reports, incorrect toilet info, feature requests, impressions — anything is welcome. You can submit anonymously.",
     "openForm": "Open feedback form",
@@ -280,6 +284,7 @@
     "metaDescription": "{count} public toilets in {label}. A map you can search by pin color (free / ask / permission) and star rating — Loo map."
   },
   "about": {
+    "breadcrumbHome": "Home",
     "title": "How to use Loo map / FAQ",
     "metaDescription": "How to use Loo map and frequently asked questions: what the pin colors mean, estimated pins, Japanese toilet etiquette, and more.",
     "intro": "Loo map is a map service for finding nearby public toilets in 3 taps or fewer, using color-coded pins (blue = free to use, yellow = ask staff, red = permission needed) and 1-5 star cleanliness ratings.",

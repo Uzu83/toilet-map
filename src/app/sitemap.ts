@@ -1,8 +1,8 @@
 import type { MetadataRoute } from "next";
 import { routing } from "@/i18n/routing";
 import { absUrl, languageAlternates } from "@/lib/urls";
-import { areaSlugs } from "@/lib/areas";
-import { getIndexableToiletIdsPage } from "@/lib/toilets";
+import { areaSlugs, findArea } from "@/lib/areas";
+import { getIndexableToiletIdsPage, areaHasIndexableToilets } from "@/lib/toilets";
 import { SITEMAP_CHUNK_TOILETS, sitemapChunkCount } from "@/lib/sitemapChunks";
 
 // コード版 sitemap は既定でキャッシュされる。Supabase のデータ変化を取り込むため日次で再生成。
@@ -38,8 +38,30 @@ export default async function sitemap(props: {
         });
       }
     }
-    for (const slug of areaSlugs()) {
-      const path = `/area/${slug}`;
+    // #30 — indexable トイレが 1 件もないエリアをサイトマップから除外する。
+    //
+    // WHY 並列 Promise.all か:
+    //   57 エリア × getToiletsInRegion(bbox, 180) = 57 Supabase 呼び出しを直列にすると
+    //   sitemap 生成が数十秒かかる。revalidate = 86400 で 24h に 1 回しか実行されないので
+    //   並列化のコストは問題ない。失敗時は areaHasIndexableToilets が [] を返し false = 除外。
+    //
+    // WHY STATIC_PATHS は除外対象にしないか:
+    //   静的ページ(/, /about, etc.)はエリア判定と無関係なので常にサイトマップに含める。
+    //
+    // KNOWN FALSE-NEGATIVE: #29 と同じ 180 件キャップの問題。index-reducing = ISR Write 安全。
+    const slugs = areaSlugs();
+    const hasIndexable = await Promise.all(
+      slugs.map((slug) => {
+        const area = findArea(slug);
+        // findArea は areaSlugs() から作った slug なので undefined にならないが、型上は undefined あり。
+        // undefined の場合は false として除外する(防御的フォールバック)。
+        if (!area) return Promise.resolve(false);
+        return areaHasIndexableToilets(area.bbox);
+      })
+    );
+    for (let i = 0; i < slugs.length; i++) {
+      if (!hasIndexable[i]) continue; // indexable トイレなし → サイトマップから除外
+      const path = `/area/${slugs[i]}`;
       for (const locale of routing.locales) {
         entries.push({
           url: absUrl(locale, path),

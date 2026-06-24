@@ -14,7 +14,7 @@ import {
   toiletDisplayName,
 } from "@/lib/toiletSeo";
 import { findContainingPrefecture, areaLabel } from "@/lib/areas";
-import { absUrl, languageAlternates, localePrefix, inLanguageOf } from "@/lib/urls";
+import { absUrl, languageAlternates, localePrefix, inLanguageOf, baseOpenGraph } from "@/lib/urls";
 import { formatDistance, haversineMeters } from "@/lib/geo";
 import type { Toilet } from "@/types/toilet";
 
@@ -63,7 +63,9 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical: absUrl(locale, path), languages: languageAlternates(path) },
-    openGraph: { title, description, url: absUrl(locale, path) },
+    // #34 — og:locale/type/siteName を確保(浅いマージ対策)。
+    // ただし robots の conditional logic は変えない(A+C fix を維持)。
+    openGraph: { ...baseOpenGraph(locale), title, description, url: absUrl(locale, path) },
     // C: non-indexable ページは follow も false にする(多層防御)。
     // noindex のままで follow=true だと、クローラが <a href> を辿って
     // 別の non-indexable UUID を次々 ISR 生成し Writes 枠を食い潰す。

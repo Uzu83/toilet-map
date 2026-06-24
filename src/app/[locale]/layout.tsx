@@ -8,17 +8,11 @@ import { SpeedInsights } from "@vercel/speed-insights/next";
 import { routing } from "@/i18n/routing";
 import { siteUrl } from "@/lib/siteUrl";
 import { StructuredData } from "@/components/StructuredData";
+import { baseOpenGraph } from "@/lib/urls";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"] });
 const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
-
-const OG_LOCALE: Record<string, string> = {
-  ja: "ja_JP",
-  en: "en_US",
-  ko: "ko_KR",
-  zh: "zh_CN",
-};
 
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
@@ -51,11 +45,9 @@ export async function generateMetadata({
       },
     },
     openGraph: {
+      ...baseOpenGraph(locale),
       title: t("title"),
       description: t("description"),
-      type: "website",
-      locale: OG_LOCALE[locale] ?? "ja_JP",
-      siteName: "Loo map",
       url: `${base}${path}`,
     },
     twitter: {

@@ -7,6 +7,7 @@ import { getServerSupabasePublishable } from "@/lib/supabase/server";
 import type { Toilet } from "@/types/toilet";
 import { isUuid } from "@/lib/uuid";
 import { haversineMeters } from "@/lib/geo";
+import { isToiletIndexable } from "@/lib/toiletSeo";
 
 // RPC が返す行 → Toilet 型(boolean/null をそのまま受ける)。
 // WHY export: api/toilets/[id]/route.ts が 200 レスポンスの shape 正規化に使う。
@@ -141,6 +142,25 @@ export async function getIndexableToiletIdsPage(
     // 取れた分だけ返す(部分 sitemap)
   }
   return out;
+}
+
+// #30 — sitemap チャンク 0 のエリアフィルタ用プロキシ。
+//
+// WHY 専用 helper にするか:
+//   sitemap と area/[region]/page.tsx の両方が「このエリアに indexable トイレが 1 件でもあるか」
+//   を判定する必要がある(#29/#30 同一述語 = 単一ソース)。
+//   sitemap は直接 Page コンポーネントを呼べないため helper として切り出す。
+//
+// KNOWN FALSE-NEGATIVE(#29 と同じ。意図的に受け入れる):
+//   toilets_in_region は review_count desc でソート(005:77)。zero-review named-OSM は
+//   180 件超のエリアでウィンドウ外に落ちる可能性があり、その場合このエリアは false を返す。
+//   index-reducing(= noindex 方向への変化のみ)なので ISR Write 予算に安全。
+//   /toilet/[id] の個別ページは getIndexableToiletIdsPage 経由で sitemap に残る。
+export async function areaHasIndexableToilets(
+  bbox: Bbox
+): Promise<boolean> {
+  const toilets = await getToiletsInRegion(bbox, 180);
+  return toilets.some(isToiletIndexable);
 }
 
 // 指定トイレ周辺の近隣トイレ(自身を除く、距離順)。

@@ -38,7 +38,14 @@ export function ToiletJsonLd({
       value: true,
     }));
   }
-  if (toilet.review_count >= 1 && toilet.avg_rating != null) {
+  // #31 — aggregateRating を出力するガードを >= 1 から >= 10 に引き上げる。
+  //
+  // WHY 10 件未満を出さないか:
+  //   ページ上の表示(pinSheet.ratingNote / area ページの星表示)は 10 件未満を「参考値」として
+  //   目立たない表示にしている。構造化データだけ >= 1 で出すと、Google がリッチスニペット候補として
+  //   低信頼性の平均値をサムネイル表示するリスクがある。
+  //   10 件以上で統一することで「ページ表示 ↔ JSON-LD」が整合し、低レビューの過信を誘発しない。
+  if (toilet.review_count >= 10 && toilet.avg_rating != null) {
     place.aggregateRating = {
       "@type": "AggregateRating",
       ratingValue: toilet.avg_rating,
