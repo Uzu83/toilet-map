@@ -190,18 +190,20 @@ function LogoutButton() {
   async function logout() {
     setBusy(true);
     try {
-      const res = await fetch("/api/admin/logout", {
+      await fetch("/api/admin/logout", {
         method: "POST",
         credentials: "same-origin", // cookie を送る。CSRF はサーバの Origin/Host 検証で守る
       });
-      // 成否に関わらずログイン画面へ。成功なら cookie は消えており、未認証として扱われる。
-      if (res.ok) {
-        window.location.assign("/admin/login");
-        return;
-      }
+      // #25 — 非 OK(403/500 等)でも無条件でログイン画面に遷移する。
+      //   理由: cookie 削除は冪等(サーバがエラーを返しても Set-Cookie: 削除済みか、
+      //   そもそも cookie が既に無効になっているケースが多い)。
+      //   成功時のみ遷移する旧実装だと 403/500 でユーザーがログイン画面に戻れず
+      //   「ログアウトできない」状態に陥る。遷移後も認証 cookie が残っていれば
+      //   次の admin アクセスで再認証を求められるので、セキュリティ上の後退はない。
+      window.location.assign("/admin/login");
     } catch {
-      // ネットワーク失敗時は何もしない(ボタンを再度押せる状態に戻す)。
-    } finally {
+      // ネットワーク失敗時(DNS 解決不可・fetch 例外)のみ遷移をスキップし、
+      // ユーザーがリトライできるようボタンを戻す。
       setBusy(false);
     }
   }

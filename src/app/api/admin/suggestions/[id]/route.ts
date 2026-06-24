@@ -1,9 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isSameOrigin } from "@/lib/adminAuth";
-import { noStore } from "@/lib/adminHttp";
-import { getAdminSession } from "@/lib/adminSession";
+import { clientMessageFor, noStore, requireAdminMutation, rpcStatusFor } from "@/lib/adminHttp";
 import { getServerSupabaseSecret } from "@/lib/supabase/server";
-import { isUuid } from "@/lib/uuid";
 
 // secret(SUPABASE_SECRET_KEY / ADMIN_SESSION_SECRET)を読むため Node ランタイム固定。
 export const runtime = "nodejs";
@@ -24,25 +21,23 @@ export const dynamic = "force-dynamic";
 //   ただし「pending のときだけ rejected にする」精密更新にして、二重処理(既に approved/rejected/auto_applied/no_op)を
 //   .eq("status","pending") の precondition で弾く(0 行更新 = 既に終端 = 409)。単一行・単一テーブル更新なので原子的。
 //
-// 防御(既存 PATCH の guard 再利用):
-//   ① getAdminSession → 401 ② isSameOrigin → 403 ③ suggestion id を uuid 検証 ④ noStore
+// 防御: requireAdminMutation(request, rawId) = session(401) → CSRF(403) → UUID(400)。
+//   順序は既存 guard() と完全に同一。
 
-async function guard(
-  request: NextRequest,
-  rawId: string,
-): Promise<{ ok: true; id: string } | { ok: false; res: NextResponse }> {
-  const session = await getAdminSession();
-  if (!session) {
-    return { ok: false, res: noStore(NextResponse.json({ error: "unauthorized" }, { status: 401 })) };
-  }
-  if (!isSameOrigin(request)) {
-    return { ok: false, res: noStore(NextResponse.json({ error: "bad origin" }, { status: 403 })) };
-  }
-  if (!isUuid(rawId)) {
-    return { ok: false, res: noStore(NextResponse.json({ error: "invalid id" }, { status: 400 })) };
-  }
-  return { ok: true, id: rawId };
-}
+// RPC のエラーメッセージ('admin_rpc: <理由>')を HTTP に写す(生 DB 文言は返さない)。
+//   ai_apply_suggestion 固有の理由 + admin_apply_edit から伝播する理由の両方をカバー。
+const SUGGESTIONS_RPC_ERROR_TABLE: ReadonlyArray<[string, number]> = [
+  ["suggestion not found", 404],
+  ["toilet not found", 404],
+  ["suggestion not pending", 409], // 既に処理済(二重反映防止)
+  ["invalid inferred_access", 400],
+  // auto ガード(auto field/value/confidence)・invalid mode/editor 等は B1 の manual では起きない想定。
+  //   起きたら呼び出し側のバグなので 500(想定外)に倒す(→ rpcStatusFor の fallback)。
+];
+
+// このルートの 409 クライアント文言。toilets の "newer state exists" とは意味が違う。
+// WHY ルートごとに異なる: 409 の文脈が違う(提案の二重処理 vs edit の concurrent state conflict)。
+const SUGGESTIONS_CONFLICT_TEXT = "conflict: already processed";
 
 // ai_apply_suggestion(jsonb)の戻りを受ける最小 shape。
 type ApplySuggestionResult = {
@@ -52,39 +47,15 @@ type ApplySuggestionResult = {
   changed_fields?: string[];
 };
 
-// RPC のエラーメッセージ('admin_rpc: <理由>')を HTTP に写す(生 DB 文言は返さない)。
-//   ai_apply_suggestion 固有の理由 + admin_apply_edit から伝播する理由の両方をカバー。
-function statusForRpcError(message: string): number {
-  if (message.includes("suggestion not found")) return 404;
-  if (message.includes("toilet not found")) return 404;
-  if (message.includes("suggestion not pending")) return 409; // 既に処理済(二重反映防止)
-  if (message.includes("invalid inferred_access")) return 400;
-  // auto ガード(auto field/value/confidence)・invalid mode/editor 等は B1 の manual では起きない想定。
-  //   起きたら呼び出し側のバグなので 500(想定外)に倒す。
-  return 500;
-}
-
-function clientErrorFor(status: number): string {
-  switch (status) {
-    case 404:
-      return "not found";
-    case 409:
-      return "conflict: already processed";
-    case 400:
-      return "invalid value";
-    default:
-      return "internal error";
-  }
-}
-
 export async function POST(
   request: NextRequest,
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id: rawId } = await ctx.params;
-  const g = await guard(request, rawId);
+  // requireAdminMutation: session(401) → CSRF(403) → UUID(400)。順序は既存 guard() と同一。
+  const g = await requireAdminMutation(request, rawId);
   if (!g.ok) return g.res;
-  const id = g.id;
+  const id = g.id!; // rawId を渡したので id は必ず存在する。
 
   // body から action(+ 任意の reason)を取る。
   let action: string;
@@ -119,11 +90,14 @@ export async function POST(
       });
 
       if (error) {
-        const status = statusForRpcError(error.message);
+        const status = rpcStatusFor(error.message, SUGGESTIONS_RPC_ERROR_TABLE);
         if (status === 500) {
           console.error("[api/admin/suggestions] apply rpc error", error);
         }
-        return noStore(NextResponse.json({ error: clientErrorFor(status) }, { status }));
+        return noStore(NextResponse.json(
+          { error: clientMessageFor(status, SUGGESTIONS_CONFLICT_TEXT) },
+          { status },
+        ));
       }
 
       const result = (data ?? {}) as ApplySuggestionResult;

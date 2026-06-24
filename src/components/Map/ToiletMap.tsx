@@ -79,13 +79,15 @@ function BoundsWatcher({ onChange }: { onChange: (b: L.LatLngBounds) => void }) 
   useEffect(() => {
     onChange(map.getBounds());
   }, [map, onChange]);
+  // #15 — moveend のみ購読(zoomend を削除)。
+  //   Leaflet 1.9.4 の Map._moveEnd(Map.js ~L.1244) は:
+  //     1. zoom が変化した場合に zoomend を fire し、
+  //     2. 常に moveend を fire する。
+  //   つまり「ズーム後」は zoomend → moveend の順に両方発火するため、
+  //   旧来の dual-subscription は bbox fetch と persistView を 2 回実行していた。
+  //   moveend だけ購読すれば「パン後」「ズーム後」どちらも 1 回で済む。
   useMapEvents({
     moveend: () => {
-      onChange(map.getBounds());
-      const c = map.getCenter();
-      persistView({ lat: c.lat, lng: c.lng, zoom: map.getZoom() });
-    },
-    zoomend: () => {
       onChange(map.getBounds());
       const c = map.getCenter();
       persistView({ lat: c.lat, lng: c.lng, zoom: map.getZoom() });

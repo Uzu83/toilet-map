@@ -8,8 +8,11 @@ import type { Toilet } from "@/types/toilet";
 import { isUuid } from "@/lib/uuid";
 import { haversineMeters } from "@/lib/geo";
 
-// RPC が返す行 → Toilet 型(boolean/null をそのまま受ける)
-function toToilet(row: Record<string, unknown>): Toilet {
+// RPC が返す行 → Toilet 型(boolean/null をそのまま受ける)。
+// WHY export: api/toilets/[id]/route.ts が 200 レスポンスの shape 正規化に使う。
+//   getToiletById() は RPC エラーを null に潰すため、route の「RPC error → 500」パスが消えてしまう。
+//   そこで route は RPC を直接呼び、成功時の行をこの関数で Toilet 型に変換するだけにする(PR2 #13)。
+export function toToilet(row: Record<string, unknown>): Toilet {
   return {
     id: String(row.id),
     name: (row.name as string | null) ?? null,

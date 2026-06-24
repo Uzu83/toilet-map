@@ -1,8 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { isSameOrigin } from "@/lib/adminAuth";
 import { analyzeComment } from "@/lib/aiAnalysis";
-import { noStore } from "@/lib/adminHttp";
-import { getAdminSession } from "@/lib/adminSession";
+import { noStore, requireAdminMutation } from "@/lib/adminHttp";
 import { AiSuggestionValidationError, validateAiSuggestion } from "@/lib/aiSuggestion";
 import { getServerSupabaseSecret } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/uuid";
@@ -17,10 +15,10 @@ export const dynamic = "force-dynamic";
 // ───────────────────────────────────────────────────────────────────
 // スコープ(B1): 「全件 pending でキューに積む」だけ。自動反映(auto-apply)は B2。ここでは ai_apply_suggestion を呼ばない。
 //
-// 防御(既存 PATCH の guard を必ず再利用):
+// 防御: requireAdminMutation(request) with NO rawId
 //   ① getAdminSession → 401(proxy をすり抜けても権限の最終根拠はここ)
 //   ② isSameOrigin → 403(cookie 認証の変更系なので CSRF を Origin/Host で確認)
-//   ③ review_id を uuid 検証(不正値で DB/LLM に投げない)
+//   ③ UUID は体内(body)で別途検証。rawId を渡さない = requireAdminMutation のステップ③はスキップ。
 //   ④ noStore(モデレーション情報をキャッシュさせない)
 // ⚠️ isSameOrigin は Origin/Referer 必須 deny なので batch/cron では通らない = ブラウザ起点オンデマンドのみ
 //   (PHASE-B-DESIGN-BRIEF.md「API guard 再利用」)。これにより Gemini 無料枠の RPM 内に収める。
@@ -28,22 +26,10 @@ export const dynamic = "force-dynamic";
 // ⚠️ LLM 失敗時は pending 行を作らない(Minor 論点5): analyzeComment が ok:false のとき INSERT しない
 //   = 再試行可能(失敗を pending キューに混ぜない)。エラーログは原因種別のみ(本文/キー/raw 出力を出さない)。
 
-// 共通の前段ガード(PATCH route の guard と同じ思想)。通れば true、失敗時は NextResponse を返す。
-async function guard(
-  request: NextRequest,
-): Promise<{ ok: true } | { ok: false; res: NextResponse }> {
-  const session = await getAdminSession();
-  if (!session) {
-    return { ok: false, res: noStore(NextResponse.json({ error: "unauthorized" }, { status: 401 })) };
-  }
-  if (!isSameOrigin(request)) {
-    return { ok: false, res: noStore(NextResponse.json({ error: "bad origin" }, { status: 403 })) };
-  }
-  return { ok: true };
-}
-
 export async function POST(request: NextRequest) {
-  const g = await guard(request);
+  // requireAdminMutation(request) — rawId なし: session(401) → CSRF(403) のみ。
+  //   review_id の UUID 検証は body パース後に行う(既存動作と同一)。
+  const g = await requireAdminMutation(request);
   if (!g.ok) return g.res;
 
   // body から review_id を取る。uuid 形でなければ 400。
@@ -89,7 +75,7 @@ export async function POST(request: NextRequest) {
     // WHY ここで status 不問に「この review が既に分析済みか」を見る(Fix B / Codex medium + Claude low 採用):
     //   二重反映防止の部分 UNIQUE INDEX は status='pending' だけを dedup する(終端行は一意制約に絡まない =
     //   re-analyze で pending を積み直せる設計)。その裏返しで、同じ review×field を一度 approve/reject/no_op に
-    //   終端させた“後で”再分析すると、終端行は INDEX 対象外なので新規 pending が再生成される。
+    //   終端させた"後で"再分析すると、終端行は INDEX 対象外なので新規 pending が再生成される。
     //   → キューの再汚染 + 同じコメントへの LLM 再呼び出し(Gemini 無料枠コストの無駄)が起きる。
     //   そこで「この review_id 由来の ai_suggestions 行が status 不問で 1 件でもあれば = 分析済み」とみなし、
     //   generateText(LLM)を呼ぶ前に early return する。INSERT のみならず LLM コストも断つのが肝(論点5 の

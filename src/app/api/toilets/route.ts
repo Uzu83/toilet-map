@@ -28,12 +28,14 @@ export async function GET(request: NextRequest) {
       result_limit: 500,
     });
     if (error) {
+      // #21 — raw DB error は外部に返さない(スキーマ情報が漏れる)。サーバーログに記録してジェネリック応答。
       console.error("[api/toilets] supabase error", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "internal error" }, { status: 500 });
     }
     return NextResponse.json({ toilets: data ?? [] });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    // #21 — 例外メッセージも外部には返さない。
+    console.error("[api/toilets] unexpected error", err);
+    return NextResponse.json({ error: "internal error" }, { status: 500 });
   }
 }

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+import { getAdminSessionMock } from "../../__tests__/helpers";
 
 // ───────────────────────────────────────────────────────────────────
 // テストの射程(重要)
@@ -15,7 +16,9 @@ import { NextRequest } from "next/server";
 //    submit_toilet の plpgsql 列衝突をモックが見逃し本番 500 を出した教訓と同じ)。
 
 // 認証 cookie 再検証(adminSession)をモックして、テストごとに認証可否を切り替える。
-const getAdminSessionMock = vi.fn();
+// WHY インラインファクトリ: vitest は vi.mock() をファイル先頭にホイストするため、
+//   外部モジュールから import した factory 関数を渡すと初期化前参照エラーになる。
+//   getAdminSessionMock の参照を helpers から取り込み、factory は inline で書く。
 vi.mock("@/lib/adminSession", () => ({
   getAdminSession: () => getAdminSessionMock(),
 }));
@@ -81,6 +84,7 @@ const ctxBadId = { params: Promise.resolve({ id: "not-a-uuid" }) };
 beforeEach(() => {
   rpcCalls = [];
   rpcResults = {};
+  // 認証済みデフォルト。未認証テストでは getAdminSessionMock.mockReturnValue(null) を使う。
   getAdminSessionMock.mockReturnValue({ exp: 9_999_999_999, role: "admin" });
 });
 

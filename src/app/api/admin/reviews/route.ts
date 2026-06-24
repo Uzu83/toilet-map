@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { noStore } from "@/lib/adminHttp";
-import { getAdminSession } from "@/lib/adminSession";
+import { noStore, requireAdminRead } from "@/lib/adminHttp";
 import { getServerSupabaseSecret } from "@/lib/supabase/server";
 import { ADMIN_MAX_REVIEWS } from "@/lib/adminConstants";
 
@@ -11,15 +10,13 @@ export const dynamic = "force-dynamic";
 
 // GET /api/admin/reviews — コメント付きレビュー一覧 + 紐づくトイレの現在値を返す(運営の編集材料)。
 //
-// 防御: ① proxy で early gate 済みだが、ここでも cookie を再検証する(多層防御 / 権限の最終根拠)。
-//   GET は副作用が無いので CSRF(Origin)チェックは課さない(設計書: isSameOrigin は変更系のみに適用)。
+// 防御: requireAdminRead() = session 再検証のみ。GET は副作用が無いので CSRF(Origin)チェックは課さない
+//   (設計書: isSameOrigin は変更系のみに適用)。proxy で early gate 済みだが多層防御で再検証する。
 // PII: ip_hash は返さない(レビュー行から明示的に除外する。表示不要・個人データ相当 / R1#7)。
 export async function GET() {
-  // ① 認証 cookie 再検証。未認証は 401(proxy をすり抜けても最終的にここで止める)。
-  const session = await getAdminSession();
-  if (!session) {
-    return noStore(NextResponse.json({ error: "unauthorized" }, { status: 401 }));
-  }
+  // ① requireAdminRead: session cookie 再検証のみ。未認証は 401。CSRF チェックは課さない(READ)。
+  const g = await requireAdminRead();
+  if (!g.ok) return g.res;
 
   try {
     const supabase = getServerSupabaseSecret();

@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
+import { getAdminSessionMock } from "../../__tests__/helpers";
 
 // ───────────────────────────────────────────────────────────────────
 // テストの射程(app 層のみ)
@@ -12,7 +13,7 @@ import { NextRequest } from "next/server";
 // ⚠️ plpgsql 本体(FOR UPDATE / 単一 tx / 409 不変条件 / 監査の同一トランザクション性)は live smoke 専管。
 //   既存 toilets/[id]/route.test.ts の流儀(adminSession / supabase secret / origin)に倣う。
 
-const getAdminSessionMock = vi.fn();
+// WHY インラインファクトリ: vitest は vi.mock() をホイストするため外部 factory 関数は初期化前参照エラーになる。
 vi.mock("@/lib/adminSession", () => ({
   getAdminSession: () => getAdminSessionMock(),
 }));

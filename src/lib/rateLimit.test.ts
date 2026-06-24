@@ -1,10 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
   checkAndRecord,
+  extractIp,
+  hashIp,
   makeCoordKey,
   peekAttempts,
   recordAttempt,
 } from "@/lib/rateLimit";
+import { NextRequest } from "next/server";
 
 // TESTS-2.md §1。座標バケットキー(geohash 相当 = 小数3桁丸め)と IP rate limit の単体。
 describe("makeCoordKey — 座標バケット", () => {
@@ -121,5 +124,55 @@ describe("peekAttempts / recordAttempt — ログイン用カウンタ式", () =
     for (let i = 0; i < OPTS.max; i++) recordAttempt("ip-pa5a", "admin-login", OPTS);
     expect(peekAttempts("ip-pa5a", "admin-login", OPTS).ok).toBe(false);
     expect(peekAttempts("ip-pa5b", "admin-login", OPTS).ok).toBe(true);
+  });
+});
+
+// H6 — extractIp / hashIp の追加テスト
+// extractIp はプロキシヘッダを読むため NextRequest でテストする。
+
+function makeReqWithHeaders(headers: Record<string, string>) {
+  return new NextRequest("http://localhost/api/reviews", {
+    method: "POST",
+    headers,
+  });
+}
+
+describe("extractIp — IP 抽出優先順位 (H6)", () => {
+  it("x-real-ip がある → x-real-ip を返す(XFF より優先)", () => {
+    const req = makeReqWithHeaders({
+      "x-real-ip": "1.2.3.4",
+      "x-forwarded-for": "9.9.9.9, 8.8.8.8",
+    });
+    expect(extractIp(req)).toBe("1.2.3.4");
+  });
+
+  it("x-real-ip なし・XFF のみ → XFF 先頭要素を返す", () => {
+    const req = makeReqWithHeaders({
+      "x-forwarded-for": "5.6.7.8, 4.4.4.4",
+    });
+    expect(extractIp(req)).toBe("5.6.7.8");
+  });
+
+  it("どちらもない → フォールバック '0.0.0.0'", () => {
+    const req = makeReqWithHeaders({});
+    expect(extractIp(req)).toBe("0.0.0.0");
+  });
+});
+
+describe("hashIp — IP ハッシュ特性 (H6)", () => {
+  it("同じ IP からは同じハッシュを返す(冪等)", () => {
+    const h1 = hashIp("1.2.3.4");
+    const h2 = hashIp("1.2.3.4");
+    expect(h1).toBe(h2);
+  });
+
+  it("異なる IP からは異なるハッシュを返す(衝突なし)", () => {
+    expect(hashIp("1.2.3.4")).not.toBe(hashIp("1.2.3.5"));
+  });
+
+  it("ハッシュは 32 桁の hex 文字列", () => {
+    const h = hashIp("192.168.0.1");
+    expect(h).toHaveLength(32);
+    expect(h).toMatch(/^[0-9a-f]{32}$/);
   });
 });
