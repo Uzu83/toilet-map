@@ -7,7 +7,7 @@ import { AreaJsonLd } from "@/components/seo/AreaJsonLd";
 import { AccessChip } from "@/components/seo/AccessChip";
 import { findArea, relatedAreas, areaLabel, type Area } from "@/lib/areas";
 import { getRegionCount, getToiletsInRegion } from "@/lib/toilets";
-import { toiletAccessKey, toiletDisplayName } from "@/lib/toiletSeo";
+import { isToiletIndexable, toiletAccessKey, toiletDisplayName } from "@/lib/toiletSeo"; // ISR Writes 止血: non-indexable リンク除去(A+C)
 import { absUrl, languageAlternates, inLanguageOf } from "@/lib/urls";
 import type { Toilet } from "@/types/toilet";
 
@@ -152,24 +152,51 @@ async function AreaToiletRow({ toilet }: { toilet: Toilet }) {
   const tp = await getTranslations("pinSheet");
   const access = toiletAccessKey(toilet);
   const name = toiletDisplayName(toilet, tp("unnamed"));
+  const indexable = isToiletIndexable(toilet);
+
+  // A: ISR Writes 止血 — non-indexable トイレへのクロール可能 <a href> を消す。
+  //
+  // 背景: クローラがエリアページのトイレ一覧から non-indexable UUID を辿ると
+  // /toilet/[id] が on-demand ISR 生成される(cache=MISS = 1 ISR Write)。
+  // エリアページは 180 件まで列挙するため、非 indexable 比率が高いと Writes を多量消費する。
+  //
+  // non-indexable (inferred ピン / review=0 かつ名称なし / not_a_toilet>=5) は
+  // <Link> を外し <div> のプレーン表示にする。行自体はユーザーに見えるが bot はリンクを辿れない。
+  //
+  // NearbyRow(toilet/[id]/page.tsx) にも同じ修正を適用している。
+  const inner = (
+    <>
+      <span className="min-w-0 truncate">{name}</span>
+      <span className="flex shrink-0 items-center gap-2">
+        {toilet.review_count >= 10 && toilet.avg_rating != null && (
+          <span className="text-xs text-amber-600">★ {toilet.avg_rating.toFixed(1)}</span>
+        )}
+        <AccessChip
+          level={access}
+          label={access ? ta(`${access}.label`) : tp("noRating")}
+          size="sm"
+        />
+      </span>
+    </>
+  );
+
   return (
     <li className="py-2">
-      <Link
-        href={`/toilet/${toilet.id}`}
-        className="flex items-center justify-between gap-2 hover:text-blue-700"
-      >
-        <span className="min-w-0 truncate">{name}</span>
-        <span className="flex shrink-0 items-center gap-2">
-          {toilet.review_count >= 10 && toilet.avg_rating != null && (
-            <span className="text-xs text-amber-600">★ {toilet.avg_rating.toFixed(1)}</span>
-          )}
-          <AccessChip
-            level={access}
-            label={access ? ta(`${access}.label`) : tp("noRating")}
-            size="sm"
-          />
-        </span>
-      </Link>
+      {indexable ? (
+        // indexable: <Link> でクローラが辿れる通常リンク
+        <Link
+          href={`/toilet/${toilet.id}`}
+          className="flex items-center justify-between gap-2 hover:text-blue-700"
+        >
+          {inner}
+        </Link>
+      ) : (
+        // non-indexable: <a>/<Link> を一切描画しない。ユーザーには表示するが bot は辿れない。
+        // text-zinc-500 でリンク色(blue)を外して非インタラクティブと示唆する。
+        <div className="flex items-center justify-between gap-2 text-zinc-500 dark:text-zinc-400">
+          {inner}
+        </div>
+      )}
     </li>
   );
 }

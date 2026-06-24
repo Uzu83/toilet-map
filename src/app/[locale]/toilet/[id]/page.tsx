@@ -7,7 +7,7 @@ import { AccessChip } from "@/components/seo/AccessChip";
 import { ToiletJsonLd } from "@/components/seo/ToiletJsonLd";
 import { getNearbyToilets, getToiletById } from "@/lib/toilets";
 import {
-  isToiletIndexable,
+  isToiletIndexable, // ISR Writes 止血: non-indexable トイレへの <a> を消す(A+C)
   isToiletUnconfirmed,
   toiletAccessKey,
   toiletAmenityKeys,
@@ -64,7 +64,12 @@ export async function generateMetadata({
     description,
     alternates: { canonical: absUrl(locale, path), languages: languageAlternates(path) },
     openGraph: { title, description, url: absUrl(locale, path) },
-    robots: { index: isToiletIndexable(toilet), follow: true },
+    // C: non-indexable ページは follow も false にする(多層防御)。
+    // noindex のままで follow=true だと、クローラが <a href> を辿って
+    // 別の non-indexable UUID を次々 ISR 生成し Writes 枠を食い潰す。
+    // noindex,nofollow にすることでリンクグラフ探索を本ページで断ち切る。
+    // 残ったエントリポイント(/api/toilets bbox API 経由の UUID)は本修正スコープ外 — デプロイ後ログで評価。
+    robots: { index: isToiletIndexable(toilet), follow: isToiletIndexable(toilet) },
   };
 }
 
@@ -232,15 +237,45 @@ async function NearbyRow({ from, toilet }: { from: Toilet; toilet: Toilet }) {
   const access = toiletAccessKey(toilet);
   const name = toiletDisplayName(toilet, tp("unnamed"));
   const dist = formatDistance(haversineMeters(from, toilet));
+  const indexable = isToiletIndexable(toilet);
+
+  // A: ISR Writes 止血 — non-indexable トイレへのクロール可能 <a href> を消す。
+  //
+  // 背景: /toilet/[id] は dynamicParams=true で ~80,450 件 × 4 ロケール ≈ 320,000 ページが
+  // on-demand 生成可能。クローラがこのリンクを辿ると non-indexable UUID も次々 ISR 生成
+  // (cache=MISS 毎に 1 ISR Write)し、無料枠 200,000 を急速消費することを本番ログで確認。
+  //
+  // UUID は uuid v4 で予測不可能なため、HTML に <a href> リンクを置かなければ検索 bot は
+  // URL を発見できない(列挙不可 = discovery を断てる)。
+  //
+  // non-indexable の場合: 行自体は表示し続けるが <Link> を外し <div> のプレーン表示にする。
+  // これにより「近くのトイレ」の存在はユーザーに見えるが bot はリンクを辿れない。
+  //
+  // 残リスク: PinSheet 共有URL / /api/toilets bbox API 経由の UUID 合成は対象外 — デプロイ後ログで再評価。
+  const inner = (
+    <span className="flex items-center justify-between gap-2 w-full">
+      <span className="min-w-0 truncate">{name}</span>
+      <span className="flex shrink-0 items-center gap-2">
+        <span className="text-xs text-zinc-400">{dist}</span>
+        <AccessChip level={access} label={access ? ta(`${access}.label`) : tp("noRating")} size="sm" />
+      </span>
+    </span>
+  );
+
   return (
     <li className="py-2">
-      <Link href={`/toilet/${toilet.id}`} className="flex items-center justify-between gap-2 hover:text-blue-700">
-        <span className="min-w-0 truncate">{name}</span>
-        <span className="flex shrink-0 items-center gap-2">
-          <span className="text-xs text-zinc-400">{dist}</span>
-          <AccessChip level={access} label={access ? ta(`${access}.label`) : tp("noRating")} size="sm" />
-        </span>
-      </Link>
+      {indexable ? (
+        // indexable: <Link> でクローラが辿れる通常リンク
+        <Link href={`/toilet/${toilet.id}`} className="flex items-center justify-between gap-2 hover:text-blue-700">
+          {inner}
+        </Link>
+      ) : (
+        // non-indexable: <a>/<Link> を一切描画しない。ユーザーには表示するが bot は辿れない。
+        // text-zinc-500 でリンク色(blue)を外して非インタラクティブと示唆する。
+        <div className="flex items-center justify-between gap-2 text-zinc-500 dark:text-zinc-400">
+          {inner}
+        </div>
+      )}
     </li>
   );
 }
