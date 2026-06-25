@@ -166,13 +166,13 @@ export default async function ToiletPage({
             {toilet.avg_rating != null ? (
               <>
                 ★ {toilet.avg_rating.toFixed(1)}{" "}
-                <span className="text-zinc-400">
+                <span className="text-zinc-500 dark:text-zinc-400">
                   ({tt("ratingCount", { count: toilet.review_count })}
                   {toilet.review_count > 0 && toilet.review_count < 10 ? ` · ${tp("ratingNote")}` : ""})
                 </span>
               </>
             ) : (
-              <span className="text-zinc-400">{tt("noRating")}</span>
+              <span className="text-zinc-500 dark:text-zinc-400">{tt("noRating")}</span>
             )}
           </dd>
         </div>
@@ -288,7 +288,7 @@ async function NearbyRow({ from, toilet }: { from: Toilet; toilet: Toilet }) {
     <span className="flex items-center justify-between gap-2 w-full">
       <span className="min-w-0 truncate">{name}</span>
       <span className="flex shrink-0 items-center gap-2">
-        <span className="text-xs text-zinc-400">{dist}</span>
+        <span className="text-xs text-zinc-500 dark:text-zinc-400">{dist}</span>
         <AccessChip level={access} label={access ? ta(`${access}.label`) : tp("noRating")} size="sm" />
       </span>
     </span>

@@ -15,7 +15,7 @@ import {
 import { Stars } from "./Stars";
 import { routing } from "@/i18n/routing";
 import { useMapStore } from "@/store/mapStore";
-import { ACCESS_COLORS, effectiveAccess, isUnconfirmed, isInferredPin } from "@/types/toilet";
+import { ACCESS_BADGE_COLORS, effectiveAccess, isInferredPin, isUnconfirmed } from "@/types/toilet";
 import { bearingDeg, bearingIndex, formatDistance, haversineMeters } from "@/lib/geo";
 import { is24h } from "@/lib/openingHours";
 import { trackEvent } from "@/lib/analytics";
@@ -64,7 +64,9 @@ export function PinSheet() {
     : null;
 
   const access = effectiveAccess(toilet);
-  const accessColor = access ? ACCESS_COLORS[access] : null;
+  // バッジ背景は白文字 AA を満たす濃色版を使う(ACCESS_BADGE_COLORS の WHY 参照)。
+  // 地図ピンの ACCESS_COLORS とは別定義 — ここに ACCESS_COLORS を使うとコントラスト不足が再発する。
+  const accessBadgeColor = access ? ACCESS_BADGE_COLORS[access] : null;
   const accessLabel = access ? ta(`${access}.label`) : null;
   const unconfirmed = isUnconfirmed(toilet);
   const isInferred = isInferredPin(toilet);
@@ -157,10 +159,10 @@ export function PinSheet() {
         </div>
 
         <div className="mb-3 flex flex-wrap gap-2">
-          {accessColor && accessLabel ? (
+          {accessBadgeColor && accessLabel ? (
             <span
               className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-white"
-              style={{ backgroundColor: accessColor }}
+              style={{ backgroundColor: accessBadgeColor }}
             >
               {accessLabel}
             </span>
@@ -214,11 +216,11 @@ export function PinSheet() {
         )}
 
         <div className="mb-4 flex items-center gap-2 text-sm">
-          <Stars value={toilet.avg_rating ?? 0} />
+          <Stars value={toilet.avg_rating ?? 0} reviewCount={toilet.review_count} />
           <span className="text-zinc-700 dark:text-zinc-300">
             {toilet.avg_rating ? toilet.avg_rating.toFixed(1) : "—"}
           </span>
-          <span className="text-zinc-400">
+          <span className="text-zinc-500 dark:text-zinc-400">
             ({t("reviewCount", { count: toilet.review_count })}
             {unconfirmed && toilet.review_count > 0 ? ` · ${t("ratingNote")}` : ""})
           </span>

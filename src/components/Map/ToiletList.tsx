@@ -115,7 +115,7 @@ export function ToiletList() {
                         {inferred && <> ・ {t("unconfirmedShort")}</>}
                       </p>
                       <div className="mt-0.5 flex items-center gap-1">
-                        <Stars value={toilet.avg_rating ?? 0} size="sm" />
+                        <Stars value={toilet.avg_rating ?? 0} reviewCount={toilet.review_count} size="sm" />
                         <span className="text-[10px] text-zinc-500 tabular-nums">
                           {toilet.avg_rating ? toilet.avg_rating.toFixed(1) : "—"}
                           ({toilet.review_count})

@@ -340,5 +340,15 @@
     "pendingConfirm": "这里有厕所",
     "cancel": "取消",
     "close": "关闭"
+  },
+  "a11y": {
+    "language": "语言",
+    "breadcrumb": "面包屑导航",
+    "starRating": "5星中★{rating}，{count}条评价",
+    "starRatingNone": "评价不足",
+    "marker": "{name}，{access}，★{rating}",
+    "markerNoRating": "{name}，{access}",
+    "markerNoAccess": "{name}",
+    "cluster": "附近{count}处厕所"
   }
 }

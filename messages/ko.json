@@ -340,5 +340,15 @@
     "pendingConfirm": "여기에 화장실이 있어요",
     "cancel": "취소",
     "close": "닫기"
+  },
+  "a11y": {
+    "language": "언어",
+    "breadcrumb": "탐색 경로",
+    "starRating": "5점 만점에 ★{rating}, 리뷰 {count}건",
+    "starRatingNone": "평가 부족",
+    "marker": "{name}, {access}, ★{rating}",
+    "markerNoRating": "{name}, {access}",
+    "markerNoAccess": "{name}",
+    "cluster": "이 부근 화장실 {count}곳"
   }
 }

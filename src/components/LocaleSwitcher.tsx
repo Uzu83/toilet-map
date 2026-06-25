@@ -1,6 +1,6 @@
 "use client";
 
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { routing } from "@/i18n/routing";
 import { Link, usePathname } from "@/i18n/navigation";
 
@@ -16,9 +16,10 @@ const LABELS: Record<string, string> = {
 export function LocaleSwitcher() {
   const locale = useLocale();
   const pathname = usePathname();
+  const t = useTranslations("a11y");
 
   return (
-    <nav aria-label="Language" className="flex items-center text-xs">
+    <nav aria-label={t("language")} className="flex items-center text-xs">
       {routing.locales.map((l, i) => (
         <span key={l} className="flex items-center">
           {i > 0 && (

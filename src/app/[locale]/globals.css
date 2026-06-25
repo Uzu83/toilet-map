@@ -65,6 +65,31 @@ body {
   border: 0 !important;
 }
 
+/*
+  グローバル :focus-visible リング(WCAG 2.4.7 Focus Visible / 2.4.11)。
+  WHY: これまでアプリ製のフォーカスリングが無く、キーボード操作時に UA 既定 outline が
+  色付き CTA(青/赤/緑の塗りボタン)上でほぼ見えなかった。:focus-visible なのでマウス
+  クリック時は出ず、Tab 操作時のみ出る(マウスユーザーに枠が出る煩わしさを避ける)。
+  :where() で詳細度 0 → コンポーネント側の上書きが容易。border-radius:inherit で丸ボタンに追従。
+*/
+:where(a, button, [role="button"], input, select, textarea, summary):focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+  border-radius: inherit;
+}
+
+/*
+  色付きの塗り CTA(.bg-blue-600/.bg-red-600/.bg-emerald-600)では、青 outline が
+  ボタン地色に溶けて見えないことがある。白の内側リング(box-shadow inset 相当を offset で)
+  を足し、outline(青)とボタンの間に視認用の白ギャップを作る。
+  WHY (box-shadow でなく ring 用の白 outline 重ねでなく shadow): outline は既に↑で青を使うため、
+  ここでは白の二重リングを box-shadow で重ねて「白→青」の 2 層リングにする。
+*/
+:where(.bg-blue-600, .bg-red-600, .bg-emerald-600):focus-visible {
+  outline-color: #ffffff;
+  box-shadow: 0 0 0 4px #2563eb;
+}
+
 /* 任意 z-index */
 .z-1000 { z-index: 1000; }
 .z-2000 { z-index: 2000; }
@@ -72,3 +97,23 @@ body {
 /* スクロールバー非表示(モバイルの横スクロールチップ用) */
 .scrollbar-none { scrollbar-width: none; }
 .scrollbar-none::-webkit-scrollbar { display: none; }
+
+/*
+  prefers-reduced-motion: reduce(WCAG 2.3.3 / 前庭障害・乗り物酔い配慮)。
+  OS の「視差効果を減らす/アニメーションを減らす」を有効にしたユーザーには
+  CSS の transition/animation を実質無効化する。.001ms は「0 だと一部ブラウザで
+  transitionend が発火せず JS が固まる」既知問題の回避値(0 にしない)。
+  NOTE: pinIcon.ts の SMIL <animate>(選択ピンの無限パルス)は CSS の animation/transition
+  ではないためこの media query では止まらない → pinIcon.ts 側で matchMedia 判定して
+  パルス自体を出力しない(下記コンポーネント実装を参照)。
+*/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
