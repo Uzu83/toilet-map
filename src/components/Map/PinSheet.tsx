@@ -124,13 +124,21 @@ export function PinSheet() {
               <p className="text-xs text-zinc-500 dark:text-zinc-400">{distInfo}</p>
             )}
           </div>
-          <div className="flex shrink-0 items-center">
+          {/*
+            WHY (min-w-11 min-h-11 + gap-1 の理由):
+              旧実装 p-1.5 = アイコン 20px + パディング 12px = 実寸 32px → WCAG 2.5.5 の 44px 目安を下回る。
+              min-w-11(44px) + min-h-11(44px) + inline-flex + items-center + justify-center で
+              タップ領域を 44px 以上に確保しつつ、アイコン視覚サイズは 20px のまま変えない。
+              gap-1(4px) を gap-0.5(2px) から広げることで「お気に入り↔共有↔閉じる」の誤タップを低減する
+              (指幅 7–8mm を考慮した隣接ターゲット間の余白確保)。
+          */}
+          <div className="flex shrink-0 items-center gap-0.5">
             <button
               type="button"
               onClick={() => toggleFavorite(toilet.id)}
               aria-pressed={fav}
               aria-label={fav ? t("favoriteRemove") : t("favoriteAdd")}
-              className="rounded-full p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <Heart className={fav ? "h-5 w-5 fill-rose-500 text-rose-500" : "h-5 w-5 text-zinc-400"} />
             </button>
@@ -138,7 +146,7 @@ export function PinSheet() {
               type="button"
               onClick={onShare}
               aria-label={t("share")}
-              className="relative rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <Share2 className="h-5 w-5" />
               {shared && (
@@ -151,7 +159,7 @@ export function PinSheet() {
               type="button"
               onClick={() => select(null)}
               aria-label={t("close")}
-              className="rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <X className="h-5 w-5" />
             </button>

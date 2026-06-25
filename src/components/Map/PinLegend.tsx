@@ -12,10 +12,17 @@ export function PinLegend() {
 
   return (
     <div className="absolute bottom-4 left-3 z-1000">
+      {/*
+        WHY (min-h-11 の理由):
+          旧実装 py-1 = 上下 4px × 2 + テキスト行高 ≈ 25px → 44px 目安を大幅に下回る。
+          min-h-11(44px) + inline-flex + items-center でタップ領域を確保。
+          rounded-t-lg / text-[11px] / px-2 の視覚デザインは変えない。
+          地図左下コーナーのコンパクトな配置を維持するためパディング増量より min-h を使う。
+      */}
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="flex items-center gap-1 rounded-t-lg bg-white/95 px-2 py-1 text-[11px] font-semibold text-zinc-600 shadow ring-1 ring-black/5 dark:bg-zinc-900/95 dark:text-zinc-300 dark:ring-white/10"
+        className="inline-flex min-h-11 items-center gap-1 rounded-t-lg bg-white/95 px-2 text-[11px] font-semibold text-zinc-600 shadow ring-1 ring-black/5 dark:bg-zinc-900/95 dark:text-zinc-300 dark:ring-white/10"
       >
         {t("title")}
         {open ? <ChevronDown className="h-3 w-3" /> : <ChevronUp className="h-3 w-3" />}

@@ -39,24 +39,35 @@ export default async function HomePage({
         <p className="text-xs text-zinc-400 dark:text-zinc-500">
           {tApp("tagline")}
         </p>
-        <nav className="flex flex-wrap items-center justify-end gap-x-3 gap-y-1 text-xs text-zinc-500">
-          <Link href="/contact" className="hover:text-zinc-900 dark:hover:text-zinc-200">
+        {/*
+          WHY (inline-flex min-h-11 items-center の理由 / B1 タップ領域 + #13 SSRタグライン統合):
+            旧実装はテキストリンクのみ(text-xs 行高 ≈ 16px)で実寸タップ領域が 16px 前後。
+            WCAG 2.5.5 の 44px 目安を大幅に下回り、特にモバイルの片手操作で誤タップが多発する。
+            inline-flex + min-h-11(44px) + items-center でタップ領域を確保しつつ、
+            視覚的テキストサイズ(text-xs)とヘッダの高さ(shrink-0)に影響を与えない。
+            gap-x / gap-y はリンク間隔であり当たり判定には影響しないが、
+            タップ後の隣接ターゲットへの誤ジャンプを防ぐため gap-x-1 gap-y-0 に絞める。
+            gap-x を大きくすると縦折り返し時に横幅が溢れるので flex-wrap + justify-end で吸収する。
+        */}
+        <nav className="flex flex-wrap items-center justify-end gap-x-1 gap-y-0 text-xs text-zinc-500">
+          <Link href="/contact" className="inline-flex min-h-11 items-center px-2 hover:text-zinc-900 dark:hover:text-zinc-200">
+
             {t("feedback")}
           </Link>
-          <Link href="/privacy" className="hover:text-zinc-900 dark:hover:text-zinc-200">
+          <Link href="/privacy" className="inline-flex min-h-11 items-center px-2 hover:text-zinc-900 dark:hover:text-zinc-200">
             {t("privacy")}
           </Link>
-          <Link href="/terms" className="hover:text-zinc-900 dark:hover:text-zinc-200">
+          <Link href="/terms" className="inline-flex min-h-11 items-center px-2 hover:text-zinc-900 dark:hover:text-zinc-200">
             {t("terms")}
           </Link>
-          <Link href="/about" className="hover:text-zinc-900 dark:hover:text-zinc-200">
+          <Link href="/about" className="inline-flex min-h-11 items-center px-2 hover:text-zinc-900 dark:hover:text-zinc-200">
             {t("about")}
           </Link>
           <a
             href={KO_FI_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-zinc-900 dark:hover:text-zinc-200"
+            className="inline-flex min-h-11 items-center px-2 hover:text-zinc-900 dark:hover:text-zinc-200"
           >
             ☕ {t("support")}
           </a>

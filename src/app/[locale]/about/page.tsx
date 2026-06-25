@@ -62,7 +62,21 @@ export default async function AboutPage({
 
   return (
     <article className="mx-auto max-w-2xl space-y-5 px-4 py-8 text-sm leading-7 text-zinc-700 dark:text-zinc-300">
-      <Link href="/" className="text-xs text-blue-600 hover:underline">
+      {/*
+        WHY (bg-blue-600 px-4 rounded-full ボタン化の理由):
+          旧実装は text-xs・padding 無しのテキストリンク(実寸 ≈ 16px)で、SSR ページへの
+          Google 検索流入ユーザーがアプリに戻る導線として著しく affordance が低かった。
+          明確なボタン形状(filled・rounded-full・min-h-11)にすることで:
+          1) タップ領域 44px を確保(WCAG 2.5.5 目安)
+          2) CTA として視覚的に目立ち「地図に戻れる」ことが一目で分かる
+          3) Google 流入をアプリに送客する最重要導線を強化する。
+          hover・focus-visible リングも付けてキーボード操作でも見えやすくする。
+          inline-flex gap-1.5 で → アイコン + テキストの可読性を確保。
+      */}
+      <Link
+        href="/"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+      >
         {tn("backToMap")}
       </Link>
       {/* #38a — 最初のパンくずラベルを about.breadcrumbHome から取得。

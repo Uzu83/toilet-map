@@ -103,16 +103,21 @@ export default async function AreaPage({
 
   return (
     <article className="mx-auto max-w-2xl space-y-5 px-4 py-8 text-sm leading-7 text-zinc-700 dark:text-zinc-300">
-      <Link href="/" className="text-xs text-blue-600 hover:underline">
+      {/* WHY: テキストリンク(16px)→ 明確な filled ボタン(44px)に変更。Google 流入をアプリに送客する導線強化 + WCAG 2.5.5 タップ領域確保 */}
+      <Link
+        href="/"
+        className="inline-flex min-h-11 items-center gap-1.5 rounded-full bg-blue-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2"
+      >
         {tn("backToMap")}
       </Link>
       <Breadcrumbs items={[{ label: t("breadcrumbHome"), href: "/" }, { label }]} />
       <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{heading}</h1>
       <p>{t("intro", { label })}</p>
       <p className="text-zinc-500 dark:text-zinc-400">{t("countLine", { count })}</p>
+      {/* WHY: h-10=40px → min-h-11=44px に変更。WCAG 2.5.5 44px 目安に合わせる */}
       <Link
         href="/"
-        className="inline-flex h-10 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow hover:bg-blue-700"
+        className="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow hover:bg-blue-700"
       >
         {t("viewAreaOnMap")}
       </Link>

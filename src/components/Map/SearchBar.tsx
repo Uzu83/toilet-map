@@ -80,7 +80,15 @@ export function SearchBar() {
   return (
     <div className="absolute left-1/2 top-16 z-1000 w-full max-w-md -translate-x-1/2 px-2">
       <div className="relative">
-        <div className="flex items-center gap-2 rounded-full bg-white/95 px-3 py-1.5 shadow-md ring-1 ring-black/5 backdrop-blur dark:bg-zinc-900/95 dark:ring-white/10">
+        {/*
+          WHY (min-h-11 の理由):
+            旧実装 py-1.5 = 上下 6px × 2 + input 行高(20px) = 32px → 44px 目安を下回る。
+            min-h-11(44px) を付けることでタップ領域を確保しつつ、
+            px-3 の横パディングと rounded-full の見た目は変えない。
+          WHY (クリアボタンの min-h-11 min-w-11):
+            p-0.5 だとクリア × が 24px 程度。44px に拡大して誤タップを防ぐ。
+        */}
+        <div className="flex min-h-11 items-center gap-2 rounded-full bg-white/95 px-3 shadow-md ring-1 ring-black/5 backdrop-blur dark:bg-zinc-900/95 dark:ring-white/10">
           <Search className="h-4 w-4 text-zinc-400" />
           <input
             type="search"
@@ -98,7 +106,7 @@ export function SearchBar() {
                 onInputChange("");
               }}
               aria-label={t("clear")}
-              className="rounded-full p-0.5 text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <X className="h-4 w-4" />
             </button>

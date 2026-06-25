@@ -26,6 +26,13 @@ export function FilterBar({ visibleCount }: { visibleCount: number }) {
         {CHIPS.map((c) => {
           const active = filters[c.key];
           return (
+            /*
+              WHY (min-h-11 + py-2.5 の理由):
+                旧実装 py-1 = 上下 4px × 2 + アイコン/テキスト高 ≈ 24px → 44px 目安を大幅に下回る。
+                py-2.5(10px×2) + フォント行高 ≈ 44px に到達。
+                横幅はコンテナに入りきる範囲で min-w-11 も付けて保証。
+                視覚の文字サイズ(text-xs)と丸み(rounded-full)は変えない。
+            */
             <button
               key={c.key}
               type="button"
@@ -33,8 +40,8 @@ export function FilterBar({ visibleCount }: { visibleCount: number }) {
               aria-pressed={active}
               className={
                 active
-                  ? "flex items-center gap-1 rounded-full bg-blue-600 px-2.5 py-1 text-xs font-medium text-white shadow-sm"
-                  : "flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+                  ? "inline-flex min-h-11 min-w-11 items-center gap-1 rounded-full bg-blue-600 px-2.5 py-2.5 text-xs font-medium text-white shadow-sm"
+                  : "inline-flex min-h-11 min-w-11 items-center gap-1 rounded-full px-2.5 py-2.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
               }
             >
               {c.icon}
@@ -46,11 +53,16 @@ export function FilterBar({ visibleCount }: { visibleCount: number }) {
           {t("count", { count: visibleCount })}
         </span>
         {anyOn && (
+          /*
+            WHY (min-h-11 min-w-11 + inline-flex):
+              リセット × ボタンも 44px タップ領域に合わせる。
+              p-1 → inline-flex + min-h/w-11 + items-center + justify-center で視覚サイズを変えずに達成。
+          */
           <button
             type="button"
             onClick={resetFilters}
             aria-label={t("reset")}
-            className="rounded-full p-1 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
           >
             <X className="h-3.5 w-3.5" />
           </button>
