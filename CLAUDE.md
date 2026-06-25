@@ -6,11 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Subagents
 
-このリポジトリには `.claude/agents/` に 6 つのサブエージェントが定義されている。**自動 orchestration は無い** — ユーザは普通にチャットに投げるだけで、メインセッションがタスクの性質に応じて適切なエージェントに委任する。
+このリポジトリには `.claude/agents/` に 7 つのサブエージェントが定義されている。**自動 orchestration は無い** — ユーザは普通にチャットに投げるだけで、メインセッションがタスクの性質に応じて適切なエージェントに委任する。
 
 | エージェント | 役割 | tools | いつ使う |
 |---|---|---|---|
 | `coder` | 機能実装・バグ修正・リファクタリング | Read/Write/Edit/Bash/Grep/Glob/Web* | コードを書く作業全般。終了時に必ず `pnpm run lint && pnpm run build` を通す。コミットはしない |
+| `designer` | UI/UX デザイン(視覚・レイアウト・インタラクション・a11y・モバイル UX) | Read/Write/Edit/Bash/Grep/Glob/Web* + Playwright(navigate/resize/snapshot/screenshot/click/hover) | デザイン判断を伴う変更全般。余白/色/状態表現(空・読込・エラー)/コントラスト/タップ領域/モーションの磨き込み。ピン色は型(`ACCESS_LEVELS`)が真実の源で二重管理しない。コピーは seo-writer・機能ロジックは coder に振る。既定 sonnet、大規模リデザインは opus 昇格。コミットはしない |
 | `reviewer` | push 前チェック(レビュー専用、コード変更なし) | Read/Bash/Grep/Glob | push 直前。lint/build・公開表記ポリシー違反・i18n 漏れ・セキュリティ・アーキテクチャ規約を監査し指摘リストを返す |
 | `seo-writer` | SEO・多言語コピー(ja/en/ko/zh) | Read/Write/Edit/Grep/Glob/Web* | キーワード調査、`messages/*.json` のドラフト、metadata/OGP/JSON-LD 文言、ローカル SEO ランディング文 |
 | `planner` | 実装プランニング(コード変更なし) | Read/Grep/Glob/Bash/Web* | 新機能・改修の前のタスク洗い出し・影響範囲調査・段階的プラン作成 |
