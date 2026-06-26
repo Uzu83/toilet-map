@@ -44,3 +44,13 @@ next-env.d.ts
 
 # Codex CLI local working dir
 .codex/
+
+# Playwright MCP のスクショ/成果物(デザイン検証で生成。コミット対象外)
+.playwright-mcp/
+/initial-mobile.png
+/map-after-onboarding.png
+/pinsheet-mobile.png
+
+# Supabase CLI のローカル作業ディレクトリ(ブランチ/一時ファイル)
+supabase/.branches/
+supabase/.temp/

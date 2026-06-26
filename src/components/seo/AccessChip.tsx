@@ -1,7 +1,14 @@
-import { ACCESS_COLORS, type AccessLevel } from "@/types/toilet";
+import { ACCESS_BADGE_COLORS, type AccessLevel } from "@/types/toilet";
 
-// 利用区分の色付きチップ。色は型側(ACCESS_COLORS)を真実とする。
-// label は呼び出し側で i18n から解決して渡す。size="sm" は一覧用の小型。
+// 利用区分の色付きチップ。label は呼び出し側で i18n から解決して渡す。
+// size="sm" は一覧用の小型。
+// WHY (白文字 on 濃色 = ACCESS_BADGE_COLORS / dark mode 不要):
+//   旧実装は「色文字 on 12%tint + border」で WCAG 1.9–3.6:1 と AA 不足だった。
+//   PinSheet のアクセスバッジと同じ「white 文字 on ACCESS_BADGE_COLORS(濃色)」に統一し、
+//   AA(open 5.17 / ask 5.02 / permission 6.47:1)を満たす。Google 流入の着地点(/toilet・/area)で
+//   「一声かけて/許可が必要」の安全情報が読めることが重要。
+//   濃色 bg + 白文字はライト/ダーク両方でコントラストが成立するため dark: バリアントは不要
+//   (地図ピン用 ACCESS_COLORS は使わない — それだと白文字でコントラスト不足が再発する)。
 export function AccessChip({
   level,
   label,
@@ -19,11 +26,10 @@ export function AccessChip({
       </span>
     );
   }
-  const color = ACCESS_COLORS[level];
   return (
     <span
-      className={`inline-flex items-center rounded-full font-medium ${pad}`}
-      style={{ backgroundColor: `${color}1f`, color, border: `1px solid ${color}66` }}
+      className={`inline-flex items-center rounded-full font-medium text-white ${pad}`}
+      style={{ backgroundColor: ACCESS_BADGE_COLORS[level] }}
     >
       {label}
     </span>

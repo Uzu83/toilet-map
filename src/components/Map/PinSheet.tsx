@@ -15,7 +15,7 @@ import {
 import { Stars } from "./Stars";
 import { routing } from "@/i18n/routing";
 import { useMapStore } from "@/store/mapStore";
-import { ACCESS_COLORS, effectiveAccess, isUnconfirmed, isInferredPin } from "@/types/toilet";
+import { ACCESS_BADGE_COLORS, effectiveAccess, isInferredPin, isUnconfirmed } from "@/types/toilet";
 import { bearingDeg, bearingIndex, formatDistance, haversineMeters } from "@/lib/geo";
 import { is24h } from "@/lib/openingHours";
 import { trackEvent } from "@/lib/analytics";
@@ -64,7 +64,9 @@ export function PinSheet() {
     : null;
 
   const access = effectiveAccess(toilet);
-  const accessColor = access ? ACCESS_COLORS[access] : null;
+  // バッジ背景は白文字 AA を満たす濃色版を使う(ACCESS_BADGE_COLORS の WHY 参照)。
+  // 地図ピンの ACCESS_COLORS とは別定義 — ここに ACCESS_COLORS を使うとコントラスト不足が再発する。
+  const accessBadgeColor = access ? ACCESS_BADGE_COLORS[access] : null;
   const accessLabel = access ? ta(`${access}.label`) : null;
   const unconfirmed = isUnconfirmed(toilet);
   const isInferred = isInferredPin(toilet);
@@ -122,13 +124,21 @@ export function PinSheet() {
               <p className="text-xs text-zinc-500 dark:text-zinc-400">{distInfo}</p>
             )}
           </div>
-          <div className="flex shrink-0 items-center">
+          {/*
+            WHY (min-w-11 min-h-11 + gap-1 の理由):
+              旧実装 p-1.5 = アイコン 20px + パディング 12px = 実寸 32px → WCAG 2.5.5 の 44px 目安を下回る。
+              min-w-11(44px) + min-h-11(44px) + inline-flex + items-center + justify-center で
+              タップ領域を 44px 以上に確保しつつ、アイコン視覚サイズは 20px のまま変えない。
+              gap-1(4px) を gap-0.5(2px) から広げることで「お気に入り↔共有↔閉じる」の誤タップを低減する
+              (指幅 7–8mm を考慮した隣接ターゲット間の余白確保)。
+          */}
+          <div className="flex shrink-0 items-center gap-0.5">
             <button
               type="button"
               onClick={() => toggleFavorite(toilet.id)}
               aria-pressed={fav}
               aria-label={fav ? t("favoriteRemove") : t("favoriteAdd")}
-              className="rounded-full p-1.5 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <Heart className={fav ? "h-5 w-5 fill-rose-500 text-rose-500" : "h-5 w-5 text-zinc-400"} />
             </button>
@@ -136,7 +146,7 @@ export function PinSheet() {
               type="button"
               onClick={onShare}
               aria-label={t("share")}
-              className="relative rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <Share2 className="h-5 w-5" />
               {shared && (
@@ -149,7 +159,7 @@ export function PinSheet() {
               type="button"
               onClick={() => select(null)}
               aria-label={t("close")}
-              className="rounded-full p-1.5 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800"
             >
               <X className="h-5 w-5" />
             </button>
@@ -157,10 +167,10 @@ export function PinSheet() {
         </div>
 
         <div className="mb-3 flex flex-wrap gap-2">
-          {accessColor && accessLabel ? (
+          {accessBadgeColor && accessLabel ? (
             <span
               className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium text-white"
-              style={{ backgroundColor: accessColor }}
+              style={{ backgroundColor: accessBadgeColor }}
             >
               {accessLabel}
             </span>
@@ -214,11 +224,11 @@ export function PinSheet() {
         )}
 
         <div className="mb-4 flex items-center gap-2 text-sm">
-          <Stars value={toilet.avg_rating ?? 0} />
+          <Stars value={toilet.avg_rating ?? 0} reviewCount={toilet.review_count} />
           <span className="text-zinc-700 dark:text-zinc-300">
             {toilet.avg_rating ? toilet.avg_rating.toFixed(1) : "—"}
           </span>
-          <span className="text-zinc-400">
+          <span className="text-zinc-500 dark:text-zinc-400">
             ({t("reviewCount", { count: toilet.review_count })}
             {unconfirmed && toilet.review_count > 0 ? ` · ${t("ratingNote")}` : ""})
           </span>

@@ -64,7 +64,13 @@ export const viewport: Viewport = {
   themeColor: "#3B82F6",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  // WHY (maximumScale を指定しない = ユーザーのピンチズームを許可):
+  //   以前は maximumScale:1 でページ全体の拡大を禁止していたが、これは WCAG 1.4.4
+  //   (Resize Text)違反。低視力ユーザーが PinSheet・フォーム・法務ページの文字を
+  //   ブラウザのピンチで拡大できなかった。地図自体のズームは Leaflet が .leaflet-container
+  //   内のジェスチャを自前で処理するため、UA のページズームを開放しても二重ズームにはならない
+  //   (Codex 異モデルレビューで確認済み)。⚠️ a11y 退行になるので maximumScale/userScalable を
+  //   再び足さないこと。
   viewportFit: "cover",
 };
 

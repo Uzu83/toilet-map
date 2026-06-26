@@ -340,5 +340,15 @@
     "pendingConfirm": "ここにトイレがある",
     "cancel": "キャンセル",
     "close": "閉じる"
+  },
+  "a11y": {
+    "language": "言語",
+    "breadcrumb": "パンくずリスト",
+    "starRating": "5段階中★{rating}、レビュー{count}件",
+    "starRatingNone": "評価不足",
+    "marker": "{name}、{access}、★{rating}",
+    "markerNoRating": "{name}、{access}",
+    "markerNoAccess": "{name}",
+    "cluster": "この付近のトイレ{count}件"
   }
 }

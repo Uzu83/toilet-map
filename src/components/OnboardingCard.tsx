@@ -16,25 +16,20 @@ const getClient = () => {
   }
 };
 
-// 太字 <b>...</b> を含む文言を React ノードに変換。
+// 色凡例(青=声かけ不要 / 黄=一声 / 赤=要許可)の太字は next-intl の t.rich() で描画する。
+// JSX 側は {t.rich("colorLine", { b: (chunks) => <b>{chunks}</b> })}(下部参照)。
 //
-// [B5] WHY t.rich() でなく独自 renderBold を使うか:
-//   next-intl の t.rich() は messages/*.json の対応キーに `<b>` タグ宣言が必要
-//   (例: `"colorLine": "<b>青</b> = 声かけ不要..."`)。しかし次の問題がある:
-//     1. ja/en/ko/zh の 4 ファイル全てで同じタグを宣言する必要があり、翻訳者が
-//        タグを省略・変換すると実行時エラー(Missing rich text tag)になる。
-//     2. "colorLine" は他のページが t() で単純文字列として参照する可能性があり、
-//        <b> タグ埋め込みに変えると後方互換が壊れる。
-//   renderBold は「messages 側の変更なし」で動く軽量な代替。
-//   colorLine の太字は 1 行のみ・UI 変更なしが前提なので、ここでの簡易実装で十分。
-function renderBold(text: string) {
-  const parts = text.split(/(<b>.*?<\/b>)/g);
-  return parts.map((p, i) => {
-    const m = p.match(/^<b>(.*?)<\/b>$/);
-    if (m) return <b key={i}>{m[1]}</b>;
-    return <span key={i}>{p}</span>;
-  });
-}
+// WHY (#13 の独自 renderBold を廃し t.rich に統一 — この rebase 時に実データで検証して確定):
+//   colorLine は messages/{ja,en,ko,zh}.json で `<b>青</b>=…` のタグ付き ICU メッセージ
+//   (4 ファイルとも <b>…</b> で揃うのを確認済み)。タグ付きメッセージは t.rich() で描画するのが
+//   next-intl の正しい API で、プレーンな t() で参照するのは誤用。Tranche B1 では t() 参照時に
+//   太字にならず「onboarding.colorLine」の生キーが出る壊れ方を実際に観測した(use-intl の版により
+//   throw かフォールバック表示かは分かれる — Codex の異モデルレビューで指摘 — が、いずれにせよ
+//   正しい描画にはならない)。#13 は renderBold(= t() の生文字列を正規表現でパース)で回避しようと
+//   したが、それ自体 t() を呼ぶため同じ誤用パスを踏む(=本番で壊れていた可能性)。さらに [B5] が
+//   挙げた「他ページが colorLine を t() で参照する」後方互換懸念は grep で該当 0(参照は OnboardingCard
+//   のみ)と判明し前提が崩れている。よって t.rich() + b ハンドラ(法務ページの t.rich(..., { link })
+//   と同一パターン)が正しく安全(rebase 統合後 en で太字描画 + IntlError 無しを Playwright で確認)。
 
 export function OnboardingCard() {
   const t = useTranslations("onboarding");
@@ -79,7 +74,16 @@ export function OnboardingCard() {
             <span className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white">
               {t("colorBadge")}
             </span>
-            <span className="text-zinc-700 dark:text-zinc-200">{renderBold(t("colorLine"))}</span>
+            {/*
+              WHY (t.rich() + b ハンドラ):
+                colorLine は "<b>青</b>=声かけ不要 / …" のタグ付き ICU メッセージ。
+                t() で取ると next-intl が IntlError を投げ生キーが表示される(本番バグ)。
+                t.rich() にタグハンドラを渡すことで next-intl が安全に React ノードへ変換する。
+                法務ページの t.rich("..."、{ link: … }) と同じパターン。
+            */}
+            <span className="text-zinc-700 dark:text-zinc-200">
+              {t.rich("colorLine", { b: (chunks) => <b>{chunks}</b> })}
+            </span>
           </li>
           <li className="flex items-start gap-2.5">
             <MapPin className="mt-0.5 h-5 w-5 shrink-0 text-blue-500" />

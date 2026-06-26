@@ -7,6 +7,18 @@ export const ACCESS_COLORS: Record<AccessLevel, string> = {
   permission: "#EF4444",
 };
 
+// バッジ/チップの「白文字 on 背景」専用の濃色版。WHY: 地図ピン用の ACCESS_COLORS は
+// 鮮やかさ優先(#3B82F6 等)で、白文字を乗せると WCAG 4.5:1 を割る(open 3.68 / ask 2.15 /
+// permission 3.76 と実測=全て不合格)。pin は「文字でない」ので ACCESS_COLORS のまま、
+// 「文字を乗せるバッジ」だけ↓の濃色を使う。値は white 文字で実測 AA 合格を確認済み
+// (open #2563EB=5.17:1 / ask #B45309=5.02:1 / permission #B91C1C=6.47:1)。
+// ⚠️ 白文字バッジに ACCESS_COLORS を使うな(コントラスト不足が再発する)。
+export const ACCESS_BADGE_COLORS: Record<AccessLevel, string> = {
+  open: "#2563EB",
+  ask: "#B45309",
+  permission: "#B91C1C",
+};
+
 export const ACCESS_KEYS: AccessLevel[] = ["open", "ask", "permission"];
 
 // 単一ソースの真実: 3 値 access_level の Set。

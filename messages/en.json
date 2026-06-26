@@ -340,5 +340,15 @@
     "pendingConfirm": "There's a toilet here",
     "cancel": "Cancel",
     "close": "Close"
+  },
+  "a11y": {
+    "language": "Language",
+    "breadcrumb": "Breadcrumb",
+    "starRating": "{rating} out of 5 stars, {count} reviews",
+    "starRatingNone": "Not enough reviews",
+    "marker": "{name}, {access}, {rating} stars",
+    "markerNoRating": "{name}, {access}",
+    "markerNoAccess": "{name}",
+    "cluster": "{count} toilets nearby"
   }
 }

@@ -117,7 +117,7 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
             >
               {submitting ? t("submitting") : t("reportSubmit")}
             </button>
-            <p className="mt-2 text-center text-xs text-zinc-400">{t("rateLimit")}</p>
+            <p className="mt-2 text-center text-xs text-zinc-500 dark:text-zinc-400">{t("rateLimit")}</p>
           </>
         ) : (
           <>
@@ -223,7 +223,7 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
             >
               {submitting ? t("submitting") : t("submit")}
             </button>
-            <p className="mt-2 text-center text-xs text-zinc-400">{t("rateLimit")}</p>
+            <p className="mt-2 text-center text-xs text-zinc-500 dark:text-zinc-400">{t("rateLimit")}</p>
           </>
         )}
       </div>
