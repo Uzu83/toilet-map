@@ -1,38 +1,22 @@
 import { NextResponse } from "next/server";
-import { noStore } from "@/lib/adminHttp";
-import { getAdminSession } from "@/lib/adminSession";
+import { noStore, requireAdminRead } from "@/lib/adminHttp";
 import { getServerSupabaseSecret } from "@/lib/supabase/server";
+import { ADMIN_MAX_REVIEWS } from "@/lib/adminConstants";
 
 // secret(SUPABASE_SECRET_KEY / ADMIN_SESSION_SECRET)を読むため Node ランタイム固定。
 export const runtime = "nodejs";
 // 管理系は静的化・キャッシュさせない(layout/login と同方針)。常にリクエスト毎にサーバで再検証。
 export const dynamic = "force-dynamic";
 
-// 一覧に出す最大件数。運営が「コメントに有用情報が埋もれている」レビューを拾う導線なので、
-// 直近の有限件で十分(無限スクロール/ページャは Phase A では作らない=過剰実装回避)。
-// ───────────────────────────────────────────────────────────────────
-// なぜ「100」か(無制限でも 10 でもなく):
-//   - 上限なし(.limit を外す): コメント付きレビューが将来数千件になるとレスポンス肥大 + Server Component
-//     ページの初期描画が重くなり、関連 toilets の .in(toiletIds) も巨大化する。admin 画面の応答性が落ちる。
-//   - 小さすぎる(例 10): 1 画面で運営が「未反映の有用コメント」を取りこぼし、編集の見落としが増える。
-//   - 100 ≒ 「ソロ運営が 1 セッションで目視レビューして編集に回せる現実的な上限」。これを超えて溜まったら
-//     ページャより「AI 抽出で半自動化(Phase B)」で捌く設計なので、ここを際限なく増やさない。
-//   ★ admin/page.tsx の MAX_REVIEWS と同値であること(Server Component 初期表示と本 API の再取得で件数がズレると
-//     編集後リフレッシュで一覧が変わって混乱する)。片方だけ変えない。
-// PostgREST の 1 レスポンス上限(1000 行)未満なので内部ページングは不要(getToiletIdsPage のような分割は要らない)。
-const MAX_REVIEWS = 100;
-
 // GET /api/admin/reviews — コメント付きレビュー一覧 + 紐づくトイレの現在値を返す(運営の編集材料)。
 //
-// 防御: ① proxy で early gate 済みだが、ここでも cookie を再検証する(多層防御 / 権限の最終根拠)。
-//   GET は副作用が無いので CSRF(Origin)チェックは課さない(設計書: isSameOrigin は変更系のみに適用)。
+// 防御: requireAdminRead() = session 再検証のみ。GET は副作用が無いので CSRF(Origin)チェックは課さない
+//   (設計書: isSameOrigin は変更系のみに適用)。proxy で early gate 済みだが多層防御で再検証する。
 // PII: ip_hash は返さない(レビュー行から明示的に除外する。表示不要・個人データ相当 / R1#7)。
 export async function GET() {
-  // ① 認証 cookie 再検証。未認証は 401(proxy をすり抜けても最終的にここで止める)。
-  const session = await getAdminSession();
-  if (!session) {
-    return noStore(NextResponse.json({ error: "unauthorized" }, { status: 401 }));
-  }
+  // ① requireAdminRead: session cookie 再検証のみ。未認証は 401。CSRF チェックは課さない(READ)。
+  const g = await requireAdminRead();
+  if (!g.ok) return g.res;
 
   try {
     const supabase = getServerSupabaseSecret();
@@ -46,7 +30,7 @@ export async function GET() {
       .not("comment", "is", null)
       .neq("comment", "")
       .order("created_at", { ascending: false })
-      .limit(MAX_REVIEWS);
+      .limit(ADMIN_MAX_REVIEWS);
 
     if (reviewErr) {
       // WHY 生の DB メッセージを返さない: PostgREST/Postgres のエラー文はテーブル名・列名・制約名等の

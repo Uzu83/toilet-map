@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cache } from "react";
 import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
@@ -8,7 +9,8 @@ import { AccessChip } from "@/components/seo/AccessChip";
 import { findArea, relatedAreas, areaLabel, type Area } from "@/lib/areas";
 import { getRegionCount, getToiletsInRegion } from "@/lib/toilets";
 import { isToiletIndexable, toiletAccessKey, toiletDisplayName } from "@/lib/toiletSeo"; // ISR Writes 止血: non-indexable リンク除去(A+C)
-import { absUrl, languageAlternates, inLanguageOf } from "@/lib/urls";
+// #29: isToiletIndexable は loadArea が返す既取得の toilets に対して適用する。追加 DB 呼び出しなし。
+import { absUrl, languageAlternates, inLanguageOf, baseOpenGraph } from "@/lib/urls";
 import type { Toilet } from "@/types/toilet";
 
 export const revalidate = 604800; // 7日(件数はシード時くらいしか変わらない。ISR Writes 節約)
@@ -21,7 +23,12 @@ export function generateStaticParams(): { region: string }[] {
 
 const LIST_LIMIT = 180;
 
-async function loadArea(
+// WHY cache() でラップするか:
+//   generateMetadata と page の両方が loadArea を呼ぶ。Supabase-js は fetch-memoization の対象外のため、
+//   cache() の per-request memo により同一リクエスト内の二重 DB ラウンドトリップを 1 回に削減する。
+//   出力は変わらない(同じ DB に同じ引数で問い合わせるので結果は同一)。
+//   ⚠️ cache() のスコープは「サーバーリクエスト単位」。Next の ISR キャッシュとは別物。
+const loadArea = cache(async function loadArea(
   region: string
 ): Promise<{ area: Area; count: number; toilets: Toilet[] } | null> {
   const area = findArea(region);
@@ -31,7 +38,7 @@ async function loadArea(
     getToiletsInRegion(area.bbox, LIST_LIMIT),
   ]);
   return { area, count, toilets };
-}
+});
 
 export async function generateMetadata({
   params,
@@ -51,8 +58,27 @@ export async function generateMetadata({
     title,
     description,
     alternates: { canonical: absUrl(locale, path), languages: languageAlternates(path) },
-    openGraph: { title, description, url: absUrl(locale, path) },
-    robots: { index: data.count > 0, follow: true },
+    // #34 — og:locale/type/siteName を確保(浅いマージ対策)。
+    openGraph: { ...baseOpenGraph(locale), title, description, url: absUrl(locale, path) },
+    // #29 — count > 0 から indexable ベースのゲートへ変更。
+    //
+    // WHY: count は DB の全件数(RPC toilets_in_region_count)だが、ページが実際にクローラブルな
+    // リンクとして見せるのは isToiletIndexable() を満たす toilets のみ(A+C ISR Write 止血の
+    // non-indexable リンク除去)。count > 0 のままだと「ページ内に辿れる個別ページリンクが 0 件
+    // でも index: true」という不整合が起きる。
+    //
+    // KNOWN FALSE-NEGATIVE(意図的に受け入れる):
+    //   toilets_in_region は review_count desc でソートされる(005:77)。
+    //   migration 007 は zero-review の named-OSM トイレも indexable にする(007:34-38)。
+    //   これらは review=0 ブロックの末尾に並ぶため、エリアの総件数が LIST_LIMIT(180)を超える場合は
+    //   window から外れ data.toilets に含まれない可能性がある。
+    //   その場合、zero-review named-OSM トイレが ONLY の indexable toilets なら
+    //   このゲートは誤って noindex にする(false-negative)。
+    //   ACCEPTED: (a) index-reducing = ISR Write 予算に安全 (b) 個別の /toilet/[id] ページは
+    //   sitemap の getIndexableToiletIdsPage 経由で引き続き独立して発見可能。
+    //   また、このゲートはページが実際にクローラへ見せるリンク群と整合しているため、
+    //   クローラの「リンクを辿って index → 辿れるリンクが 0 件」という矛盾を防げる。
+    robots: { index: data.toilets.some(isToiletIndexable), follow: true },
   };
 }
 
@@ -141,6 +167,7 @@ export default async function AreaPage({
           { name: t("breadcrumbHome"), url: absUrl(locale, "") },
           { name: label, url: absUrl(locale, path) },
         ]}
+        count={count}
       />
     </article>
   );

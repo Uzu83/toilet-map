@@ -3,7 +3,8 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { FaqJsonLd } from "@/components/seo/FaqJsonLd";
-import { absUrl, languageAlternates } from "@/lib/urls";
+import { buildBreadcrumbList } from "@/components/seo/jsonLdHelpers";
+import { absUrl, languageAlternates, baseOpenGraph } from "@/lib/urls";
 import { findArea, areaLabel } from "@/lib/areas";
 import { SITE_TEAM, CONTACT_FORM_URL } from "@/lib/contact";
 
@@ -18,8 +19,6 @@ const FAQ_KEYS = [
   "operator",
 ] as const;
 
-const FEATURED_AREA_SLUGS = ["fukuoka-city", "tokyo-23", "jp-13", "jp-27", "jp-01", "jp-40"];
-
 export async function generateMetadata({
   params,
 }: {
@@ -29,13 +28,23 @@ export async function generateMetadata({
   const t = await getTranslations({ locale, namespace: "about" });
   const path = "/about";
   return {
-    title: t("title"),
+    // #37 — layout template は "%s | Loo map"。about.title が "Loo map の使い方…" を含むと
+    // "Loo map の使い方… | Loo map" のように Loo map が二重になる。
+    // { absolute: } を使うことでテンプレートを無視して文言をそのまま使い、ブランドの重複を防ぐ。
+    // visible h1 は t("title") のままなので表示に変化なし(メタタグだけの修正)。
+    title: { absolute: t("title") },
     description: t("metaDescription"),
     alternates: { canonical: absUrl(locale, path), languages: languageAlternates(path) },
-    openGraph: { title: t("title"), description: t("metaDescription"), url: absUrl(locale, path) },
-    robots: { index: true, follow: true },
+    // #34 — og:locale/type/siteName を baseOpenGraph で確実に維持する(浅いマージ対策)。
+    openGraph: { ...baseOpenGraph(locale), title: t("title"), description: t("metaDescription"), url: absUrl(locale, path) },
+    // #34 C6 — layout がデフォルト { index: true, follow: true } を設定済み。冗長な重複を除去。
   };
 }
+
+// about ページで FEATURED_AREA_SLUGS を export する理由:
+//   home ページ(#40)が同じリストでポピュラーエリアチップを描画するため。
+//   ここで定義することで単一ソースを維持し、順序変更が両ページに即反映される。
+export const FEATURED_AREA_SLUGS = ["fukuoka-city", "tokyo-23", "jp-13", "jp-27", "jp-01", "jp-40"];
 
 export default async function AboutPage({
   params,
@@ -56,7 +65,10 @@ export default async function AboutPage({
       <Link href="/" className="text-xs text-blue-600 hover:underline">
         {tn("backToMap")}
       </Link>
-      <Breadcrumbs items={[{ label: tn("about"), href: "/" }, { label: t("title") }]} />
+      {/* #38a — 最初のパンくずラベルを about.breadcrumbHome から取得。
+           旧実装は tn("about")("ヘルプ")を使っていたが、ホームのパンくずは "ホーム/Home/홈/首页" が正しい。
+           tn("about") は nav メニューラベルであり、パンくずの Home ラベルとは意味が違う。 */}
+      <Breadcrumbs items={[{ label: t("breadcrumbHome"), href: "/" }, { label: t("title") }]} />
       <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-50">{t("title")}</h1>
       <p>{t("intro")}</p>
 
@@ -106,6 +118,22 @@ export default async function AboutPage({
       </ul>
 
       <FaqJsonLd items={faqItems} />
+      {/* #38b — /about の BreadcrumbList JSON-LD。Home → about.title の 2 クラム構造。
+           areaPage / toiletPage と同じ buildBreadcrumbList を使い実装の統一を保つ。 */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              buildBreadcrumbList([
+                { name: t("breadcrumbHome"), url: absUrl(locale, "") },
+                { name: t("title"), url: absUrl(locale, "/about") },
+              ]),
+            ],
+          }),
+        }}
+      />
     </article>
   );
 }

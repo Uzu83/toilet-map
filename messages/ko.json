@@ -1,7 +1,8 @@
 {
   "app": {
     "name": "Loo map",
-    "tagline": "가까운 화장실을 가장 빠르게 찾는 지도"
+    "tagline": "가까운 화장실을 가장 빠르게 찾는 지도",
+    "popularAreas": "인기 지역"
   },
   "metadata": {
     "title": "Loo map - 일본에서 가까운 화장실 찾기",
@@ -202,6 +203,7 @@
   },
   "privacy": {
     "metaTitle": "개인정보 처리방침",
+    "metaDescription": "Loo map의 개인정보 처리방침. 위치 정보·리뷰·IP 해시 수집 목적과 보호 방침, 제3자 미제공 방침, 데이터 삭제 문의 방법을 확인하세요.",
     "title": "개인정보 처리방침",
     "intro": "본 서비스 'Loo map'(이하 '본 서비스', 운영: {team})은 이용자의 개인정보를 최대한 존중하며, 일본의 개인정보보호법 및 관련 법령을 준수하여 운영합니다.",
     "collectTitle": "수집하는 정보",
@@ -218,6 +220,7 @@
   },
   "terms": {
     "metaTitle": "이용약관",
+    "metaDescription": "Loo map 이용약관. 금지 사항(허위 리뷰·스팸 등)·면책 조항·OpenStreetMap 라이선스 표기 등 서비스 이용 전 꼭 확인하세요.",
     "title": "이용약관",
     "purposeTitle": "1. 서비스의 목적",
     "purpose": "본 서비스 'Loo map'(이하 '본 서비스', 운영: {team})은 이용자가 근처의 공중화장실을 쾌적하게 찾을 수 있도록 지도 표시와 평가 기능을 제공합니다.",
@@ -238,6 +241,7 @@
   },
   "contact": {
     "metaTitle": "의견·요청",
+    "metaDescription": "Loo map에 버그 신고·화장실 정보 오류·기능 요청을 Google 폼으로 익명 전송. 앱 내 핀 상세에서 직접 신고도 가능합니다.",
     "title": "의견·요청",
     "intro": "Loo map의 버그 신고·화장실 정보 오류·기능 요청·감상 등 부담 없이 보내 주세요. 익명으로 보낼 수 있습니다.",
     "openForm": "의견 폼 열기",
@@ -280,6 +284,7 @@
     "metaDescription": "{label}의 공중화장실 {count}곳. 핀 색상(자유 이용·직원에게 한마디·허가 필요)과 별점으로 찾을 수 있는 지도 — Loo map."
   },
   "about": {
+    "breadcrumbHome": "홈",
     "title": "Loo map 사용법 · 자주 묻는 질문",
     "metaDescription": "Loo map 사용법과 자주 묻는 질문: 핀 색상의 의미, 추정 핀, 일본 화장실 이용 매너 등.",
     "intro": "Loo map은 가까운 공중화장실을 색상 핀(파랑 = 자유 이용, 노랑 = 직원에게 한마디, 빨강 = 허가 필요)과 1~5점 청결도로 3탭 이내에 찾을 수 있는 지도 서비스입니다.",

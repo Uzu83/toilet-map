@@ -17,7 +17,14 @@ export function toiletAccessKey(t: Toilet): AccessLevel | null {
   return effectiveAccess(t);
 }
 
-// レビュー10件未満 or 推定ピンは「未確認」扱い
+// レビュー10件未満 or 推定ピン(source=inferred)は「未確認」扱い。
+//
+// [D6] WHY isToiletUnconfirmed と isUnconfirmed(types/toilet.ts)で predicate が異なるか:
+//   isToiletUnconfirmed は SEO ページ(title/description/structured-data)向けの判定。
+//   inferred ピンはレビュー 0 以外もありうるが、source=inferred の時点でトイレの実在が
+//   群衆確認されていない — タイトルに「未確認」を付けて薄コンテンツリスクを軽減する必要がある。
+//   isUnconfirmed(UI 用)は source に関わらず review_count < 10 のみを見るため、
+//   この追加条件は SEO 専用の述語でのみ持つ。統合すると UI ユーザーには過剰な警告が出る。
 export function isToiletUnconfirmed(t: Toilet): boolean {
   return t.review_count < 10 || t.source === "inferred";
 }

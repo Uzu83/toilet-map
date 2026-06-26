@@ -230,7 +230,10 @@ async function main() {
   }
   for (const p of args.prefectures) {
     await seedPrefecture(p, args);
-    await sleep(2000); // Overpass に優しく
+    // #F5 — 2000ms 待機: 複数都道府県を --regions で連続指定した場合に Overpass ミラーへの
+    //   連続リクエストを緩和する。公式ミラーは短時間の連続大型クエリで一時 ban をかけることがある。
+    //   2 秒は「ミラーへの負荷を下げながらシード時間を許容範囲に保つ」バランス値。
+    await sleep(2000);
   }
   if (args.allJapan) {
     console.log(`\n🗾 全国モード: 47都道府県を順次取得します(Overpass レート制限のため間に待機を入れます)`);
@@ -243,7 +246,9 @@ async function main() {
       } catch (e) {
         console.error(`  ⚠️ ${p.label} 失敗(スキップして続行):`, e instanceof Error ? e.message : e);
       }
-      // 最後以外は 3 秒待つ(全ミラーへの負荷分散)
+      // #F5 — 3000ms 待機: --all-japan は 47 都道府県を順に叩くため、連続 47 クエリになる。
+      //   2000ms でも可だが、全国モードは特に大量であるため 3 秒に増やして ban リスクをさらに下げる。
+      //   最終県の後は不要なので i < length のガードを入れる(余分な待機を避ける)。
       if (i < JP_PREFECTURES.length) await sleep(3000);
     }
   }

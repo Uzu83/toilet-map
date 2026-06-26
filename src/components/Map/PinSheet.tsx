@@ -10,12 +10,12 @@ import {
   Info,
   MessageSquarePlus,
   Share2,
-  Star,
   X,
 } from "lucide-react";
+import { Stars } from "./Stars";
 import { routing } from "@/i18n/routing";
 import { useMapStore } from "@/store/mapStore";
-import { ACCESS_COLORS, effectiveAccess, isUnconfirmed } from "@/types/toilet";
+import { ACCESS_COLORS, effectiveAccess, isUnconfirmed, isInferredPin } from "@/types/toilet";
 import { bearingDeg, bearingIndex, formatDistance, haversineMeters } from "@/lib/geo";
 import { is24h } from "@/lib/openingHours";
 import { trackEvent } from "@/lib/analytics";
@@ -67,7 +67,7 @@ export function PinSheet() {
   const accessColor = access ? ACCESS_COLORS[access] : null;
   const accessLabel = access ? ta(`${access}.label`) : null;
   const unconfirmed = isUnconfirmed(toilet);
-  const isInferred = toilet.source === "inferred" && toilet.review_count === 0;
+  const isInferred = isInferredPin(toilet);
   const fav = favorites.has(toilet.id);
   // WHY (なぜ &origin= を付けないのか / 将来 AI への警告):
   //   Google Maps の dir/?api=1 は origin 未指定だとデバイスのライブ現在地を起点に採用する。
@@ -308,19 +308,3 @@ export function PinSheet() {
   );
 }
 
-function Stars({ value }: { value: number }) {
-  return (
-    <div className="flex">
-      {[1, 2, 3, 4, 5].map((i) => (
-        <Star
-          key={i}
-          className={
-            i <= Math.round(value)
-              ? "h-4 w-4 fill-amber-400 text-amber-400"
-              : "h-4 w-4 text-zinc-300 dark:text-zinc-600"
-          }
-        />
-      ))}
-    </div>
-  );
-}

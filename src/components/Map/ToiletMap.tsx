@@ -29,9 +29,11 @@ import { AddModeWatcher } from "./AddModeWatcher";
 import { PendingMarkers } from "./PendingMarkers";
 import { AddToiletFlow } from "./AddToiletFlow";
 import type { Toilet, ToiletSubmission } from "@/types/toilet";
+import { HAKATA_STATION } from "@/lib/geo";
 
-// 博多駅(福岡市シード対象に合わせたフォールバック)
-const HAKATA_STATION: [number, number] = [33.5904, 130.4204];
+// WHY VIEW_KEY をローカル定数にしたままにするか:
+//   HAKATA_STATION は geo.ts に集中させたが、VIEW_KEY は localStorage のキー名で
+//   ToiletMap 専用かつ変更頻度が低い。他のファイルが参照しないため、ここに残す。
 const VIEW_KEY = "toilet-map.view";
 
 type SavedView = { lat: number; lng: number; zoom: number };
@@ -77,13 +79,15 @@ function BoundsWatcher({ onChange }: { onChange: (b: L.LatLngBounds) => void }) 
   useEffect(() => {
     onChange(map.getBounds());
   }, [map, onChange]);
+  // #15 — moveend のみ購読(zoomend を削除)。
+  //   Leaflet 1.9.4 の Map._moveEnd(Map.js ~L.1244) は:
+  //     1. zoom が変化した場合に zoomend を fire し、
+  //     2. 常に moveend を fire する。
+  //   つまり「ズーム後」は zoomend → moveend の順に両方発火するため、
+  //   旧来の dual-subscription は bbox fetch と persistView を 2 回実行していた。
+  //   moveend だけ購読すれば「パン後」「ズーム後」どちらも 1 回で済む。
   useMapEvents({
     moveend: () => {
-      onChange(map.getBounds());
-      const c = map.getCenter();
-      persistView({ lat: c.lat, lng: c.lng, zoom: map.getZoom() });
-    },
-    zoomend: () => {
       onChange(map.getBounds());
       const c = map.getCenter();
       persistView({ lat: c.lat, lng: c.lng, zoom: map.getZoom() });
@@ -155,7 +159,7 @@ export default function ToiletMap() {
   const initial = useMemo(() => {
     const saved = readSavedView();
     if (saved) return { center: [saved.lat, saved.lng] as [number, number], zoom: saved.zoom };
-    return { center: HAKATA_STATION, zoom: 15 };
+    return { center: [HAKATA_STATION.lat, HAKATA_STATION.lng] as [number, number], zoom: 15 };
   }, []);
 
   // 1 度だけ生成する debounce 済み fetch。zustand setter は安定なので deps は実質固定。

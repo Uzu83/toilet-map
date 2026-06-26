@@ -11,7 +11,8 @@
 // ⚠️ field allowlist は adminAuth.ts の EDITABLE_FIELDS を import 共有する(二重定義しない)。
 //   ここで独自リストを持つと、将来 EDITABLE_FIELDS に列が増減したとき片方が取り残されて齟齬が出る。
 
-import { EDITABLE_FIELDS, type EditableField } from "@/lib/adminAuth";
+import { EDITABLE_FIELDS, MAX_NAME_LEN, MAX_OPENING_HOURS_LEN, type EditableField } from "@/lib/adminAuth";
+import { ACCESS_SET } from "@/types/toilet";
 
 // 正規化済み提案。value は field の型に合わせて string | boolean になる(DB の jsonb と RPC 解釈に対称)。
 //   - bool3(has_washlet / has_diaper_table / is_universal): boolean
@@ -30,13 +31,8 @@ export type NormalizedAiSuggestion = {
 //   EDITABLE_FIELDS(6 列)とは粒度が違う。auto 反映の DB ガード(014)とも一致させる。
 const BOOL_FIELDS = new Set<EditableField>(["has_washlet", "has_diaper_table", "is_universal"]);
 
-// inferred_access の enum 値(adminAuth.validateEdit と同じ語彙)。
-const ACCESS_VALUES = new Set(["open", "ask", "permission"]);
-
-// 文字列列の長さ上限(adminAuth.ts の MAX_NAME_LEN / MAX_OPENING_HOURS_LEN と同値に保つ)。
-//   ここで超過を弾いておくと、後段 admin_apply_edit(値検証は最小限)に過大な値が届かない。
-const MAX_NAME_LEN = 120;
-const MAX_OPENING_HOURS_LEN = 200;
+// MAX_NAME_LEN / MAX_OPENING_HOURS_LEN は adminAuth.ts からインポートした単一定義を使う。
+// ACCESS_SET も同様に types/toilet.ts から。局所的な再宣言は上流変更との乖離を招くため廃止した。
 
 export class AiSuggestionValidationError extends Error {
   constructor(message: string) {
@@ -100,7 +96,7 @@ export function validateAiSuggestion(
     }
   } else if (f === "inferred_access") {
     // enum 文字列(open/ask/permission)。それ以外は弾く。
-    if (typeof value !== "string" || !ACCESS_VALUES.has(value)) {
+    if (typeof value !== "string" || !ACCESS_SET.has(value as "open" | "ask" | "permission")) {
       throw new AiSuggestionValidationError("inferred_access must be one of open/ask/permission");
     }
     normalized = value;

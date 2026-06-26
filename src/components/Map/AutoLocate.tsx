@@ -11,7 +11,6 @@ import { useMapStore } from "@/store/mapStore";
 export function AutoLocate() {
   const map = useMap();
   const setUserPos = useMapStore((s) => s.setUserPos);
-  const userPos = useMapStore((s) => s.userPos);
   const triedRef = useRef(false);
 
   useEffect(() => {
@@ -42,9 +41,12 @@ export function AutoLocate() {
       () => {},
       { enableHighAccuracy: false, timeout: 8000, maximumAge: 60_000 }
     );
+    // WHY userPos ストアセレクターを購読しないか:
+    //   triedRef.current = true が既に「1 回だけ実行する」ガードを担っている。
+    //   userPos を deps に含めると「GPS 取得成功 → setUserPos → AutoLocate 再レンダー」の
+    //   ループが起きうる上、triedRef で弾かれるだけなので実害はないが無駄なサブスクリプションが残る。
+    //   void userPos という「使わない依存のつなぎ止め」も不要なので削除した。
   }, [map, setUserPos]);
 
-  // userPos は副作用なし(他箇所での表示用)
-  void userPos;
   return null;
 }

@@ -1,10 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { getServerSupabaseSecret } from "@/lib/supabase/server";
 import { checkAndRecord, extractIp, hashIp } from "@/lib/rateLimit";
+import { ACCESS_SET } from "@/types/toilet";
+import { UUID_RE } from "@/lib/uuid";
 
 export const runtime = "nodejs";
-
-const ACCESS_VALUES = new Set(["open", "ask", "permission"]);
 
 type ReviewBody = {
   toiletId?: unknown;
@@ -24,6 +24,18 @@ export async function POST(request: NextRequest) {
   }
 
   const toiletId = typeof body.toiletId === "string" ? body.toiletId : null;
+
+  // #24 — UUID 検証を rate-limit/insert より前に行う。
+  // WHY ここで弾くか:
+  //   checkAndRecord は in-memory キャッシュに `ipHash:toiletId` を書き込む。
+  //   不正 toiletId(ランダム文字列など)でキャッシュが汚染されると、同 IP が 1 時間その
+  //   バケットを消費し続ける(キャッシュ汚染)。また、DB に無効な UUID を送れば外部キー違反で
+  //   500 が返るが、その前にレート枠を消費してしまうと「訂正して再送」ができなくなる。
+  //   UUID 形式違反は入力エラー(400)なので、副作用を一切起こさず即時拒否するのが正しい。
+  if (!toiletId || !UUID_RE.test(toiletId)) {
+    return NextResponse.json({ error: "toiletId must be a valid UUID" }, { status: 400 });
+  }
+
   const notAToilet = body.notAToilet === true;
   // 「ここトイレない」報告は rating/accessLevel をデフォルト埋めで受け付ける
   const rating = typeof body.rating === "number" ? body.rating : notAToilet ? 1 : null;
@@ -40,13 +52,13 @@ export async function POST(request: NextRequest) {
       ? body.comment.slice(0, 500)
       : null;
 
-  if (!toiletId || !rating || !accessLevel) {
+  if (!rating || !accessLevel) {
     return NextResponse.json({ error: "toiletId, rating, accessLevel are required" }, { status: 400 });
   }
   if (!Number.isInteger(rating) || rating < 1 || rating > 5) {
     return NextResponse.json({ error: "rating must be integer 1-5" }, { status: 400 });
   }
-  if (!ACCESS_VALUES.has(accessLevel)) {
+  if (!ACCESS_SET.has(accessLevel as "open" | "ask" | "permission")) {
     return NextResponse.json({ error: "invalid accessLevel" }, { status: 400 });
   }
 
@@ -71,12 +83,14 @@ export async function POST(request: NextRequest) {
       not_a_toilet: notAToilet,
     });
     if (error) {
+      // #21 — raw DB error は外部に返さない(スキーマ情報が漏れる)。サーバーログに記録してジェネリック応答。
       console.error("[api/reviews] insert error", error);
-      return NextResponse.json({ error: error.message }, { status: 500 });
+      return NextResponse.json({ error: "internal error" }, { status: 500 });
     }
     return NextResponse.json({ ok: true });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "unknown error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    // #21 — 例外メッセージも外部には返さない(スタックトレース漏洩防止)。
+    console.error("[api/reviews] unexpected error", err);
+    return NextResponse.json({ error: "internal error" }, { status: 500 });
   }
 }

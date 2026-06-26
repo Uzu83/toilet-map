@@ -3,7 +3,7 @@ import { getTranslations, setRequestLocale } from "next-intl/server";
 import { ExternalLink } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
-import { absUrl, languageAlternates } from "@/lib/urls";
+import { absUrl, languageAlternates, baseOpenGraph } from "@/lib/urls";
 import { CONTACT_FORM_URL } from "@/lib/contact";
 
 export async function generateMetadata({
@@ -16,8 +16,12 @@ export async function generateMetadata({
   const path = "/contact";
   return {
     title: t("metaTitle"),
+    // #36
+    description: t("metaDescription"),
     alternates: { canonical: absUrl(locale, path), languages: languageAlternates(path) },
-    robots: { index: true, follow: true },
+    // #34
+    openGraph: { ...baseOpenGraph(locale), title: t("metaTitle"), description: t("metaDescription"), url: absUrl(locale, path) },
+    // #34 C6 — layout デフォルト済み。冗長除去。
   };
 }
 

@@ -1,11 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import {
   AdminEditValidationError,
-  isSameOrigin,
   validateEdit,
 } from "@/lib/adminAuth";
-import { noStore } from "@/lib/adminHttp";
-import { getAdminSession } from "@/lib/adminSession";
+import { clientMessageFor, noStore, requireAdminMutation, rpcStatusFor } from "@/lib/adminHttp";
 import { getServerSupabaseSecret } from "@/lib/supabase/server";
 import { isUuid } from "@/lib/uuid";
 
@@ -38,52 +36,19 @@ export const dynamic = "force-dynamic";
 
 // RPC のエラーメッセージは 012 で 'admin_rpc: <理由>' 形式に固定してある。route はこの理由を見て
 // HTTP ステータスを出し分ける(生 DB メッセージはクライアントに返さない=内部スキーマ非露出)。
-// マッピングを 1 箇所に集約し、未知の理由は 500 にフォールバックする(フェイルセーフ)。
-function statusForRpcError(message: string): number {
-  if (message.includes("toilet not found")) return 404;
-  if (message.includes("no edit to undo")) return 404;
-  if (message.includes("edit is not latest")) return 409;
-  if (message.includes("current value drifted")) return 409;
-  if (message.includes("invalid inferred_access")) return 400;
-  // invalid editor 等(呼び出し側のバグ)・想定外は 500。
-  return 500;
-}
+// マッピングテーブルは adminHttp.rpcStatusFor に渡す。未知の理由は 500 にフォールバックする(フェイルセーフ)。
+const TOILETS_RPC_ERROR_TABLE: ReadonlyArray<[string, number]> = [
+  ["toilet not found", 404],
+  ["no edit to undo", 404],
+  ["edit is not latest", 409],
+  ["current value drifted", 409],
+  ["invalid inferred_access", 400],
+  // invalid editor 等(呼び出し側のバグ)・想定外は 500(→ rpcStatusFor の fallback)。
+];
 
-// クライアントに返す安全な文言(生 DB 文言は出さない)。理由コードだけを露出する。
-function clientErrorFor(status: number): string {
-  switch (status) {
-    case 404:
-      return "not found";
-    case 409:
-      return "conflict: newer state exists";
-    case 400:
-      return "invalid value";
-    default:
-      return "internal error";
-  }
-}
-
-// 共通の前段ガード: ①認証 cookie 再検証 ②CSRF(同一オリジン)③id が uuid。
-// 通れば id を返す。失敗時は NextResponse(エラー)を返す。
-async function guard(
-  request: NextRequest,
-  rawId: string,
-): Promise<{ ok: true; id: string } | { ok: false; res: NextResponse }> {
-  // ① 認証 cookie 再検証(proxy をすり抜けてもここで止める = 権限の最終根拠)。
-  const session = await getAdminSession();
-  if (!session) {
-    return { ok: false, res: noStore(NextResponse.json({ error: "unauthorized" }, { status: 401 })) };
-  }
-  // ② CSRF: cookie 認証の変更系なので、自サイト由来かを Origin/Host で確認する(SameSite=Lax と併用)。
-  if (!isSameOrigin(request)) {
-    return { ok: false, res: noStore(NextResponse.json({ error: "bad origin" }, { status: 403 })) };
-  }
-  // ③ パスの id が uuid 形か(不正値で DB に投げない)。
-  if (!isUuid(rawId)) {
-    return { ok: false, res: noStore(NextResponse.json({ error: "invalid id" }, { status: 400 })) };
-  }
-  return { ok: true, id: rawId };
-}
+// このルートの 409 クライアント文言。suggestions の "already processed" とは意味が違う。
+// WHY ルートごとに異なる: 409 の文脈が違う(edit の concurrent state conflict vs 提案の二重処理)。
+const TOILETS_CONFLICT_TEXT = "conflict: newer state exists";
 
 // admin_apply_edit / admin_undo_edit の戻り値(jsonb)を受ける最小 shape。
 // supabase-js は RPC 戻り値を静的解析できないので unknown 経由で受け直す。
@@ -92,17 +57,18 @@ type UndoEditResult = { restored?: string[]; undo_edit_id?: string | null };
 
 // PATCH /api/admin/toilets/[id] — allowlist フィールドのみ UPDATE + admin_edits に before/after 追記。
 //
-// 手順: ①認証 ②CSRF ③validateEdit(アプリ層 allowlist) ④admin_apply_edit RPC(DB 側でアトミックに
-//   FOR UPDATE → allowlist 再固定 → 変化列のみ UPDATE + 監査 INSERT を単一トランザクションで)。
+// 手順: ①認証 ②CSRF ③UUID(requireAdminMutation) ④validateEdit(アプリ層 allowlist)
+//        ⑤admin_apply_edit RPC(DB 側でアトミックに FOR UPDATE → allowlist 再固定 → 変化列のみ UPDATE + 監査 INSERT)。
 //   旧実装の read-modify-write(before 取得→update→audit 別クエリ)は撤去済み。
 export async function PATCH(
   request: NextRequest,
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id: rawId } = await ctx.params;
-  const g = await guard(request, rawId);
+  // requireAdminMutation: session(401) → CSRF(403) → UUID(400)。順序は既存 guard() と同一。
+  const g = await requireAdminMutation(request, rawId);
   if (!g.ok) return g.res;
-  const id = g.id;
+  const id = g.id!; // rawId を渡したので id は必ず存在する。
 
   // ボディ(JSON)→ allowlist 検証。未知キー・source・型違反はここで弾かれる(throw)。
   // これは「早期拒否」層。DB 層の admin_apply_edit も同じ列ホワイトリストを持つ(多層防御)。
@@ -121,7 +87,7 @@ export async function PATCH(
   try {
     const supabase = getServerSupabaseSecret();
 
-    // ④ アトミック編集 RPC。編集(変化列の UPDATE)+ 監査(admin_edits INSERT)を単一トランザクションで実行。
+    // ⑤ アトミック編集 RPC。編集(変化列の UPDATE)+ 監査(admin_edits INSERT)を単一トランザクションで実行。
     //   どちらか失敗で全ロールバック → 「監査なしの変更」が構造的に起こらない。並行 PATCH は FOR UPDATE で直列化。
     const { data, error } = await supabase.rpc("admin_apply_edit", {
       p_toilet_id: id,
@@ -131,12 +97,15 @@ export async function PATCH(
 
     if (error) {
       // RPC が raise した理由を 'admin_rpc: ...' から判別して HTTP に写す。生 DB 文言は返さない。
-      const status = statusForRpcError(error.message);
+      const status = rpcStatusFor(error.message, TOILETS_RPC_ERROR_TABLE);
       if (status === 500) {
         // 想定外/内部バグはサーバログに残す(クライアントには generic のみ)。
         console.error("[api/admin/toilets] apply_edit rpc error", error);
       }
-      return noStore(NextResponse.json({ error: clientErrorFor(status) }, { status }));
+      return noStore(NextResponse.json(
+        { error: clientMessageFor(status, TOILETS_CONFLICT_TEXT) },
+        { status },
+      ));
     }
 
     const result = (data ?? {}) as ApplyEditResult;
@@ -166,9 +135,10 @@ export async function DELETE(
   ctx: { params: Promise<{ id: string }> },
 ) {
   const { id: rawId } = await ctx.params;
-  const g = await guard(request, rawId);
+  // requireAdminMutation: session(401) → CSRF(403) → UUID(400)。順序は既存 guard() と同一。
+  const g = await requireAdminMutation(request, rawId);
   if (!g.ok) return g.res;
-  const id = g.id;
+  const id = g.id!; // rawId を渡したので id は必ず存在する。
 
   // 取消対象 edit の id(query param)。uuid 形でなければ 400。
   const editId = request.nextUrl.searchParams.get("editId");
@@ -187,11 +157,14 @@ export async function DELETE(
     });
 
     if (error) {
-      const status = statusForRpcError(error.message);
+      const status = rpcStatusFor(error.message, TOILETS_RPC_ERROR_TABLE);
       if (status === 500) {
         console.error("[api/admin/toilets] undo_edit rpc error", error);
       }
-      return noStore(NextResponse.json({ error: clientErrorFor(status) }, { status }));
+      return noStore(NextResponse.json(
+        { error: clientMessageFor(status, TOILETS_CONFLICT_TEXT) },
+        { status },
+      ));
     }
 
     const result = (data ?? {}) as UndoEditResult;

@@ -9,6 +9,13 @@ export const ACCESS_COLORS: Record<AccessLevel, string> = {
 
 export const ACCESS_KEYS: AccessLevel[] = ["open", "ask", "permission"];
 
+// 単一ソースの真実: 3 値 access_level の Set。
+// WHY ReadonlySet: 下流で add/delete できないことを型で保証する。
+// WHY ACCESS_KEYS から導出: enum 値を 2 箇所に書くと片方だけ伸びて齟齬が出るので派生させる。
+// 置き換え対象: api/reviews, api/submissions, lib/adminAuth, lib/aiSuggestion の
+// 局所的な `new Set(["open","ask","permission"])` を本定数に統一する。
+export const ACCESS_SET: ReadonlySet<AccessLevel> = new Set(ACCESS_KEYS);
+
 export type Toilet = {
   id: string;
   name: string | null;
@@ -65,7 +72,32 @@ export function effectiveAccess(t: Toilet): AccessLevel | null {
   return null;
 }
 
-// 「未確定」=推定だけ または レビュー10件未満
+// 「未確定」=レビュー10件未満(= 清潔度バッジを「参考値」と出す閾値)。
+//
+// [D6] WHY isUnconfirmed と isToiletUnconfirmed(lib/toiletSeo.ts)で predicate が異なるか:
+//   isUnconfirmed は「UI ユーザー向けの信頼度警告」専用。source は関係なく、
+//   OSM 由来でも reviews 件数が少なければ同じ警告バッジを表示する。
+//   isToiletUnconfirmed は「SEO ページの title/description で『未確認』を表記するか」の判定で、
+//   "review_count < 10 OR source === 'inferred'" という追加条件を持つ。
+//   inferred ピンは group-confirmation が全くなくても source だけで「未確認」と断言する SEO 上の必要があるため。
+//   この差異は意図的で、統合すると一方に不適切な判定が混入する(統合しない理由)。
 export function isUnconfirmed(t: Toilet): boolean {
   return t.review_count < 10;
+}
+
+// 「推定ピン(群衆確認なし)」= source=inferred かつ review_count=0。
+//
+// WHY review_count === 0 の確認が必要か:
+//   source=inferred でも 1 件以上のレビューが付けば「誰かが実際に使った」という群衆確認が生まれる。
+//   このピンは「実態未確認の推定」から「確認済み拠点」に意味が変わるため、
+//   推定専用の視覚区別(破線 + 半透明ピン / PinSheet の「未確認」バッジと警告文)を外す。
+//   つまり review_count === 0 を外すと、確認済みの推定ピンに誤ってラベルが付き続ける。
+//
+// WHY isUnconfirmed/isToiletUnconfirmed と分けるか:
+//   isUnconfirmed = review < 10 の信頼度バッジ(全 source に適用)。
+//   isToiletUnconfirmed(lib/toiletSeo.ts) = review < 10 || source=inferred(SEO 用に source も混ぜた述語)。
+//   isInferredPin = source=inferred && review=0 の「推定ピン視覚区別」だけに使う専用述語。
+//   3 つが異なる条件を表すため、1 つに統合すると他の用途で誤った判定をするリスクが高い。
+export function isInferredPin(t: Toilet): boolean {
+  return t.source === "inferred" && t.review_count === 0;
 }

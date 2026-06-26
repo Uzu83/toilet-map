@@ -1,7 +1,8 @@
 {
   "app": {
     "name": "Loo map",
-    "tagline": "最快找到附近厕所的地图"
+    "tagline": "最快找到附近厕所的地图",
+    "popularAreas": "热门地区"
   },
   "metadata": {
     "title": "Loo map - 在日本快速找到附近的厕所",
@@ -202,6 +203,7 @@
   },
   "privacy": {
     "metaTitle": "隐私政策",
+    "metaDescription": "Loo map 隐私政策：位置信息、评价内容、IP 哈希的收集目的与保护措施，不向第三方提供，以及数据删除申请方式。",
     "title": "隐私政策",
     "intro": "本服务「Loo map」(以下简称「本服务」，运营：{team})最大限度地尊重用户隐私，遵守日本的《个人信息保护法》及相关法令运营。",
     "collectTitle": "收集的信息",
@@ -218,6 +220,7 @@
   },
   "terms": {
     "metaTitle": "使用条款",
+    "metaDescription": "Loo map 使用条款：禁止事项（虚假评价、垃圾信息等）、免责声明及 OpenStreetMap 数据授权说明。使用前请仔细阅读。",
     "title": "使用条款",
     "purposeTitle": "1. 服务目的",
     "purpose": "本服务「Loo map」(以下简称「本服务」，运营：{team})通过地图显示和评价功能，帮助用户舒适地发现附近的公共厕所。",
@@ -238,6 +241,7 @@
   },
   "contact": {
     "metaTitle": "意见·建议",
+    "metaDescription": "通过匿名 Google 表单向 Loo map 提交 bug 报告、厕所信息有误或功能建议。也可在应用内点击图钉直接报告。",
     "title": "意见·建议",
     "intro": "Loo map 的 bug 报告、厕所信息有误、功能建议、感想等，欢迎随时反馈。可匿名提交。",
     "openForm": "打开意见反馈表单",
@@ -280,6 +284,7 @@
     "metaDescription": "{label}的公共厕所 {count} 处。可按图钉颜色（可直接使用·需打招呼·需许可）和星级查找的地图 — Loo map。"
   },
   "about": {
+    "breadcrumbHome": "首页",
     "title": "Loo map 使用方法 · 常见问题",
     "metaDescription": "Loo map 的使用方法和常见问题：图钉颜色的含义、推测图钉、日本厕所使用礼仪等。",
     "intro": "Loo map 是一款用彩色图钉（蓝色 = 可直接使用，黄色 = 需先打声招呼，红色 = 需获得许可）和 1-5 星清洁度，3 次点击以内找到附近公共厕所的地图服务。",
