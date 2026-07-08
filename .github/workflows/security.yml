@@ -75,7 +75,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      - uses: aquasecurity/trivy-action@0.33.1
+      # v プレフィックス必須(初回 run で `0.33.1` が解決不能エラー → タグ実在確認して修正。
+      # このアクションのタグは v0.33.1 形式。テンプレ側の pin 表記ミス)
+      - uses: aquasecurity/trivy-action@v0.33.1
         with:
           scan-type: fs
           format: sarif

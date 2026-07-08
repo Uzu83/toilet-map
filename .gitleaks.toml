@@ -1,0 +1,28 @@
+# .gitleaks.toml — gitleaks の誤検知 allowlist
+#
+# 規律(/dev-secure・projects/CLAUDE.md): 誤検知の抑制は「理由コメント付き」でのみ
+# 許可(理由なし抑制は禁止 — 監査時に無根拠 ignore は全部剥がされる)。
+# 実シークレットを検出した場合はここに入れず、①キーのローテーション
+# ②該当サービス側での失効 を最優先する(履歴の書き換え=force push は本
+# プロジェクトでは禁止操作なので、無効化が唯一の対処)。
+#
+# security.yml の gitleaks job は fetch-depth:0 の履歴込みスキャンなので、
+# 一度でも履歴に入った誤検知パターンは恒久的にここで抑制する必要がある。
+
+[extend]
+# gitleaks 標準ルールセットをベースに、allowlist だけ追加する
+useDefault = true
+
+[allowlist]
+description = """
+偽陽性: src/types/toilet.ts の日本語コメント(リファクタ対象のファイルパス列挙
+「置き換え対象: api/reviews, api/submissions, lib/adminAuth, ...」)を
+generic-api-key ルールが誤検知(2026-07-08 初回スキャン、初出 commit 9771f45)。
+'api/...' 列挙と日本語の混在が高エントロピー文字列として規則にマッチしただけで、
+シークレットではない(git show で実物確認済み)。commit 単位でなく行パターンで
+allowlist する理由: この行は HEAD にも存在し、将来このコメントを編集した
+commit で再検知されるのを防ぐため。
+"""
+# regexTarget = "line": 正規表現をマッチ断片でなく行全体に対して評価する
+regexTarget = "line"
+regexes = ['''置き換え対象: api/reviews, api/submissions, lib/adminAuth''']
