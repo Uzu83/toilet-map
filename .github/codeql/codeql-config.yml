@@ -1,0 +1,27 @@
+# CodeQL 設定（/dev-secure scope:security が .github/codeql/ に配置）
+#
+# security-and-quality = 既定のセキュリティクエリ + 品質クエリ。
+# security-extended へ広げるのは auth/決済を持つ repo だけにする
+# （extended は精度がわずかに下がり誤検知が増える方向のため、
+#   ノイズ耐性のない 1 人開発では既定+品質が損益分岐点）。
+# 本 repo は /admin(パスワード認証) を持つが決済は無いため、既定の
+# security-and-quality に留める（extended 昇格は将来の課金導入時に再検討）。
+name: "repo-codeql"
+queries:
+  - uses: security-and-quality
+paths-ignore:
+  # 生成物・依存はスキャン対象外。ここを削ると解析時間が数倍になるうえ
+  # 自分が書いていないコードの指摘でノイズが埋まる。
+  - "**/node_modules/**"
+  - "**/.next/**"
+  - "**/dist/**"
+  - "**/coverage/**"
+  - "**/generated/**"
+  # --- ここから toilet-map 固有の追加除外 ---
+  # public/ は静的アセット(SVG・manifest.json・PWA アイコン)のみで JS/TS を
+  # 含まない。javascript-typescript 言語スキャンは元々 .js/.ts/.jsx/.tsx
+  # 以外を解析しないため実害はないが、明示除外してスキャン対象の意図を示す。
+  - "**/public/**"
+  # supabase/migrations/*.sql は CodeQL の javascript-typescript 解析対象外
+  # (SQL は別言語)。実害はないが明示除外してノイズ源から外す意図を示す。
+  - "**/supabase/migrations/**"

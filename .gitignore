@@ -54,3 +54,10 @@ next-env.d.ts
 # Supabase CLI のローカル作業ディレクトリ(ブランチ/一時ファイル)
 supabase/.branches/
 supabase/.temp/
+
+# --- /dev-secure が追記（DevSecOps 成果物） ---
+# artifacts/ はスキャン結果・テスト結果・承認票の出力先。
+# コミットしない理由: 成果物は「その commit 時点の証拠」であり、CI の
+# Actions artifacts（retention 30〜90日）と Security タブが保存先。
+# リポジトリに入れると diff ノイズ + 古い成果物を最新と誤読する事故のもと。
+artifacts/

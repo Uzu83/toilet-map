@@ -1,3 +1,7 @@
+<!-- dev-secure-profile: critical -->
+<!-- WHY critical: supabase/migrations 18本 + /admin 認証 + reviews.ip_hash(個人データ相当) + 本番公開済み。
+     /dev-secure と weekly-project-maintenance がこの値を読んで要求水準を決める(2026-07-08 オーナー合意)。
+     プロジェクトの性質が変わったら人間かdev-secureが更新する。 -->
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.

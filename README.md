@@ -49,8 +49,9 @@ Supabase ダッシュボード **SQL Editor** で以下を順に貼り付けて 
 ### 3) 環境変数
 
 ```bash
-cp .env.local.example .env.local
-# エディタで開いて 3 つのキーをペースト
+cp .env.example .env.local
+# エディタで開いて必要なキーをペースト(必須は Supabase の 3 つ。
+# /admin を使うなら ADMIN_PASSWORD / ADMIN_SESSION_SECRET も設定)
 ```
 
 ### 4) シード(福岡市の OSM データを投入)
