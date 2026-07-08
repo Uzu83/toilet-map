@@ -75,9 +75,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
-      # v プレフィックス必須(初回 run で `0.33.1` が解決不能エラー → タグ実在確認して修正。
-      # このアクションのタグは v0.33.1 形式。テンプレ側の pin 表記ミス)
-      - uses: aquasecurity/trivy-action@v0.33.1
+      # ⚠️ このアクションは v0.35.0 未満に下げてはいけない:
+      # GHSA-69fq-xp46-6x23(critical, 2026-03-24 公示)「Trivy ecosystem supply
+      # chain was briefly compromised」の侵害範囲が trivy-action < 0.35.0。
+      # テンプレ由来の初期 pin 0.33.1 はこの範囲内で、本 PR の dependency-review
+      # ゲート自身が検出した(導入したゲートの初仕事)。v0.36.0 は 2026-07-08 に
+      # タグ実在確認済み。タグは v プレフィックス形式(v0.36.0)。
+      # なお同 advisory の trivy 本体(Go)の侵害は 0.69.4 のみ → 下の docker
+      # ステップの 0.72.0 は影響外。
+      - uses: aquasecurity/trivy-action@v0.36.0
         with:
           scan-type: fs
           format: sarif
