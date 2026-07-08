@@ -1,0 +1,184 @@
+# ============================================================================
+# security.yml — SAST / SCA / Secret / SBOM パイプライン（/dev-secure scope:security が導入）
+#
+# 役割分担（単一ツール万能主義を取らない。出典: AI駆動開発環境リサーチ）:
+# - CodeQL   = 深い SAST（semantic 解析）。JS/TS のみに絞って時間を節約。
+# - Trivy    = SCA(依存脆弱性) + misconfig + secret + SBOM 生成の基盤。
+#              コードグラフ解析をしないため exploitability は判定できない。
+#              到達不能な指摘は .trivyignore に「理由コメント付き」で追加する
+#              （理由なし抑制は禁止 — 監査時に無根拠 ignore は全部剥がされる）。
+# - Gitleaks = Secret 検出のバックストップ。一次防衛は GitHub Push Protection
+#              （到達前ブロック）で、これは gh api で別途有効化する。
+# - Dependency Review = PR で新規導入される依存の脆弱性ゲート。
+#
+# PR は軽く・スケジュールで深く: PR時は差分依存+fs スキャン、nightly で
+# 全量再スキャン（新規CVEは「コードが変わらなくても」湧くため定期実行が必須）。
+# ============================================================================
+name: security
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    # 02:25 UTC = 11:25 JST。00分台はGitHub全体で混むので分をずらしてある。
+    - cron: "25 2 * * *"
+
+# WHY attestation 系権限を workflow レベルに置かないか(Codex ゲート指摘・採用):
+# attestations:write + id-token:write を全 job に配ると、侵害された job が
+# 任意の attestation を署名発行できる爆発半径になる。必要なのは attest job
+# だけなので、その job の permissions にだけ付与する(最小権限)。
+permissions:
+  contents: read
+  # SARIF を Security タブに upload するのに必要(codeql/trivy/gitleaks が使用)
+  security-events: write
+
+jobs:
+  # --------------------------------------------------------------------------
+  # 新規依存の脆弱性ゲート。PR 限定（push には差分概念がないため）。
+  # fail-on-severity: high — critical/high の依存導入はマージ不可。
+  # medium 以下は通すが Trivy nightly が拾い続ける、という二段構え。
+  # --------------------------------------------------------------------------
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: high
+
+  # --------------------------------------------------------------------------
+  # CodeQL。language は実スタックに合わせて絞ること（/dev-secure が調整）。
+  # クエリスイートは security-and-quality（既定+品質）。security-extended は
+  # 誤検知が増える方向なので、auth/決済など危険領域を持つ repo だけで検討。
+  # private + GHAS 未契約の repo では動かないので job ごとコメントアウトする。
+  # --------------------------------------------------------------------------
+  codeql:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: github/codeql-action/init@v4
+        with:
+          languages: javascript-typescript
+          config-file: .github/codeql/codeql-config.yml
+      - uses: github/codeql-action/analyze@v4
+
+  # --------------------------------------------------------------------------
+  # Trivy: fs スキャン（vuln + misconfig + secret）と SBOM 生成を同一 job で。
+  # SARIF は Security タブへ、JSON と SBOM は artifacts へ
+  # （JSON は build-review-packet.mjs が severity 集計に読む）。
+  # ignore-unfixed: true — fix が存在しない CVE で PR を赤くしても
+  # アクションが取れずアラート疲れを生むだけ。nightly の全量ログには残る。
+  # --------------------------------------------------------------------------
+  trivy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      # ⚠️ このアクションは v0.35.0 未満に下げてはいけない:
+      # GHSA-69fq-xp46-6x23(critical, 2026-03-24 公示)「Trivy ecosystem supply
+      # chain was briefly compromised」の侵害範囲が trivy-action < 0.35.0。
+      # テンプレ由来の初期 pin 0.33.1 はこの範囲内で、本 PR の dependency-review
+      # ゲート自身が検出した(導入したゲートの初仕事)。v0.36.0 は 2026-07-08 に
+      # タグ実在確認済み。タグは v プレフィックス形式(v0.36.0)。
+      # なお同 advisory の trivy 本体(Go)の侵害は 0.69.4 のみ → 下の docker
+      # ステップの 0.72.0 は影響外。
+      - uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          format: sarif
+          output: trivy-fs.sarif
+          scanners: vuln,misconfig,secret
+          ignore-unfixed: true
+      - name: Trivy JSON + SBOM (CycloneDX)
+        # WHY :latest でなくバージョン pin か(Codex ゲート指摘・採用):
+        # latest はスキャン挙動が非決定になり、上流の破壊的変更で
+        # 「コードが変わっていないのに CI が壊れる」を誘発する。
+        # 0.72.0 は 2026-07-08 に Docker Hub で実在確認済み。
+        # 更新は「動いている pin を意図的に上げる」運用で。
+        run: |
+          mkdir -p artifacts/sca artifacts/sbom
+          docker run --rm -v "$PWD:/repo" -w /repo aquasec/trivy:0.72.0 \
+            fs . --scanners vuln,misconfig,secret --ignore-unfixed \
+            --format json --output artifacts/sca/trivy-fs.json
+          docker run --rm -v "$PWD:/repo" -w /repo aquasec/trivy:0.72.0 \
+            fs . --format cyclonedx --output artifacts/sbom/repo.cdx.json
+      - uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: trivy-fs.sarif
+          category: trivy
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-artifacts
+          path: |
+            trivy-fs.sarif
+            artifacts/sca/trivy-fs.json
+            artifacts/sbom/repo.cdx.json
+          retention-days: 90
+
+  # --------------------------------------------------------------------------
+  # Gitleaks: 履歴込みの secret 検出。
+  # `|| true` を付けない — secret 検出は絶対ブロック
+  # （projects/CLAUDE.md: severity無関係のブロック条件）。
+  # fetch-depth: 0 は履歴走査のため必須（浅いcloneだと過去コミットを見ない）。
+  # --------------------------------------------------------------------------
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Run gitleaks
+        # WHY pin + --redact(Codex ゲート指摘・採用):
+        # - v8.30.1 は 2026-07-08 に Docker Hub で実在確認済み(latest 追従は非決定)。
+        # - --redact: 実シークレットを検出した場合に、その値そのものが
+        #   SARIF/ログ(= Actions artifacts として 90 日保存される)へ
+        #   平文転記される二次漏えいを防ぐ。検出位置は file:line で追える。
+        run: |
+          docker run --rm -v "$PWD:/repo" zricethezav/gitleaks:v8.30.1 \
+            git /repo --report-format sarif --report-path /repo/gitleaks.sarif --redact
+      - uses: github/codeql-action/upload-sarif@v4
+        # 検出で fail した run の SARIF こそ必要なので always()
+        if: always()
+        with:
+          sarif_file: gitleaks.sarif
+          category: gitleaks
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: gitleaks-artifacts
+          path: gitleaks.sarif
+          retention-days: 90
+
+  # --------------------------------------------------------------------------
+  # SBOM ファイル自体への provenance 付与（main のみ）。
+  #
+  # 正確な意味(Codex ゲート指摘で明確化): attest-build-provenance に SBOM を
+  # subject-path で渡すこの構成は「この SBOM ファイルがこの workflow・この
+  # commit から生成された」という **SBOM ファイルの出所証明** であって、
+  # 「ビルド成果物に対する SBOM attestation」(actions/attest の sbom-path)
+  # ではない。この repo のデプロイ成果物は Vercel 側でビルドされ CI には
+  # 存在しないため、成果物 subject を捏造せず SBOM の出所証明に留める。
+  # 将来 CI でデプロイ成果物を作るようになったら actions/attest@v4 +
+  # sbom-path で「成果物 × SBOM」の結び付けに移行すること。
+  # public repo なら無料で使える。private + GHAS なしなら削除してよい。
+  # --------------------------------------------------------------------------
+  attest-sbom-provenance:
+    needs: [trivy]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    # attestation 系権限はこの job だけに付与(workflow レベル付与をやめた理由は
+    # 冒頭 permissions のコメント参照 — 最小権限・Codex ゲート合意)
+    permissions:
+      contents: read
+      attestations: write
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: trivy-artifacts
+      - uses: actions/attest-build-provenance@v4
+        with:
+          subject-path: artifacts/sbom/repo.cdx.json

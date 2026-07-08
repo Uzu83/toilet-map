@@ -1,0 +1,103 @@
+# ============================================================================
+# ci.yml — ビルド・テストパイプライン（/dev-secure scope:ci が導入）
+#
+# WHY この構成か:
+# - 人間がコードを読まない運用の一次証拠は「機械可読なテスト結果」。
+#   そのため vitest は必ず JUnit XML を artifacts/test/ に吐く
+#   （decision packet を組む build-review-packet.mjs がこのパスを読む。
+#    パスを変えるならスクリプト側の ARTIFACTS 定数も変えること）。
+# - check → test → build の順は projects/CLAUDE.md の main直push 前提条件
+#   （pnpm build && pnpm check && pnpm test）と同一のゲートを CI 側にも
+#   複製したもの。ローカルとCIで基準が割れると「ローカルでは通った」が
+#   言い訳として機能してしまう。
+# - permissions は contents:read のみ。ビルドCIに書き込み権限は不要
+#   （最小権限。workflow が侵害されたときの爆発半径を絞る）。
+#
+# この repo 固有の適応（テンプレ原本からの差分。理由を明記する）:
+# 1. 「pnpm check」→「pnpm lint」に置換（step名も "Lint (ESLint)"）。
+#    toilet-map の CLAUDE.md に明記のとおり本 repo は biome 不使用が
+#    意図的判断（package.json の "lint" = "eslint" 実体は next lint）。
+#    テンプレの biome 前提 (`pnpm check`) をそのまま入れると
+#    存在しない script で即 fail するため repo の実スクリプトに合わせる。
+# 2. pnpm/action-setup に `with: version: 10` を明示。
+#    package.json に packageManager フィールドが無いことを確認済み
+#    （2026-07-08 時点）。フィールドが無いと action がバージョン解決に
+#    失敗して fail するため、テンプレコメントの指示どおり明示指定する。
+# 3. node-version を 22 → 24 に変更。ローカル開発は mise 経由の
+#    Node 24.14.1 固定、Vercel 本番も Node 24 系で動かしている。
+#    CI だけ 22 のままだと「ローカル/本番では動くが CI だけ落ちる」
+#    (またはその逆の見逃し)というバージョン差起因の事故が起きうる。
+# ============================================================================
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+    steps:
+      # バージョンは 2026-07-08 に実在確認済みのメジャー（最新メジャーとは限らない —
+      # 例: checkout は v7 が出ているが、実績ある v6 を採用。Codex ゲート裁定）。
+      # 初回 push 後に Actions タブで解決エラーが出たらメジャーを1つ下げる。
+      # 更新は「動いている pin を意図的に上げる」運用で（暗黙の latest 追従をしない）。
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v4
+        with:
+          # package.json に packageManager フィールドが無いため明示指定
+          # （上の「この repo 固有の適応」2 を参照）。
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          # ローカル(mise: 24.14.1)・Vercel 本番と合わせて 24 系に統一
+          # （上の「この repo 固有の適応」3 を参照）。
+          node-version: 24
+          cache: pnpm
+
+      # --frozen-lockfile: CI が lock を書き換えることを構造的に禁止する。
+      # projects/CLAUDE.md「依存・ロックファイル操作は環境修復ではない」の
+      # CI 側の実装。lock 不整合はここで fail し、人間+Codex合意ゲートに戻す。
+      - run: pnpm install --frozen-lockfile
+
+      - name: Lint (ESLint)
+        # この repo は biome 不使用（CLAUDE.md 明記の意図的判断）。
+        # package.json の "lint" スクリプト実体は `next lint` = ESLint。
+        # テンプレ標準の `pnpm check`（biome 前提）をそのまま使うと
+        # script 不在で即 fail するため、repo 固有の lint に置換している。
+        run: pnpm lint
+
+      - name: Typecheck
+        # build にも型検査は含まれるが、先に単独で走らせるのは
+        # 「何が壊れたか」を CI ログ上で分離するため（AIが読む前提のログ設計）。
+        # WHY `next typegen` を先に実行するか（Codex ゲート指摘・採用）:
+        # この repo の tsconfig は .next/types/**/*.ts を include しており、
+        # fresh checkout の CI には .next が無い。素の tsc だけだと Next が
+        # 生成するルート型の検査が抜ける（include 不一致はエラーにならず
+        # 静かに素通りする）。typegen でルート型を生成してから tsc に通す。
+        # ローカル検証済み(2026-07-08): typegen → tsc --noEmit とも exit 0。
+        run: |
+          pnpm exec next typegen
+          pnpm exec tsc --noEmit
+
+      - name: Unit tests (JUnit XML 必須)
+        run: |
+          mkdir -p artifacts/test
+          pnpm exec vitest run --reporter=default --reporter=junit --outputFile=artifacts/test/vitest-junit.xml
+
+      - name: Build
+        run: pnpm build
+
+      # if: always() — テストが落ちた run こそ結果XMLが要る（落ちた証拠を残す）。
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-results
+          path: artifacts/test/
+          retention-days: 30
