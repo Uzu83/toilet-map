@@ -44,5 +44,13 @@
     "tsx": "^4.21.0",
     "typescript": "^5",
     "vitest": "^4.1.8"
+  },
+  "pnpm": {
+    "overrides": {
+      "next@16.2.6>postcss": "^8.5.10",
+      "tsx@4.21.0>esbuild": "0.28.1",
+      "@babel/core": "^7.29.6",
+      "js-yaml": "^4.2.0"
+    }
   }
 }
