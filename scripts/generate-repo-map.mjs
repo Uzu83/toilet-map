@@ -14,7 +14,7 @@
 //   「ドキュメント再生成」という軽い操作の摩擦が不釣り合いに大きくなるため。
 // ============================================================================
 import { execSync } from "node:child_process";
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync, mkdirSync } from "node:fs";
 
 const REPO_MAP = "REPO_MAP.md";
 const BEGIN = "<!-- repo-map:auto:begin -->";
@@ -22,11 +22,25 @@ const END = "<!-- repo-map:auto:end -->";
 
 const sh = (cmd) => execSync(cmd, { encoding: "utf8" }).trim();
 
-if (!existsSync(REPO_MAP)) {
-  console.error(
-    `${REPO_MAP} がありません。先に /dev-secure scope:docs でテンプレートを配置してください。`
-  );
-  process.exit(1);
+// REPO_MAP.md を「存在チェックしてから書く」のではなく直接読む。
+// WHY（CodeQL js/file-system-race[high] 対策・PR #20 で検出）:
+//   旧実装は existsSync(REPO_MAP) で存在確認 → 後段 line で writeFileSync という
+//   check-then-use（TOCTOU）だった。チェックと書き込みの間にファイルが差し替わり
+//   うるため CodeQL が high で指摘。存在確認は「読めたか」で兼ね、ENOENT のときだけ
+//   「テンプレ未配置」の friendly メッセージにフォールバックする。それ以外の error
+//   （権限・I/O 異常）は握りつぶさず re-throw し、障害を隠さない。
+//   読み込んだ src は後段のマーカー差し替えでそのまま再利用する（二重 read しない）。
+let src;
+try {
+  src = readFileSync(REPO_MAP, "utf8");
+} catch (err) {
+  if (err.code === "ENOENT") {
+    console.error(
+      `${REPO_MAP} がありません。先に /dev-secure scope:docs でテンプレートを配置してください。`
+    );
+    process.exit(1);
+  }
+  throw err;
 }
 
 // --- 収集 -------------------------------------------------------------------
@@ -47,9 +61,13 @@ const routes = files.filter((f) =>
 );
 
 // package.json scripts = このリポジトリで「実行してよいコマンド」の一覧。
+// package.json も existsSync を前置きせず直接読む（file-system-race 回避の一貫化）。
 let scripts = {};
-if (existsSync("package.json")) {
+try {
   scripts = JSON.parse(readFileSync("package.json", "utf8")).scripts ?? {};
+} catch (err) {
+  // package.json 不在（ENOENT）は許容し scripts 空で続行。JSON 破損等はそのまま投げる。
+  if (err.code !== "ENOENT") throw err;
 }
 
 // --- 自動セクションの組み立て -------------------------------------------------
@@ -80,7 +98,7 @@ const lines = [
 ];
 
 // --- マーカー間のみ差し替え ----------------------------------------------------
-const src = readFileSync(REPO_MAP, "utf8");
+// src は冒頭で読み込み済み（TOCTOU 回避のため存在チェックと読み込みを一本化した）。
 const beginIdx = src.indexOf(BEGIN);
 const endIdx = src.indexOf(END);
 if (beginIdx === -1 || endIdx === -1) {
