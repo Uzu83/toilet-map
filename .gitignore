@@ -42,8 +42,16 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# Codex CLI local working dir
-.codex/
+# Codex CLI local working dir。.codex/agents/*.toml はローカル専用のまま維持する
+# (git 未追跡が既存仕様、triggering agents スコープでも不可侵)。
+# review-schema.json / prompts/ は review-pre・review-post skill とオプションの
+# CI workflow (codex-review.yml) がリポジトリから読む前提のため追跡が必要 —
+# `.codex/*` で一旦全無視してから明示的に un-ignore する（ネストは親ディレクトリ
+# エントリも un-ignore しないと git がそもそも中を見に行かない点に注意）。
+.codex/*
+!.codex/review-schema.json
+!.codex/prompts/
+!.codex/prompts/*.md
 
 # Playwright MCP のスクショ/成果物(デザイン検証で生成。コミット対象外)
 .playwright-mcp/

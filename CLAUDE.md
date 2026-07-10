@@ -1,3 +1,4 @@
+<!-- notion-page: 35a1ef8488d581abb452c26dc5fed7f1 -->
 <!-- dev-secure-profile: critical -->
 <!-- WHY critical: supabase/migrations 18本 + /admin 認証 + reviews.ip_hash(個人データ相当) + 本番公開済み。
      /dev-secure と weekly-project-maintenance がこの値を読んで要求水準を決める(2026-07-08 オーナー合意)。
@@ -117,3 +118,50 @@ Phase 2+ の未実装機能を勝手に Phase 1 に混ぜない(スコープ膨�
 - 詳細仕様(旧ページ、ピットイン名のまま): [🚽 ピットイン -近くのトイレ専用地図アプリ-](https://www.notion.so/35a1ef8488d581afaf3fff53da269f9c)
 - 商標調査ログ: [⚖️ 商標調査ログ](https://www.notion.so/35b1ef8488d58132b7baed8b6830a823)
 - 共通テンプレ: [⚡ Next.js初期セットアップ](https://www.notion.so/35a1ef8488d5815290bcd07ac5937e4f) / [📊 Vercel Analytics](https://www.notion.so/35a1ef8488d5814ba4fef7372dc88c38) / [🎨 Tailwindデザインルール](https://www.notion.so/35a1ef8488d58116b2befd42347840b3) / [🔍 SEO最適化](https://www.notion.so/35a1ef8488d581e196e2c4db8521d461)
+
+## 地雷マップ (dev-secure scope:docs)
+
+<!-- WHY この節が要る理由: 既存の情報は `## Supabase 運用` / `## アーキテクチャ要点` / `## モデレーション運用` に
+     詳しく書いてあるが、量が多く索引が無いと「どこに何が書いてあるか」を探すコストが高い。
+     ここは **索引 + 1-2行の要点再掲** に限定し、手順の本体(デプロイ順序・grant一覧・live smoke手順)は
+     コピペしない — 二重管理(second source of truth)にすると片方だけ更新されて食い違う事故が起きるため、
+     本体は必ず参照先の節を読みに行くこと。この節自体は将来 REPO_MAP.md の「Change hotspots」に
+     移管・統合してもよい(役割が重複するため)。 -->
+
+過去に事故った/事故りやすい箇所の索引。新規に大きな地雷を踏んだら日付付きでここに1行追記し、詳細は該当節に書く。
+
+| 領域 | 要点 | 詳細参照 |
+|---|---|---|
+| Supabase migration 適用順序 | migration はコード変更前に **手動適用必須**。順序を誤ると RPC 不在で 500(実際に 010 で本番 POST 500 を検出済み) | `## Supabase 運用` の「デプロイ順序(008/009/010)」「デプロイ順序(011/012, /admin)」 |
+| `admin_apply_edit` / `admin_undo_edit` の非アトミック性 | 編集+監査ログを単一トランザクションにしないと lost update・監査欠落・非アトミック undo が起きる(Codex 指摘で修正済み) | `## Supabase 運用` 012・013 の記述 |
+| `submit_toilet` の列名衝突 | plpgsql の OUT パラメータ名とテーブル列名が衝突すると本番でのみ 500 になる(vitest モックでは検出不可) | `## Supabase 運用` 010 の記述、`feedback_db_rpc_live_smoke` メモリ |
+| Supabase grants / RLS の広がりすぎ | default privileges で anon/authenticated に意図せぬ権限が付く、definer view 経由で RLS を迂回できる抜け道がある | `## Supabase 運用` 015-018 の記述 |
+| `main` ブランチの自動デプロイ OFF | push しても Vercel は自動デプロイしない(migration 未適用のまま反映される事故を防ぐ設計)。本番反映は手動 3 ステップ | `## Supabase 運用` の「main は自動デプロイ OFF」 |
+| ピン色の二重管理禁止 | 色は `src/types/toilet.ts` の `ACCESS_LEVELS` が真実の源。CSS 変数や UI 側で独自に色を決め直さない | `## アーキテクチャ要点` のピン色の記述 |
+| ユーザー投稿の自動承認閾値 | distinct-ip confirm_count>=3 で自動昇格。閾値を安易に下げると Sybil 耐性が落ちる | `## モデレーション運用 (Phase 2 ユーザー投稿)` |
+| 公開表記ポリシー | 本名・事業者メアドを UI/OGP/JSON-LD/README/コミットメッセージに出さない | 本ファイル冒頭の共通遵守事項、`src/lib/contact.ts` |
+
+## セキュリティ敏感領域 (dev-secure scope:docs)
+
+<!-- ここに載っている領域に触れる変更は review-pre / review-post skill(.agents/skills/)の対象。
+     詳細手順は各参照先にあり、ここは「どこに何があるか」の索引のみ。 -->
+
+- **認証・認可**: `/admin` の Basic 的セッション認証(`src/lib/adminAuth.ts` / `src/lib/adminSession.ts` / `src/app/api/admin/login/route.ts` / `src/app/api/admin/logout/route.ts` / `src/app/admin/layout.tsx`)。書き込みは必ず `admin_apply_edit` / `admin_undo_edit` RPC 経由(`src/app/api/admin/toilets/[id]/route.ts`)、直接 `.update()` しない。
+- **秘密情報の読み書き**: `SUPABASE_SECRET_KEY` / `ADMIN_PASSWORD` / `ADMIN_SESSION_SECRET` は server-only env(`NEXT_PUBLIC_` 禁止)。読み書き箇所は `src/lib/supabase/server.ts`(`getServerSupabaseSecret()`)と `src/lib/adminAuth.ts`。ローカルは `.env.local`(gitignore 済)、本番は Vercel env。
+- **課金**: Phase 1/2 時点で決済コードは存在しない(Stripe は Phase 3 未実装)。追加時はこの節と `## Phase 範囲` を更新すること。
+- **データ削除・migration**: `supabase/migrations/00N_*.sql` は新規ファイル追加のみ(既存を書き換えない)。`admin_edits` / `submission_confirmations` は append-only trigger で UPDATE/DELETE/TRUNCATE を拒否(018 で TRUNCATE も revoke)。データ削除系の操作(ユーザー投稿の却下・トイレ非表示化)は `toilets.source` CHECK 制約と `not_a_toilet_count` の self-correcting 表示除外のみで、物理削除は行わない設計。
+
+## ドキュメント更新トリガー (dev-secure scope:docs)
+
+<!-- 「この変更をしたら、どの docs を更新すべきか」の対応表。
+     更新を忘れると REPO_MAP.md の Change hotspots や本ファイルが陳腐化し、
+     後任 AI が古い前提で動いてしまう。 -->
+
+| 変更の種類 | 更新すべき docs |
+|---|---|
+| 新規 migration 追加(`supabase/migrations/00N_*.sql`) | 本ファイルの `## Supabase 運用`(ファイル一覧・デプロイ順序)。RLS/grant に触れるなら「セキュリティ敏感領域」も |
+| 新規ページ・API ルート追加 | `REPO_MAP.md` の Runtime boundaries(手書き部分)。App Router の自動セクションは `node scripts/generate-repo-map.mjs` 再実行で追随 |
+| 本番事故・想定外の挙動を踏んだとき | `REPO_MAP.md` の Change hotspots、および本ファイルの「地雷マップ」に日付付きで追記 |
+| Phase 2+ 機能の着手・完了 | 本ファイルの `## Phase 範囲` |
+| i18n 文言追加 | `messages/{ja,en,ko,zh}.json` 全 4 ファイル(docs ではないがコード変更と同時にコミットする規約) |
+| dev-secure スキャフォールド自体の変更(`.agents/skills/` 等) | `.agents/skills/README.md` と `.claude/skills/` へ同期コピー(`pnpm verify:skills` で drift 検知) |

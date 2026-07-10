@@ -1,0 +1,62 @@
+# ============================================================================
+# codex-review.yml — Codex による PR 時の異モデルレビュー（/dev-secure scope:agents が導入・既定は無効）
+#
+# WHY 既定無効か: OPENAI_API_KEY での codex exec は従量課金。1人開発では
+# 「auth/課金/migration 等の重い PR だけローカルで /codex:review」が基本線で、
+# CI 常時実行はコストに見合わないことが多い。常時回したくなったら
+# リポジトリ variables に ENABLE_CODEX_CI_REVIEW=true を設定する。
+#
+# セキュリティ:
+# - sandbox は read-only 固定。レビュー担当に書き込み権限を与えない
+#   （レビュアーが implement しはじめる事故と、prompt injection 経由の
+#    改変の両方を構造的に封じる）。
+# - fork PR では secrets が渡らない + 信頼できないコードで実行しない、の
+#   二重の理由で head.repo == 本体 repo のときだけ動かす。
+# ============================================================================
+name: codex-review
+
+on:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  codex-review:
+    if: >
+      vars.ENABLE_CODEX_CI_REVIEW == 'true' &&
+      github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # base との diff を取るため全履歴が必要
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - run: npm install -g @openai/codex
+
+      - name: Codex post-review (read-only, structured output)
+        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
+        run: |
+          git fetch origin "$BASE_REF"
+          mkdir -p artifacts/review
+          # --output-schema で JSON 構造を強制 = 「散文の自己申告」を排除し、
+          # 後段の /review-post 裁定と build-review-packet.mjs が機械的に読める形にする
+          codex exec \
+            --sandbox read-only \
+            --output-schema .codex/review-schema.json \
+            --output-last-message artifacts/review/review.json \
+            "$(cat .codex/prompts/post-review.md)"
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: codex-review
+          path: artifacts/review/review.json
+          retention-days: 90
