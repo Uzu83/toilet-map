@@ -75,6 +75,14 @@ if (vulns.CRITICAL > 0) blockers.push(`CRITICAL 脆弱性 ${vulns.CRITICAL} 件`
 
 // --- 3. Secret (gitleaks SARIF + Trivy secrets) --------------------------------
 // CI はリポジトリ直下、ローカル security-scan.sh は artifacts/secret/ に吐くため両方見る。
+// 【break を戻さないこと — Chess-Japan の Codex ゲート② F001 と統合】最初に見つかった
+// SARIF で break すると、古い clean な artifacts/secret/gitleaks.sarif が残ったまま root 側に
+// 検出入り SARIF がある場合に root が無視され、絶対ブロックが発火しない fail-open になる。
+// secret は絶対ブロック条件なので両パスを break せず全合算する（同一検出の二重計上は
+// 起きうるが、判定は secretCount>0 の閾値なので過大計上は安全側＝fail-safe。de-dup の
+// 複雑さより単純さを取る）。gitleaksFound は「どれか1つでも SARIF を読めたか」を追跡し、
+// 下の fail-closed 判定（SARIF が皆無なら missing 計上）に使う。両者で (a)SARIF 皆無 と
+// (b)stale-clean を先に読んで検出を握り潰す の 2 つの fail-open を同時に塞ぐ。
 let secretCount = secretsFromTrivy;
 let gitleaksFound = false;
 for (const p of ["artifacts/secret/gitleaks.sarif", "gitleaks.sarif"]) {
@@ -83,7 +91,6 @@ for (const p of ["artifacts/secret/gitleaks.sarif", "gitleaks.sarif"]) {
     const sarif = JSON.parse(raw);
     for (const run of sarif.runs ?? []) secretCount += (run.results ?? []).length;
     gitleaksFound = true;
-    break;
   }
 }
 // fail-closed: gitleaks SARIF が無ければ「secret 0 件」ではなく「欠損」扱いにする。
