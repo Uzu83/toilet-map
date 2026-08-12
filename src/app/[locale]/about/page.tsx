@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
+import { KoFiTip } from "@/components/KoFiTip";
 import { FaqJsonLd } from "@/components/seo/FaqJsonLd";
 import { buildBreadcrumbList } from "@/components/seo/jsonLdHelpers";
 import { absUrl, languageAlternates, baseOpenGraph } from "@/lib/urls";
@@ -130,6 +131,8 @@ export default async function AboutPage({
           </Link>
         </li>
       </ul>
+
+      <KoFiTip source="about" />
 
       <FaqJsonLd items={faqItems} />
       {/* #38b — /about の BreadcrumbList JSON-LD。Home → about.title の 2 クラム構造。

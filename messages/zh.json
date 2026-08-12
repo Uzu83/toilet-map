@@ -310,6 +310,10 @@
     "q_operator": "运营方是谁？",
     "a_operator": "由 TosaGiken（东佐技研）运营。咨询请通过意见反馈表单。"
   },
+  "kofi": {
+    "message": "Loo map 免费运营。如果对您有帮助，欢迎自愿赞助一杯咖啡。",
+    "cta": "在 Ko-fi 支持"
+  },
   "compass": ["北", "东北", "东", "东南", "南", "西南", "西", "西北"],
   "addToilet": {
     "entry": "添加厕所",
