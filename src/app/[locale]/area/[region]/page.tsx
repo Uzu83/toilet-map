@@ -123,6 +123,9 @@ export default async function AreaPage({
         {t("viewAreaOnMap")}
       </Link>
 
+      {/* WHY: 地図 CTA の直後。長い一覧の下より SEO 流入が tip を見やすい。 */}
+      <KoFiTip source="area" />
+
       {toilets.length > 0 ? (
         <section>
           <h2 className="pb-1 pt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">
@@ -161,8 +164,6 @@ export default async function AreaPage({
           </Link>
         </li>
       </ul>
-
-      <KoFiTip source="area" />
 
       <AreaJsonLd
         name={heading}

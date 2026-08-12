@@ -225,6 +225,9 @@ export default async function ToiletPage({
         </a>
       </div>
 
+      {/* WHY: 主要 CTA の直後 = 情報を得た直後のソフト tip。ページ最下部だと SEO 流入の離脱で見えない。 */}
+      <KoFiTip source="toilet" />
+
       {/* non-indexable は近傍節ごと省略(上記 showNearby で getNearbyToilets もスキップ済み)。
           indexable は従来通り(近傍 0 件なら noNearby を表示)。 */}
       {showNearby && (
@@ -262,8 +265,6 @@ export default async function ToiletPage({
           </Link>
         </li>
       </ul>
-
-      <KoFiTip source="toilet" />
 
       <ToiletJsonLd
         toilet={toilet}
