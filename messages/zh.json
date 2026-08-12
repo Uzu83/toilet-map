@@ -266,7 +266,9 @@
     "unconfirmedNote": "部分信息根据设施信息推测。前往前请确认是否真有厕所、能否使用。",
     "nearbyTitle": "附近的厕所",
     "noNearby": "附近没有其他已登记的厕所。",
-    "metaDescription": "{name}的位置、使用类别和清洁度。在 Loo map 上用地图查找附近的公共厕所。",
+    "metaAreaPart": "（{area}）",
+    "metaAccessPart": "{access}。",
+    "metaDescription": "{name}{areaPart}{accessPart}查看星级、图钉颜色与地图位置，一键导航 — Loo map。",
     "relatedAreaPrefix": "该区域的厕所列表：",
     "washlet": "智能马桶盖",
     "diaperTable": "尿布台",
@@ -281,7 +283,7 @@
     "viewAreaOnMap": "在地图上查看该区域",
     "otherAreas": "其他区域",
     "listHeading": "已登记厕所",
-    "metaDescription": "{label}的公共厕所 {count} 处。可按图钉颜色（可直接使用·需打招呼·需许可）和星级查找的地图 — Loo map。"
+    "metaDescription": "{label}的公共厕所 {count} 处，一图尽览。蓝=可直接使用、黄=需打招呼的图钉与星级，快速找到可用厕所 — Loo map。"
   },
   "about": {
     "breadcrumbHome": "首页",

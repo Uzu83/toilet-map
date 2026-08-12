@@ -266,7 +266,9 @@
     "unconfirmedNote": "일부 정보는 시설 정보에서 추정한 것입니다. 실제로 화장실이 있는지·이용 가능한지 방문 전에 확인해 주세요.",
     "nearbyTitle": "근처 화장실",
     "noNearby": "근처에 등록된 다른 화장실이 없습니다.",
-    "metaDescription": "{name}의 위치·이용 구분·청결도. Loo map에서 근처 공중화장실을 지도로 찾아보세요.",
+    "metaAreaPart": "({area})",
+    "metaAccessPart": "{access}. ",
+    "metaDescription": "{name}{areaPart} — {accessPart}별점·핀 색·지도 위치를 확인하고 바로 길안내 — Loo map.",
     "relatedAreaPrefix": "이 지역의 화장실 목록:",
     "washlet": "비데",
     "diaperTable": "기저귀 교환대",
@@ -281,7 +283,7 @@
     "viewAreaOnMap": "이 지역을 지도에서 보기",
     "otherAreas": "다른 지역",
     "listHeading": "등록 화장실",
-    "metaDescription": "{label}의 공중화장실 {count}곳. 핀 색상(자유 이용·직원에게 한마디·허가 필요)과 별점으로 찾을 수 있는 지도 — Loo map."
+    "metaDescription": "{label} 공중화장실 {count}곳을 한 지도에서. 파랑=자유 이용·노랑=직원에게 한마디 핀과 별점으로 빠르게 찾기 — Loo map."
   },
   "about": {
     "breadcrumbHome": "홈",

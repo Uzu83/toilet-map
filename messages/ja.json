@@ -266,7 +266,9 @@
     "unconfirmedNote": "一部の情報は施設情報からの推定です。実際にトイレがあるか・利用できるかはご利用前にご確認ください。",
     "nearbyTitle": "近くのトイレ",
     "noNearby": "近くに登録された他のトイレはありません。",
-    "metaDescription": "{name}の場所・利用区分・清潔度。Loo map で近くの公衆トイレを地図から探せます。",
+    "metaAreaPart": "（{area}）",
+    "metaAccessPart": "{access}。",
+    "metaDescription": "{name}{areaPart}{accessPart}清潔度の星評価と地図位置を確認し、そのままナビ — Loo map。",
     "relatedAreaPrefix": "このエリアのトイレ一覧:",
     "washlet": "ウォシュレット",
     "diaperTable": "おむつ替え台",
@@ -281,7 +283,7 @@
     "viewAreaOnMap": "このエリアを地図で見る",
     "otherAreas": "他のエリア",
     "listHeading": "登録トイレ",
-    "metaDescription": "{label}の公衆トイレ{count}件。許可不要・声かけ要・許可要のピン色と星評価で探せる地図 — Loo map。"
+    "metaDescription": "{label}の公衆トイレ{count}件を地図で。青=許可不要・黄=声かけ要のピンと星評価で、すぐ使えるトイレを探せます — Loo map。"
   },
   "about": {
     "breadcrumbHome": "ホーム",
