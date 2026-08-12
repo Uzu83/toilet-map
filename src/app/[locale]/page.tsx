@@ -76,18 +76,22 @@ export default async function HomePage({
       </header>
       <main className="relative flex-1 pb-14">
         <ClientToiletMap />
-        {/* #40 — Popular areas セクション。クローラへのホーム→/area/* クロールパスを作る。
-             sitemap だけでは新規クロールの起点になりにくい; ホームに crawlable <a> を置くことで
-             エリアページへの自然な内部リンクグラフが生まれる。
-             sr-only クラスで視覚的に非表示にしつつ DOM に存在させる。
-             display:none / visibility:hidden にするとクローラが無視するリスクがあるため使わない。
-             BottomTabBar の pb-14 分で隠れる位置に置くことで UX への影響を最小化。 */}
-        <nav className="sr-only" aria-label={tApp("popularAreas")}>
-          <h2>{tApp("popularAreas")}</h2>
-          <ul>
+        {/* Popular areas: crawlable + visible for humans (GSC clicks exist; sr-only hid CTR).
+            Compact strip under the map — not a card grid, keeps 3-tap map UX. */}
+        <nav
+          aria-label={tApp("popularAreas")}
+          className="shrink-0 border-t border-zinc-200 bg-white/90 px-3 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/90 dark:text-zinc-400"
+        >
+          <p className="mb-1 font-medium text-zinc-700 dark:text-zinc-300">{tApp("popularAreas")}</p>
+          <ul className="flex flex-wrap gap-x-3 gap-y-1">
             {featuredAreas.map((a) => (
               <li key={a.slug}>
-                <Link href={`/area/${a.slug}`}>{areaLabel(a, tan)}</Link>
+                <Link
+                  href={`/area/${a.slug}`}
+                  className="inline-flex min-h-9 items-center underline-offset-2 hover:text-zinc-900 hover:underline dark:hover:text-zinc-200"
+                >
+                  {areaLabel(a, tan)}
+                </Link>
               </li>
             ))}
           </ul>
