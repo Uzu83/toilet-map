@@ -310,6 +310,10 @@
     "q_operator": "Who operates this?",
     "a_operator": "Operated by TosaGiken. Please contact us via the feedback form."
   },
+  "kofi": {
+    "message": "Loo map is free to use. If it helped you, an optional tip buys us a coffee.",
+    "cta": "Tip on Ko-fi"
+  },
   "compass": ["N", "NE", "E", "SE", "S", "SW", "W", "NW"],
   "addToilet": {
     "entry": "Add a toilet",

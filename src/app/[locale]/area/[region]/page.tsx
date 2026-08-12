@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
+import { KoFiTip } from "@/components/KoFiTip";
 import { AreaJsonLd } from "@/components/seo/AreaJsonLd";
 import { AccessChip } from "@/components/seo/AccessChip";
 import { findArea, relatedAreas, areaLabel, type Area } from "@/lib/areas";
@@ -160,6 +161,8 @@ export default async function AreaPage({
           </Link>
         </li>
       </ul>
+
+      <KoFiTip source="area" />
 
       <AreaJsonLd
         name={heading}

@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
+import { KoFiTip } from "@/components/KoFiTip";
 import { AccessChip } from "@/components/seo/AccessChip";
 import { ToiletJsonLd } from "@/components/seo/ToiletJsonLd";
 import { getNearbyToilets, getToiletById } from "@/lib/toilets";
@@ -254,6 +255,8 @@ export default async function ToiletPage({
           </Link>
         </li>
       </ul>
+
+      <KoFiTip source="toilet" />
 
       <ToiletJsonLd
         toilet={toilet}
