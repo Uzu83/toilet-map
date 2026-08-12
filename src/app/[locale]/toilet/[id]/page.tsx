@@ -73,10 +73,17 @@ export async function generateMetadata({
   }
   const tp = await getTranslations({ locale, namespace: "pinSheet" });
   const tt = await getTranslations({ locale, namespace: "toiletPage" });
+  const ta = await getTranslations({ locale, namespace: "access" });
+  const tan = await getTranslations({ locale, namespace: "areaNames" });
   const name = toiletDisplayName(toilet, tp("unnamed"));
   const path = `/toilet/${toilet.id}`;
   const title = await buildTitle(locale, toilet);
-  const description = tt("metaDescription", { name });
+  const access = toiletAccessKey(toilet);
+  const area = findContainingPrefecture(toilet.lat, toilet.lng);
+  const areaName = area ? areaLabel(area, tan) : null;
+  const areaPart = areaName ? tt("metaAreaPart", { area: areaName }) : "";
+  const accessPart = access ? tt("metaAccessPart", { access: ta(`${access}.label`) }) : "";
+  const description = tt("metaDescription", { name, areaPart, accessPart });
   return {
     title,
     description,

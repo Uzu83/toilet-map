@@ -266,7 +266,9 @@
     "unconfirmedNote": "Some details are estimated from facility data. Please check the actual situation before you go.",
     "nearbyTitle": "Nearby toilets",
     "noNearby": "No other registered toilets nearby.",
-    "metaDescription": "{name}: location, access type and cleanliness. Find nearby public toilets on a map with Loo map.",
+    "metaAreaPart": " ({area})",
+    "metaAccessPart": "{access}. ",
+    "metaDescription": "{name}{areaPart} — {accessPart}Check star ratings, pin color, and map location. Navigate in one tap — Loo map.",
     "relatedAreaPrefix": "Toilets in this area:",
     "washlet": "Washlet",
     "diaperTable": "Diaper table",
@@ -281,7 +283,7 @@
     "viewAreaOnMap": "View this area on the map",
     "otherAreas": "Other areas",
     "listHeading": "Registered toilets",
-    "metaDescription": "{count} public toilets in {label}. A map you can search by pin color (free / ask / permission) and star rating — Loo map."
+    "metaDescription": "{count} public toilets in {label} on one map. Color-coded pins show free vs ask-first access; star ratings help you pick fast — Loo map."
   },
   "about": {
     "breadcrumbHome": "Home",
