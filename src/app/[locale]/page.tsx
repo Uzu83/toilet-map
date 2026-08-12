@@ -74,13 +74,15 @@ export default async function HomePage({
           <LocaleSwitcher />
         </nav>
       </header>
-      <main className="relative flex-1 pb-14">
-        <ClientToiletMap />
-        {/* Popular areas: crawlable + visible for humans (GSC clicks exist; sr-only hid CTR).
-            Compact strip under the map — not a card grid, keeps 3-tap map UX. */}
+      {/* WHY flex column + min-h-0: map is h-full; without this the area strip sits
+          below the viewport and Leaflet steals scroll (Codex P2). */}
+      <main className="relative flex min-h-0 flex-1 flex-col pb-14">
+        <div className="relative min-h-0 flex-1">
+          <ClientToiletMap />
+        </div>
         <nav
           aria-label={tApp("popularAreas")}
-          className="shrink-0 border-t border-zinc-200 bg-white/90 px-3 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/90 dark:text-zinc-400"
+          className="z-10 shrink-0 border-t border-zinc-200 bg-white/95 px-3 py-2 text-xs text-zinc-600 dark:border-zinc-800 dark:bg-zinc-950/95 dark:text-zinc-400"
         >
           <p className="mb-1 font-medium text-zinc-700 dark:text-zinc-300">{tApp("popularAreas")}</p>
           <ul className="flex flex-wrap gap-x-3 gap-y-1">
