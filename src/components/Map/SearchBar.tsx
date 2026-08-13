@@ -49,31 +49,30 @@ export function SearchBar() {
   const onInputChange = (next: string) => {
     setQ(next);
     if (timerRef.current) clearTimeout(timerRef.current);
-    if (!next.trim()) {
-      setResults([]);
-      setResultsQuery("");
-      setOpen(false);
-      setBusy(false);
-      return;
-    }
-    // 旧候補を残すと、debounce 前の Enter が別地点を確定する（GPT F002）
+    // debounce 待ち中に旧 fetch が完了すると旧候補が復活する（GPT F001）
+    abortRef.current?.abort();
+    abortRef.current = null;
     setResults([]);
     setResultsQuery("");
     setOpen(false);
+    if (!next.trim()) {
+      setBusy(false);
+      return;
+    }
     timerRef.current = setTimeout(async () => {
-      abortRef.current?.abort();
       const ac = new AbortController();
       abortRef.current = ac;
       setBusy(true);
       try {
         const r = await geocode(next, ac.signal);
+        if (ac.signal.aborted) return;
         setResults(r);
         setResultsQuery(next.trim());
         setOpen(r.length > 0);
       } catch {
         // abort や network エラーは無視
       } finally {
-        setBusy(false);
+        if (!ac.signal.aborted) setBusy(false);
       }
     }, 350);
   };
