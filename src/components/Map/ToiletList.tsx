@@ -39,7 +39,9 @@ export function ToiletList() {
   const originLabel =
     distanceMode === "search" && searchOrigin
       ? t("originFromSearch", { name: searchOrigin.label })
-      : t("originFromHere");
+      : userPos
+        ? t("originFromHere")
+        : t("originFromFallback");
 
   const items = useMemo(() => {
     const filtered = applyFilters(toilets, filters, favorites);

@@ -110,6 +110,7 @@
     "referenceValue": "참고용",
     "unconfirmedShort": "미확인",
     "originFromHere": "현재 위치 기준",
+    "originFromFallback": "하카타역 기준",
     "originFromSearch": "검색 지점({name}) 기준",
     "measureFromSearch": "이 지점에서 측정",
     "measureFromHere": "현재 위치에서 측정"

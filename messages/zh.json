@@ -110,6 +110,7 @@
     "referenceValue": "仅供参考",
     "unconfirmedShort": "未确认",
     "originFromHere": "从当前位置",
+    "originFromFallback": "从博多站",
     "originFromSearch": "从搜索地点（{name}）",
     "measureFromSearch": "从此地点测量",
     "measureFromHere": "从当前位置测量"

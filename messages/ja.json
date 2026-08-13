@@ -110,6 +110,7 @@
     "referenceValue": "※参考値",
     "unconfirmedShort": "※未確認",
     "originFromHere": "現在地から",
+    "originFromFallback": "博多駅から",
     "originFromSearch": "検索地点（{name}）から",
     "measureFromSearch": "この地点から測る",
     "measureFromHere": "現在地から測る"

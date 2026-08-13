@@ -110,6 +110,7 @@
     "referenceValue": "for reference",
     "unconfirmedShort": "unverified",
     "originFromHere": "From current location",
+    "originFromFallback": "From Hakata Station",
     "originFromSearch": "From search ({name})",
     "measureFromSearch": "Measure from this place",
     "measureFromHere": "Measure from current location"
