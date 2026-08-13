@@ -4,6 +4,8 @@ import { useRef, useState } from "react";
 import { useMap } from "react-leaflet";
 import { useTranslations } from "next-intl";
 import { Loader2, Search, X } from "lucide-react";
+import { parseNominatimSearchOrigin } from "@/lib/listOrigin";
+import { useMapStore } from "@/store/mapStore";
 
 type NominatimResult = {
   place_id: number;
@@ -33,6 +35,7 @@ async function geocode(q: string, signal: AbortSignal): Promise<NominatimResult[
 export function SearchBar() {
   const t = useTranslations("search");
   const map = useMap();
+  const setSearchOrigin = useMapStore((s) => s.setSearchOrigin);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<NominatimResult[]>([]);
@@ -68,13 +71,19 @@ export function SearchBar() {
   };
 
   const select = (r: NominatimResult) => {
-    const lat = parseFloat(r.lat);
-    const lon = parseFloat(r.lon);
-    if (Number.isFinite(lat) && Number.isFinite(lon)) {
-      map.flyTo([lat, lon], 16, { duration: 0.7 });
+    const origin = parseNominatimSearchOrigin(r);
+    if (origin) {
+      map.flyTo([origin.lat, origin.lng], 16, { duration: 0.7 });
+      setSearchOrigin(origin);
     }
     setOpen(false);
     setQ(r.name ?? r.display_name.split(",")[0] ?? "");
+  };
+
+  const onEnter = () => {
+    if (open && results.length > 0) {
+      select(results[0]);
+    }
   };
 
   return (
@@ -95,6 +104,12 @@ export function SearchBar() {
             value={q}
             onChange={(e) => onInputChange(e.target.value)}
             onFocus={() => results.length > 0 && setOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                onEnter();
+              }
+            }}
             placeholder={t("placeholder")}
             className="flex-1 bg-transparent text-sm text-zinc-800 outline-none placeholder:text-zinc-400 dark:text-zinc-100"
           />

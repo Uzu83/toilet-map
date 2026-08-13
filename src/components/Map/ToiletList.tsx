@@ -11,7 +11,8 @@ import {
   type Toilet,
 } from "@/types/toilet";
 import { applyFilters, useMapStore } from "@/store/mapStore";
-import { bearingDeg, bearingIndex, formatDistance, haversineMeters, HAKATA_STATION } from "@/lib/geo";
+import { bearingDeg, bearingIndex, formatDistance, haversineMeters } from "@/lib/geo";
+import { resolveListOrigin } from "@/lib/listOrigin";
 import { FilterBar } from "./FilterBar";
 import { Stars } from "./Stars";
 
@@ -24,13 +25,21 @@ export function ToiletList() {
   const filters = useMapStore((s) => s.filters);
   const favorites = useMapStore((s) => s.favorites);
   const userPos = useMapStore((s) => s.userPos);
+  const searchOrigin = useMapStore((s) => s.searchOrigin);
+  const distanceMode = useMapStore((s) => s.distanceMode);
+  const setDistanceMode = useMapStore((s) => s.setDistanceMode);
   const select = useMapStore((s) => s.select);
   const setView = useMapStore((s) => s.setView);
   const setFlyToTarget = useMapStore((s) => s.setFlyToTarget);
   const toggleFavorite = useMapStore((s) => s.toggleFavorite);
   const loading = useMapStore((s) => s.loading);
 
-  const origin = userPos ?? HAKATA_STATION;
+  const origin = resolveListOrigin({ distanceMode, userPos, searchOrigin });
+
+  const originLabel =
+    distanceMode === "search" && searchOrigin
+      ? t("originFromSearch", { name: searchOrigin.label })
+      : t("originFromHere");
 
   const items = useMemo(() => {
     const filtered = applyFilters(toilets, filters, favorites);
@@ -55,7 +64,21 @@ export function ToiletList() {
   return (
     <div className="relative h-full w-full overflow-hidden bg-zinc-50 dark:bg-zinc-950">
       <FilterBar visibleCount={items.length} />
-      <div className="h-full overflow-y-auto pb-24 pt-16">
+      <div className="absolute inset-x-0 top-14 z-999 px-2">
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 rounded-lg bg-white/90 px-3 py-1.5 text-[11px] shadow-sm ring-1 ring-black/5 backdrop-blur dark:bg-zinc-900/90 dark:ring-white/10">
+          <span className="truncate font-medium text-zinc-600 dark:text-zinc-300">{originLabel}</span>
+          {searchOrigin && (
+            <button
+              type="button"
+              onClick={() => setDistanceMode(distanceMode === "here" ? "search" : "here")}
+              className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
+            >
+              {distanceMode === "here" ? t("measureFromSearch") : t("measureFromHere")}
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="h-full overflow-y-auto pb-24 pt-[4.75rem]">
         {items.length === 0 && loading ? (
           <ul className="mx-auto max-w-2xl divide-y divide-zinc-200/70 px-2 dark:divide-zinc-800">
             {Array.from({ length: 6 }).map((_, i) => (

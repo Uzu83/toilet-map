@@ -108,7 +108,11 @@
     "noResults": "条件に合うトイレが近くにありません",
     "noResultsHint": "フィルタを外す/マップで別のエリアに移動してください",
     "referenceValue": "※参考値",
-    "unconfirmedShort": "※未確認"
+    "unconfirmedShort": "※未確認",
+    "originFromHere": "現在地から",
+    "originFromSearch": "検索地点（{name}）から",
+    "measureFromSearch": "この地点から測る",
+    "measureFromHere": "現在地から測る"
   },
   "map": {
     "loading": "地図を読み込み中…",

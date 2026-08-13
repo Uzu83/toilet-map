@@ -108,7 +108,11 @@
     "noResults": "附近没有符合条件的厕所",
     "noResultsHint": "请取消筛选，或在地图上移动到其他区域",
     "referenceValue": "仅供参考",
-    "unconfirmedShort": "未确认"
+    "unconfirmedShort": "未确认",
+    "originFromHere": "从当前位置",
+    "originFromSearch": "从搜索地点（{name}）",
+    "measureFromSearch": "从此地点测量",
+    "measureFromHere": "从当前位置测量"
   },
   "map": {
     "loading": "正在加载地图…",

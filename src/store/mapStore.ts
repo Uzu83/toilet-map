@@ -1,6 +1,7 @@
 "use client";
 
 import { create } from "zustand";
+import type { DistanceMode, SearchOrigin } from "@/lib/listOrigin";
 import type { Toilet, ToiletSubmission } from "@/types/toilet";
 
 export type Filters = {
@@ -26,6 +27,13 @@ type MapState = {
   select: (id: string | null) => void;
   userPos: { lat: number; lng: number } | null;
   setUserPos: (p: { lat: number; lng: number } | null) => void;
+
+  /** 検索で確定した地点（距離原点とは別。セッションのみ） */
+  searchOrigin: SearchOrigin | null;
+  setSearchOrigin: (o: SearchOrigin | null) => void;
+  /** リスト距離の基準。既定 here（GPS/博多）。search はユーザーが明示切替したときだけ */
+  distanceMode: DistanceMode;
+  setDistanceMode: (m: DistanceMode) => void;
 
   // リスト→マップ遷移などで「次にマップが mount したら飛んでね」と伝えるトークン
   flyToTarget: { lat: number; lng: number; zoom?: number } | null;
@@ -121,6 +129,11 @@ export const useMapStore = create<MapState>((set, get) => ({
   select: (selectedId) => set({ selectedId }),
   userPos: null,
   setUserPos: (userPos) => set({ userPos }),
+
+  searchOrigin: null,
+  setSearchOrigin: (searchOrigin) => set({ searchOrigin }),
+  distanceMode: "here",
+  setDistanceMode: (distanceMode) => set({ distanceMode }),
 
   flyToTarget: null,
   setFlyToTarget: (flyToTarget) => set({ flyToTarget }),

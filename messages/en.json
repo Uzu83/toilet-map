@@ -108,7 +108,11 @@
     "noResults": "No matching toilets nearby",
     "noResultsHint": "Remove filters / move to a different area on the map",
     "referenceValue": "for reference",
-    "unconfirmedShort": "unverified"
+    "unconfirmedShort": "unverified",
+    "originFromHere": "From current location",
+    "originFromSearch": "From search ({name})",
+    "measureFromSearch": "Measure from this place",
+    "measureFromHere": "Measure from current location"
   },
   "map": {
     "loading": "Loading map…",

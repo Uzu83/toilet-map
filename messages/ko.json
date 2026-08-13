@@ -108,7 +108,11 @@
     "noResults": "조건에 맞는 화장실이 근처에 없습니다",
     "noResultsHint": "필터를 해제하거나 지도에서 다른 지역으로 이동하세요",
     "referenceValue": "참고용",
-    "unconfirmedShort": "미확인"
+    "unconfirmedShort": "미확인",
+    "originFromHere": "현재 위치 기준",
+    "originFromSearch": "검색 지점({name}) 기준",
+    "measureFromSearch": "이 지점에서 측정",
+    "measureFromHere": "현재 위치에서 측정"
   },
   "map": {
     "loading": "지도를 불러오는 중…",
