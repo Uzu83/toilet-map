@@ -113,7 +113,8 @@
     "originFromFallback": "从博多站",
     "originFromSearch": "从搜索地点（{name}）",
     "measureFromSearch": "从此地点测量",
-    "measureFromHere": "从当前位置测量"
+    "measureFromHere": "从当前位置测量",
+    "measureFromFallback": "从博多站测量"
   },
   "map": {
     "loading": "正在加载地图…",

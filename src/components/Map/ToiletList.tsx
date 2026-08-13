@@ -75,7 +75,11 @@ export function ToiletList() {
               onClick={() => setDistanceMode(distanceMode === "here" ? "search" : "here")}
               className="shrink-0 rounded-full bg-blue-50 px-2.5 py-1 text-[11px] font-medium text-blue-700 hover:bg-blue-100 dark:bg-blue-950 dark:text-blue-300 dark:hover:bg-blue-900"
             >
-              {distanceMode === "here" ? t("measureFromSearch") : t("measureFromHere")}
+              {distanceMode === "here"
+                ? t("measureFromSearch")
+                : userPos
+                  ? t("measureFromHere")
+                  : t("measureFromFallback")}
             </button>
           )}
         </div>
