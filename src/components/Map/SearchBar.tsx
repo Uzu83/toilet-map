@@ -4,6 +4,9 @@ import { useRef, useState } from "react";
 import { useMap } from "react-leaflet";
 import { useTranslations } from "next-intl";
 import { Loader2, Search, X } from "lucide-react";
+import { parseNominatimSearchOrigin } from "@/lib/listOrigin";
+import { shouldConfirmFirstSuggestion } from "@/lib/searchConfirm";
+import { useMapStore } from "@/store/mapStore";
 
 type NominatimResult = {
   place_id: number;
@@ -33,9 +36,11 @@ async function geocode(q: string, signal: AbortSignal): Promise<NominatimResult[
 export function SearchBar() {
   const t = useTranslations("search");
   const map = useMap();
+  const setSearchOrigin = useMapStore((s) => s.setSearchOrigin);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<NominatimResult[]>([]);
+  const [resultsQuery, setResultsQuery] = useState("");
   const [busy, setBusy] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -44,37 +49,57 @@ export function SearchBar() {
   const onInputChange = (next: string) => {
     setQ(next);
     if (timerRef.current) clearTimeout(timerRef.current);
+    // debounce 待ち中に旧 fetch が完了すると旧候補が復活する（GPT F001）
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setResults([]);
+    setResultsQuery("");
+    setOpen(false);
     if (!next.trim()) {
-      setResults([]);
-      setOpen(false);
       setBusy(false);
       return;
     }
     timerRef.current = setTimeout(async () => {
-      abortRef.current?.abort();
       const ac = new AbortController();
       abortRef.current = ac;
       setBusy(true);
       try {
         const r = await geocode(next, ac.signal);
+        if (ac.signal.aborted) return;
         setResults(r);
-        setOpen(true);
+        setResultsQuery(next.trim());
+        setOpen(r.length > 0);
       } catch {
         // abort や network エラーは無視
       } finally {
-        setBusy(false);
+        if (!ac.signal.aborted) setBusy(false);
       }
     }, 350);
   };
 
   const select = (r: NominatimResult) => {
-    const lat = parseFloat(r.lat);
-    const lon = parseFloat(r.lon);
-    if (Number.isFinite(lat) && Number.isFinite(lon)) {
-      map.flyTo([lat, lon], 16, { duration: 0.7 });
+    const origin = parseNominatimSearchOrigin(r);
+    if (origin) {
+      map.flyTo([origin.lat, origin.lng], 16, { duration: 0.7 });
+      setSearchOrigin(origin);
     }
     setOpen(false);
     setQ(r.name ?? r.display_name.split(",")[0] ?? "");
+  };
+
+  const onEnter = (isComposing: boolean) => {
+    if (
+      shouldConfirmFirstSuggestion({
+        isComposing,
+        open,
+        resultCount: results.length,
+        resultsQuery,
+        currentQuery: q,
+      })
+    ) {
+      const first = results[0];
+      if (first) select(first);
+    }
   };
 
   return (
@@ -95,6 +120,13 @@ export function SearchBar() {
             value={q}
             onChange={(e) => onInputChange(e.target.value)}
             onFocus={() => results.length > 0 && setOpen(true)}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              const composing = e.nativeEvent.isComposing || e.keyCode === 229;
+              if (composing) return;
+              e.preventDefault();
+              onEnter(false);
+            }}
             placeholder={t("placeholder")}
             className="flex-1 bg-transparent text-sm text-zinc-800 outline-none placeholder:text-zinc-400 dark:text-zinc-100"
           />

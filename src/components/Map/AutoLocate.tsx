@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { useMap } from "react-leaflet";
+import { shouldFlyToGps } from "@/lib/listOrigin";
 import { useMapStore } from "@/store/mapStore";
 
 // 起動 / リロード時に位置情報を取得して、現在地へ flyTo する。
@@ -34,8 +35,11 @@ export function AutoLocate() {
       (pos) => {
         const { latitude, longitude } = pos.coords;
         setUserPos({ lat: latitude, lng: longitude });
-        // smooth に飛ぶ。ズーム 16 = 街レベル
-        map.flyTo([latitude, longitude], 16, { duration: 0.6 });
+        const { searchOrigin } = useMapStore.getState();
+        if (shouldFlyToGps(searchOrigin)) {
+          // smooth に飛ぶ。ズーム 16 = 街レベル
+          map.flyTo([latitude, longitude], 16, { duration: 0.6 });
+        }
       },
       // 拒否・エラーは無視(初期位置のまま)
       () => {},
