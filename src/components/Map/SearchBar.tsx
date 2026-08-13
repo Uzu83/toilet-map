@@ -5,6 +5,7 @@ import { useMap } from "react-leaflet";
 import { useTranslations } from "next-intl";
 import { Loader2, Search, X } from "lucide-react";
 import { parseNominatimSearchOrigin } from "@/lib/listOrigin";
+import { shouldConfirmFirstSuggestion } from "@/lib/searchConfirm";
 import { useMapStore } from "@/store/mapStore";
 
 type NominatimResult = {
@@ -39,6 +40,7 @@ export function SearchBar() {
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<NominatimResult[]>([]);
+  const [resultsQuery, setResultsQuery] = useState("");
   const [busy, setBusy] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -49,10 +51,15 @@ export function SearchBar() {
     if (timerRef.current) clearTimeout(timerRef.current);
     if (!next.trim()) {
       setResults([]);
+      setResultsQuery("");
       setOpen(false);
       setBusy(false);
       return;
     }
+    // 旧候補を残すと、debounce 前の Enter が別地点を確定する（GPT F002）
+    setResults([]);
+    setResultsQuery("");
+    setOpen(false);
     timerRef.current = setTimeout(async () => {
       abortRef.current?.abort();
       const ac = new AbortController();
@@ -61,7 +68,8 @@ export function SearchBar() {
       try {
         const r = await geocode(next, ac.signal);
         setResults(r);
-        setOpen(true);
+        setResultsQuery(next.trim());
+        setOpen(r.length > 0);
       } catch {
         // abort や network エラーは無視
       } finally {
@@ -80,9 +88,18 @@ export function SearchBar() {
     setQ(r.name ?? r.display_name.split(",")[0] ?? "");
   };
 
-  const onEnter = () => {
-    if (open && results.length > 0) {
-      select(results[0]);
+  const onEnter = (isComposing: boolean) => {
+    if (
+      shouldConfirmFirstSuggestion({
+        isComposing,
+        open,
+        resultCount: results.length,
+        resultsQuery,
+        currentQuery: q,
+      })
+    ) {
+      const first = results[0];
+      if (first) select(first);
     }
   };
 
@@ -105,10 +122,11 @@ export function SearchBar() {
             onChange={(e) => onInputChange(e.target.value)}
             onFocus={() => results.length > 0 && setOpen(true)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                onEnter();
-              }
+              if (e.key !== "Enter") return;
+              const composing = e.nativeEvent.isComposing || e.keyCode === 229;
+              if (composing) return;
+              e.preventDefault();
+              onEnter(false);
             }}
             placeholder={t("placeholder")}
             className="flex-1 bg-transparent text-sm text-zinc-800 outline-none placeholder:text-zinc-400 dark:text-zinc-100"
