@@ -3,6 +3,8 @@ import createNextIntlPlugin from "next-intl/plugin";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
+  // vendor の feedback-* は TS ソース直出し。Next に transpile させる。
+  transpilePackages: ["@tosagiken/feedback-core", "@tosagiken/feedback-web"],
   // 管理系(運営専用・非公開)のレスポンスをブラウザ/CDN/中間プロキシにキャッシュさせない。
   // WHY: export const dynamic = "force-dynamic" は Next 自身の static 生成/Full Route Cache を抑止するだけで
   //   Cache-Control ヘッダは出さない。/admin の HTML(モデレーション情報を含む Server Component ページ)が

@@ -5,7 +5,7 @@ import { OnboardingCard } from "@/components/OnboardingCard";
 import { BottomTabBar } from "@/components/BottomTabBar";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
-import { KO_FI_URL } from "@/lib/contact";
+import { KoFiHeaderLink } from "@/components/KoFiHeaderLink";
 import { findArea, areaLabel } from "@/lib/areas";
 // #40 — FEATURED_AREA_SLUGS は about/page.tsx が正式定義(単一ソース)。
 //   home と about の両方でチップを描画するため export している。
@@ -63,14 +63,10 @@ export default async function HomePage({
           <Link href="/about" className="inline-flex min-h-11 items-center px-2 hover:text-zinc-900 dark:hover:text-zinc-200">
             {t("about")}
           </Link>
-          <a
-            href={KO_FI_URL}
-            target="_blank"
-            rel="noopener noreferrer"
+          <KoFiHeaderLink
+            label={t("support")}
             className="inline-flex min-h-11 items-center px-2 hover:text-zinc-900 dark:hover:text-zinc-200"
-          >
-            ☕ {t("support")}
-          </a>
+          />
           <LocaleSwitcher />
         </nav>
       </header>
