@@ -1,0 +1,23 @@
+{
+  // WHY lib に DOM を入れているか:
+  //   このパッケージは UI にも DOM にも依存しないが、URL だけは使う（画面 URL から
+  //   query / hash を落とす正規化）。URL は WHATWG 標準で Node にも Deno にも
+  //   ブラウザにもグローバルで存在するが、型定義は DOM lib に入っている。
+  //   document / window を使わないことはレビューで担保する（型で縛れない）。
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "verbatimModuleSyntax": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "skipLibCheck": true,
+    "types": ["vitest/globals"]
+  },
+  "include": ["src"]
+}

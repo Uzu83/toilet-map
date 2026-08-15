@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { getTranslations, setRequestLocale } from "next-intl/server";
-import { ExternalLink } from "lucide-react";
 import { Link } from "@/i18n/navigation";
 import { routing } from "@/i18n/routing";
 import { absUrl, languageAlternates, baseOpenGraph } from "@/lib/urls";
-import { CONTACT_FORM_URL } from "@/lib/contact";
+import { FeedbackForm } from "@/components/FeedbackForm";
 
 export async function generateMetadata({
   params,
@@ -56,15 +55,7 @@ export default async function ContactPage({
 
       <p>{t("intro")}</p>
 
-      <a
-        href={CONTACT_FORM_URL}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-blue-600 text-base font-semibold text-white shadow hover:bg-blue-700 active:scale-[0.99]"
-      >
-        <ExternalLink className="h-4 w-4" />
-        {t("openForm")}
-      </a>
+      <FeedbackForm />
 
       <h2 className="pt-4 text-lg font-semibold text-zinc-900 dark:text-zinc-50">{t("helpfulTitle")}</h2>
       <ul className="list-disc space-y-1 pl-5">
