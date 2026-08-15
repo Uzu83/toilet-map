@@ -25,9 +25,28 @@ const SCREEN = "contact";
 /** package.json version と揃える（JSON import を避ける）。 */
 const APP_VERSION = "0.1.0";
 
-function env(name: string): string | undefined {
-  const v = process.env[name];
+/**
+ * WHY 静的 process.env.NEXT_PUBLIC_* 参照か:
+ *   Next のクライアントバンドルは動的 process.env[name] をインラインしない。
+ *   動的 lookup だと本番でも常に undefined → Form フォールバック固定になる。
+ */
+function nonEmpty(v: string | undefined): string | undefined {
   return typeof v === "string" && v.length > 0 ? v : undefined;
+}
+
+function feedbackFirebaseConfig() {
+  return {
+    apiKey: nonEmpty(process.env.NEXT_PUBLIC_FEEDBACK_FIREBASE_API_KEY),
+    authDomain: nonEmpty(process.env.NEXT_PUBLIC_FEEDBACK_FIREBASE_AUTH_DOMAIN),
+    projectId: nonEmpty(process.env.NEXT_PUBLIC_FEEDBACK_FIREBASE_PROJECT_ID),
+    appId: nonEmpty(process.env.NEXT_PUBLIC_FEEDBACK_FIREBASE_APP_ID),
+    messagingSenderId: nonEmpty(
+      process.env.NEXT_PUBLIC_FEEDBACK_FIREBASE_MESSAGING_SENDER_ID,
+    ),
+    storageBucket: nonEmpty(
+      process.env.NEXT_PUBLIC_FEEDBACK_FIREBASE_STORAGE_BUCKET,
+    ),
+  };
 }
 
 /** Google Form フォールバック（障害・未設定時）。 */
@@ -37,19 +56,20 @@ export function getFeedbackFormUrl(): string {
 
 /** Firebase Web config が揃っているか。 */
 export function isFeedbackBackendConfigured(): boolean {
+  const c = feedbackFirebaseConfig();
   return Boolean(
-    env("NEXT_PUBLIC_FEEDBACK_FIREBASE_API_KEY") &&
-      env("NEXT_PUBLIC_FEEDBACK_FIREBASE_AUTH_DOMAIN") &&
-      env("NEXT_PUBLIC_FEEDBACK_FIREBASE_PROJECT_ID") &&
-      env("NEXT_PUBLIC_FEEDBACK_FIREBASE_APP_ID") &&
-      env("NEXT_PUBLIC_FEEDBACK_FIREBASE_MESSAGING_SENDER_ID") &&
-      env("NEXT_PUBLIC_FEEDBACK_FIREBASE_STORAGE_BUCKET"),
+    c.apiKey &&
+      c.authDomain &&
+      c.projectId &&
+      c.appId &&
+      c.messagingSenderId &&
+      c.storageBucket,
   );
 }
 
 /** Production だけ NEXT_PUBLIC_FEEDBACK_TARGET=prod。それ以外は省略 → feedback_dev。 */
 export function resolveFeedbackTarget(): FeedbackTarget | undefined {
-  return env("NEXT_PUBLIC_FEEDBACK_TARGET") === "prod" ? "prod" : undefined;
+  return process.env.NEXT_PUBLIC_FEEDBACK_TARGET === "prod" ? "prod" : undefined;
 }
 
 export type FeedbackSubmitInput = {
@@ -65,13 +85,14 @@ let dbCache: Firestore | null = null;
 
 function getDb(): Firestore {
   if (dbCache) return dbCache;
+  const c = feedbackFirebaseConfig();
   const { db } = initFeedbackFirestore({
-    apiKey: env("NEXT_PUBLIC_FEEDBACK_FIREBASE_API_KEY")!,
-    authDomain: env("NEXT_PUBLIC_FEEDBACK_FIREBASE_AUTH_DOMAIN")!,
-    projectId: env("NEXT_PUBLIC_FEEDBACK_FIREBASE_PROJECT_ID")!,
-    appId: env("NEXT_PUBLIC_FEEDBACK_FIREBASE_APP_ID")!,
-    messagingSenderId: env("NEXT_PUBLIC_FEEDBACK_FIREBASE_MESSAGING_SENDER_ID")!,
-    storageBucket: env("NEXT_PUBLIC_FEEDBACK_FIREBASE_STORAGE_BUCKET")!,
+    apiKey: c.apiKey!,
+    authDomain: c.authDomain!,
+    projectId: c.projectId!,
+    appId: c.appId!,
+    messagingSenderId: c.messagingSenderId!,
+    storageBucket: c.storageBucket!,
   });
   dbCache = db;
   return db;
