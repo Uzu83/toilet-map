@@ -58,7 +58,10 @@ export function LocateControl() {
           const { latitude, longitude } = pos.coords;
           finish(() => {
             setDenied(false);
-            setNotice(null);
+            // 位置情報拒否の案内だけ消す。無効 ?id= 案内は URL 掃除まで残す。
+            if (useMapStore.getState().notice?.kind === "locateDenied") {
+              setNotice(null);
+            }
             setUserPos({ lat: latitude, lng: longitude });
             map.flyTo([latitude, longitude], 16, { duration: 0.6 });
           });

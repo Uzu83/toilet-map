@@ -128,7 +128,7 @@
     "loadingBadge": "Loading",
     "locate": "Go to current location",
     "locateDenied": "Location permission not granted",
-    "locateDeniedBanner": "Location is unavailable, so the map shows the Hakata Station area. You can move using search.",
+    "locateDeniedBanner": "Location is unavailable. You can stay on the current map or move using search.",
     "deepLinkMissing": "This toilet could not be found. It may have been removed, or the link is invalid.",
     "deepLinkMissingAction": "Back to map",
     "dismissNotice": "Dismiss",

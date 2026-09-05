@@ -128,7 +128,7 @@
     "loadingBadge": "加载中",
     "locate": "移动到当前位置",
     "locateDenied": "未授予位置权限",
-    "locateDeniedBanner": "无法使用位置信息，因此显示博多站周边。可通过搜索移动。",
+    "locateDeniedBanner": "无法使用位置信息。可继续查看当前地图，或通过搜索移动。",
     "deepLinkMissing": "找不到此厕所。可能已删除，或链接无效。",
     "deepLinkMissingAction": "返回地图",
     "dismissNotice": "关闭",
