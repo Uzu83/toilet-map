@@ -34,17 +34,19 @@ export function isToiletUnconfirmed(t: Toilet): boolean {
 //   INDEXABLE(t) := not_a_toilet_count < 5
 //                AND ( review_count > 0
 //                      OR ( source = 'osm' AND NAMED(t) ) )
-//   NAMED(t) := usableToiletName(name) が非 null（種別ラベルのみ・HTTP エラー文は unnamed）
+//   NAMED(t) := (name を trim して長さ > 0)
 //
 // 「ない」報告が 5 件以上のトイレ(=ページが notFound 扱い)は除外。
 // review が 1 件でも付けば従来通り indexable に昇格(AC4 退行防止)。加えて source='osm' で
 // 名称ありのトイレを新シグナルとして index 化する(名前 + amenity + 地図リンクより情報量が多く
 // thin-content リスクが低い)。inferred(駅/モール等)は実物トイレ非特定の UX 問題があるため除外。
 // この述語は sitemap 用 RPC(migration 007)の WHERE と同一の真理値表を満たす(§5.2)。
+// NAMED を usableToiletName に寄せない理由: 007 SQL は空白以外なら名前あり。表示の
+// 404/(駅) フォールバックは toiletDisplayName。SQL NAMED の厳格化は別 migration。
 export function isToiletIndexable(t: Toilet): boolean {
   if (t.not_a_toilet_count >= 5) return false;
   if (t.review_count > 0) return true;
-  const named = usableToiletName(t.name) != null;
+  const named = (t.name?.trim().length ?? 0) > 0;
   return t.source === "osm" && named;
 }
 

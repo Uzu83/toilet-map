@@ -133,7 +133,7 @@ describe("isToiletIndexable — canonical predicate (設計書 §5.1)", () => {
       ).toBe(false);
     });
 
-    it("E5: osm + invalid name (404 Not Found) + review=0 → false (not NAMED due to unusable name)", () => {
+    it("E5: osm + junk name (404 Not Found) + review=0 → true (NAMED matches SQL 007, not display sanitizer)", () => {
       expect(
         isToiletIndexable(
           makeToilet({
@@ -143,10 +143,10 @@ describe("isToiletIndexable — canonical predicate (設計書 §5.1)", () => {
             not_a_toilet_count: 0,
           }),
         ),
-      ).toBe(false);
+      ).toBe(true);
     });
 
-    it("E6: osm + invalid name (駅) + review=0 → false (not NAMED due to inferred category label)", () => {
+    it("E6: osm + inferred category label (駅) + review=0 → true (NAMED matches SQL 007)", () => {
       expect(
         isToiletIndexable(
           makeToilet({
@@ -156,7 +156,7 @@ describe("isToiletIndexable — canonical predicate (設計書 §5.1)", () => {
             not_a_toilet_count: 0,
           }),
         ),
-      ).toBe(false);
+      ).toBe(true);
     });
   });
 

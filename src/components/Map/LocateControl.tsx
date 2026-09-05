@@ -57,6 +57,8 @@ export function LocateControl() {
         (pos) => {
           const { latitude, longitude } = pos.coords;
           finish(() => {
+            setDenied(false);
+            setNotice(null);
             setUserPos({ lat: latitude, lng: longitude });
             map.flyTo([latitude, longitude], 16, { duration: 0.6 });
           });

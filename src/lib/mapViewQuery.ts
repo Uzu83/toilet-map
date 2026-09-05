@@ -7,7 +7,10 @@ export function parseMapViewQuery(
 ): { lat: number; lng: number; zoom: number } | null {
   const latRaw = params.get("lat");
   const lngRaw = params.get("lng");
-  if (latRaw == null || lngRaw == null) return null;
+  // URLSearchParams は `?lat=` で "" を返す。Number("") === 0 なので空/空白は欠落とみなす。
+  if (latRaw == null || lngRaw == null || latRaw.trim() === "" || lngRaw.trim() === "") {
+    return null;
+  }
 
   const lat = Number(latRaw);
   const lng = Number(lngRaw);

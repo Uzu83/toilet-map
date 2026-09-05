@@ -8,6 +8,20 @@ describe("parseMapViewQuery", () => {
     expect(parseMapViewQuery(new URLSearchParams(""))).toBeNull();
   });
 
+  it("returns null if lat or lng is an empty or whitespace string (Number('') === 0)", () => {
+    expect(parseMapViewQuery(new URLSearchParams("lat=&lng=141.35"))).toBeNull();
+    expect(parseMapViewQuery(new URLSearchParams("lat=43.065&lng="))).toBeNull();
+    expect(parseMapViewQuery(new URLSearchParams("lat=   &lng=141.35"))).toBeNull();
+  });
+
+  it("accepts the equator origin explicitly (lat=0&lng=0)", () => {
+    expect(parseMapViewQuery(new URLSearchParams("lat=0&lng=0"))).toEqual({
+      lat: 0,
+      lng: 0,
+      zoom: 13,
+    });
+  });
+
   it("returns lat, lng, and default zoom (13) when zoom is omitted", () => {
     expect(parseMapViewQuery(new URLSearchParams("lat=43.065&lng=141.35"))).toEqual({
       lat: 43.065,

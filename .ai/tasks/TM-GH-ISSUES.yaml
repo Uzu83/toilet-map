@@ -48,8 +48,8 @@ acceptance_criteria:
     statement: usableToiletName("(駅)") と usableToiletName("(ショッピングモール・百貨店)") と usableToiletName("404 Not Found") は null。usableToiletName("西鉄天神高速バスターミナル)") は元文字列。空/空白は null。
     how_to_verify: src/lib/toiletName.test.ts
   - id: ac-27b
-    statement: ToiletList / PinSheet / toiletDisplayName は usableToiletName 経由。不正名は unnamed キー。
-    how_to_verify: grep + toiletSeo テスト（404 名の OSM 未レビューは named ではない）
+    statement: ToiletList / PinSheet / toiletDisplayName は usableToiletName 経由。不正名は unnamed キー。isToiletIndexable の NAMED は migration 007 と同一（空白以外なら named）。
+    how_to_verify: grep + toiletSeo テスト（表示は sanitizer、index NAMED は SQL 007 と同一）
   - id: ac-32
     statement: osm の推定ピンは名前なし/不正なら name=null（「(label)」を埋め込まない）。amenity=toilets も usableToiletName を通す。
     how_to_verify: src/lib/osm.ts の mapInferredElements / mapToiletElements を読む + toiletName テスト
