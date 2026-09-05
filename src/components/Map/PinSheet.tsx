@@ -19,6 +19,8 @@ import { ACCESS_BADGE_COLORS, effectiveAccess, isInferredPin, isUnconfirmed } fr
 import { bearingDeg, bearingIndex, formatDistance, haversineMeters } from "@/lib/geo";
 import { is24h } from "@/lib/openingHours";
 import { trackEvent } from "@/lib/analytics";
+import { toiletDisplayName } from "@/lib/toiletSeo";
+import { usableToiletName } from "@/lib/toiletName";
 import { ReviewForm } from "../ReviewForm";
 
 export function PinSheet() {
@@ -76,10 +78,10 @@ export function PinSheet() {
   //   ここで Loo map の userPos(GPS 取得時点で固定され、移動すると陳腐化しうる)を &origin= に
   //   注入すると、かえって古い起点のルートになり改悪になる。親切心で origin を足さないこと。
   const mapsHref = `https://www.google.com/maps/dir/?api=1&destination=${toilet.lat},${toilet.lng}`;
-  const name = toilet.name ?? t("unnamed");
+  const name = toiletDisplayName(toilet, t("unnamed"));
 
   const onShare = async () => {
-    const shareTitle = toilet.name ?? t("shareDefault");
+    const shareTitle = toiletDisplayName(toilet, t("shareDefault"));
     const accessSuffix = accessLabel ? ` (${accessLabel})` : "";
     const localePrefix = locale === routing.defaultLocale ? "" : `/${locale}`;
     const shareUrl =
@@ -309,7 +311,7 @@ export function PinSheet() {
       {reviewMode && (
         <ReviewForm
           toiletId={toilet.id}
-          toiletName={toilet.name}
+          toiletName={usableToiletName(toilet.name)}
           mode={reviewMode}
           onClose={() => setReviewMode(null)}
         />

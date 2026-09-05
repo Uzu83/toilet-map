@@ -1,12 +1,12 @@
 // 個別トイレページの表示名・評価フォーマットの純粋ヘルパ(next-intl 非依存)。
 // タイトル・説明文の組み立ては i18n 文言が要るのでページ側(getTranslations)で行う。
 
+import { usableToiletName } from "@/lib/toiletName";
 import type { AccessLevel, Toilet } from "@/types/toilet";
 import { effectiveAccess } from "@/types/toilet";
 
 export function toiletDisplayName(t: Toilet, fallback: string): string {
-  const name = t.name?.trim();
-  return name && name.length > 0 ? name : fallback;
+  return usableToiletName(t.name) ?? fallback;
 }
 
 export function formatRating(avg: number | null): string {
@@ -34,13 +34,15 @@ export function isToiletUnconfirmed(t: Toilet): boolean {
 //   INDEXABLE(t) := not_a_toilet_count < 5
 //                AND ( review_count > 0
 //                      OR ( source = 'osm' AND NAMED(t) ) )
-//   NAMED(t) := name に空白以外の文字が 1 つ以上ある((name?.trim().length ?? 0) > 0)
+//   NAMED(t) := (name を trim して長さ > 0)
 //
 // 「ない」報告が 5 件以上のトイレ(=ページが notFound 扱い)は除外。
 // review が 1 件でも付けば従来通り indexable に昇格(AC4 退行防止)。加えて source='osm' で
 // 名称ありのトイレを新シグナルとして index 化する(名前 + amenity + 地図リンクより情報量が多く
 // thin-content リスクが低い)。inferred(駅/モール等)は実物トイレ非特定の UX 問題があるため除外。
 // この述語は sitemap 用 RPC(migration 007)の WHERE と同一の真理値表を満たす(§5.2)。
+// NAMED を usableToiletName に寄せない理由: 007 SQL は空白以外なら名前あり。表示の
+// 404/(駅) フォールバックは toiletDisplayName。SQL NAMED の厳格化は別 migration。
 export function isToiletIndexable(t: Toilet): boolean {
   if (t.not_a_toilet_count >= 5) return false;
   if (t.review_count > 0) return true;

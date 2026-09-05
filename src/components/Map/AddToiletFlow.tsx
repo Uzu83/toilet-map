@@ -28,6 +28,7 @@ export function AddToiletFlow() {
   const bumpData = useMapStore((s) => s.bumpData);
   const confirmTarget = useMapStore((s) => s.confirmTarget);
   const setConfirmTarget = useMapStore((s) => s.setConfirmTarget);
+  const selectedId = useMapStore((s) => s.selectedId);
 
   const [step, setStep] = useState<"pick" | "form">("pick");
   const [accessLevel, setAccessLevel] = useState<AccessLevel | null>(null);
@@ -269,6 +270,9 @@ export function AddToiletFlow() {
   }
 
   // ── FAB「トイレを追加」 ──────────────────────────────────────
+  // PinSheet 表示中は FAB を出さない。「評価する」が全面タップできるようにする。
+  if (selectedId) return null;
+
   return (
     <button
       type="button"

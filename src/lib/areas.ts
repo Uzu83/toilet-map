@@ -36,6 +36,17 @@ const PREF_AREAS: Area[] = JP_PREFECTURES.map((p) => ({
 // 市プリセットを先に、その後に都道府県。findArea は city→pref の順で解決。
 export const ALL_AREAS: Area[] = [...CITY_AREAS, ...PREF_AREAS];
 
+// home と about のポピュラーエリアチップ。page.tsx から export すると Next の
+// ページ型（追加 export 禁止）に抵触するため、ここが単一ソース。
+export const FEATURED_AREA_SLUGS = [
+  "fukuoka-city",
+  "tokyo-23",
+  "jp-13",
+  "jp-27",
+  "jp-01",
+  "jp-40",
+] as const;
+
 export function areaSlugs(): string[] {
   return ALL_AREAS.map((a) => a.slug);
 }
@@ -55,6 +66,17 @@ export function relatedAreas(area: Area, n = 8): Area[] {
 
 // messages/*.json の `areaNames` 名前空間の translator を渡してロケール別の地名を得る。
 // 翻訳が見つからなければ日本語の正規名にフォールバック。
+// bbox 中心へ地図を開くための lat/lng/zoom。県は広域(9)、市は市街(13)。
+// bbox は [southLat, westLng, northLat, eastLng](API の minLng,minLat 順と混ぜない)。
+export function areaMapView(area: Area): { lat: number; lng: number; zoom: number } {
+  const [southLat, westLng, northLat, eastLng] = area.bbox;
+  return {
+    lat: (southLat + northLat) / 2,
+    lng: (westLng + eastLng) / 2,
+    zoom: area.kind === "prefecture" ? 9 : 13,
+  };
+}
+
 export function areaLabel(area: Area, t?: (key: string) => string): string {
   if (!t) return area.label;
   try {

@@ -6,10 +6,7 @@ import { BottomTabBar } from "@/components/BottomTabBar";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { LocaleSwitcher } from "@/components/LocaleSwitcher";
 import { KoFiHeaderLink } from "@/components/KoFiHeaderLink";
-import { findArea, areaLabel } from "@/lib/areas";
-// #40 — FEATURED_AREA_SLUGS は about/page.tsx が正式定義(単一ソース)。
-//   home と about の両方でチップを描画するため export している。
-import { FEATURED_AREA_SLUGS } from "@/app/[locale]/about/page";
+import { findArea, areaLabel, FEATURED_AREA_SLUGS } from "@/lib/areas";
 
 export default async function HomePage({
   params,

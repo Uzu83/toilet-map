@@ -1,37 +1,77 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMap } from "react-leaflet";
 import { useTranslations } from "next-intl";
 import { Crosshair, Loader2 } from "lucide-react";
 import { useMapStore } from "@/store/mapStore";
 
+const LOCATE_TIMEOUT_MS = 8000;
+
 export function LocateControl() {
   const t = useTranslations("map");
   const map = useMap();
   const setUserPos = useMapStore((s) => s.setUserPos);
+  const setNotice = useMapStore((s) => s.setNotice);
   const [busy, setBusy] = useState(false);
   const [denied, setDenied] = useState(false);
+  const settledRef = useRef(true);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, []);
+
+  const finish = (onDone?: () => void) => {
+    if (settledRef.current) return;
+    settledRef.current = true;
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setBusy(false);
+    onDone?.();
+  };
+
+  const fail = () => {
+    finish(() => {
+      setDenied(true);
+      setNotice({ kind: "locateDenied" });
+    });
+  };
 
   const locate = () => {
     if (!("geolocation" in navigator)) {
       setDenied(true);
+      setNotice({ kind: "locateDenied" });
       return;
     }
+    if (!settledRef.current) return;
+    settledRef.current = false;
     setBusy(true);
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setUserPos({ lat: latitude, lng: longitude });
-        map.flyTo([latitude, longitude], 16, { duration: 0.6 });
-        setBusy(false);
-      },
-      () => {
-        setDenied(true);
-        setBusy(false);
-      },
-      { enableHighAccuracy: true, timeout: 8000 }
-    );
+    timerRef.current = setTimeout(fail, LOCATE_TIMEOUT_MS);
+    try {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          finish(() => {
+            setDenied(false);
+            // 位置情報拒否の案内だけ消す。無効 ?id= 案内は URL 掃除まで残す。
+            if (useMapStore.getState().notice?.kind === "locateDenied") {
+              setNotice(null);
+            }
+            setUserPos({ lat: latitude, lng: longitude });
+            map.flyTo([latitude, longitude], 16, { duration: 0.6 });
+          });
+        },
+        fail,
+        { enableHighAccuracy: true, timeout: LOCATE_TIMEOUT_MS },
+      );
+    } catch {
+      fail();
+    }
   };
 
   return (

@@ -6,7 +6,7 @@ import { KoFiTip } from "@/components/KoFiTip";
 import { FaqJsonLd } from "@/components/seo/FaqJsonLd";
 import { buildBreadcrumbList } from "@/components/seo/jsonLdHelpers";
 import { absUrl, languageAlternates, baseOpenGraph } from "@/lib/urls";
-import { findArea, areaLabel } from "@/lib/areas";
+import { findArea, areaLabel, FEATURED_AREA_SLUGS } from "@/lib/areas";
 import { SITE_TEAM, CONTACT_FORM_URL } from "@/lib/contact";
 
 const FAQ_KEYS = [
@@ -41,11 +41,6 @@ export async function generateMetadata({
     // #34 C6 — layout がデフォルト { index: true, follow: true } を設定済み。冗長な重複を除去。
   };
 }
-
-// about ページで FEATURED_AREA_SLUGS を export する理由:
-//   home ページ(#40)が同じリストでポピュラーエリアチップを描画するため。
-//   ここで定義することで単一ソースを維持し、順序変更が両ページに即反映される。
-export const FEATURED_AREA_SLUGS = ["fukuoka-city", "tokyo-23", "jp-13", "jp-27", "jp-01", "jp-40"];
 
 export default async function AboutPage({
   params,

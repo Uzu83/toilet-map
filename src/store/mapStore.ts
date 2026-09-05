@@ -20,6 +20,8 @@ const DEFAULT_FILTERS: Filters = {
 
 export type View = "map" | "list";
 
+export type MapNotice = { kind: "deepLinkMissing" | "locateDenied" };
+
 type MapState = {
   toilets: Toilet[];
   setToilets: (t: Toilet[]) => void;
@@ -69,6 +71,10 @@ type MapState = {
   // 申請/追認の成功後にトイレ・pending を再取得させるトークン
   dataVersion: number;
   bumpData: () => void;
+
+  // 無効な共有リンク / 位置情報拒否。バナーは MapContainer の外(ToiletMap)で出す。
+  notice: MapNotice | null;
+  setNotice: (notice: MapNotice | null) => void;
 };
 
 const FAV_KEY = "toilet-map.favorites";
@@ -126,7 +132,13 @@ export const useMapStore = create<MapState>((set, get) => ({
   toilets: [],
   setToilets: (toilets) => set({ toilets }),
   selectedId: null,
-  select: (selectedId) => set({ selectedId }),
+  select: (selectedId) =>
+    set((s) => ({
+      selectedId,
+      // 無効共有リンク案内は、ユーザーが別ピンを開けたら用済み。locateDenied は残す。
+      notice:
+        selectedId && s.notice?.kind === "deepLinkMissing" ? null : s.notice,
+    })),
   userPos: null,
   setUserPos: (userPos) => set({ userPos }),
 
@@ -178,6 +190,9 @@ export const useMapStore = create<MapState>((set, get) => ({
   setConfirmTarget: (confirmTarget) => set({ confirmTarget }),
   dataVersion: 0,
   bumpData: () => set((s) => ({ dataVersion: s.dataVersion + 1 })),
+
+  notice: null,
+  setNotice: (notice) => set({ notice }),
 }));
 
 export function applyFilters(toilets: Toilet[], filters: Filters, favorites: Set<string>): Toilet[] {

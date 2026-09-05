@@ -102,7 +102,9 @@
   },
   "search": {
     "placeholder": "搜索地点（例如：博多站、天神、运河城）",
-    "clear": "清除"
+    "clear": "清除",
+    "noResults": "找不到该地点",
+    "noResultsHint": "请换个地名或车站名再搜索"
   },
   "list": {
     "noResults": "附近没有符合条件的厕所",
@@ -126,6 +128,10 @@
     "loadingBadge": "加载中",
     "locate": "移动到当前位置",
     "locateDenied": "未授予位置权限",
+    "locateDeniedBanner": "无法使用位置信息。可继续查看当前地图，或通过搜索移动。",
+    "deepLinkMissing": "找不到此厕所。可能已删除，或链接无效。",
+    "deepLinkMissingAction": "返回地图",
+    "dismissNotice": "关闭",
     "northBadge": "北"
   },
   "tab": {

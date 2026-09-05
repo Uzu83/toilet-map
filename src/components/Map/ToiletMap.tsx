@@ -12,7 +12,7 @@ import {
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 
-import { applyFilters, useMapStore } from "@/store/mapStore";
+import { applyFilters, useMapStore, type MapNotice } from "@/store/mapStore";
 import { LocateControl } from "./LocateControl";
 import { CompassBadge } from "./CompassBadge";
 import { PinSheet } from "./PinSheet";
@@ -140,6 +140,22 @@ async function fetchPending(bounds: L.LatLngBounds): Promise<ToiletSubmission[]>
   }
 }
 
+function noticeMessage(
+  kind: MapNotice["kind"],
+  tm: (key: "deepLinkMissing" | "locateDeniedBanner") => string,
+): string {
+  switch (kind) {
+    case "deepLinkMissing":
+      return tm("deepLinkMissing");
+    case "locateDenied":
+      return tm("locateDeniedBanner");
+    default: {
+      const _never: never = kind;
+      return _never;
+    }
+  }
+}
+
 export default function ToiletMap() {
   const tm = useTranslations("map");
   const setToilets = useMapStore((s) => s.setToilets);
@@ -152,6 +168,8 @@ export default function ToiletMap() {
   const selectedId = useMapStore((s) => s.selectedId);
   const setPendingSubmissions = useMapStore((s) => s.setPendingSubmissions);
   const dataVersion = useMapStore((s) => s.dataVersion);
+  const notice = useMapStore((s) => s.notice);
+  const setNotice = useMapStore((s) => s.setNotice);
   const [error, setError] = useState<string | null>(null);
   const [hasFetched, setHasFetched] = useState(false);
   const lastBounds = useRef<L.LatLngBounds | null>(null);
@@ -205,6 +223,16 @@ export default function ToiletMap() {
   const filterActive = useMemo(() => Object.values(filters).some(Boolean), [filters]);
   const showEmpty = hasFetched && visible.length === 0 && !error;
 
+  const dismissNotice = () => {
+    if (notice?.kind === "deepLinkMissing" && typeof window !== "undefined") {
+      const url = new URL(window.location.href);
+      url.searchParams.delete("id");
+      window.history.replaceState({}, "", url.toString());
+      select(null);
+    }
+    setNotice(null);
+  };
+
   return (
     <div className="relative h-full w-full">
       <MapContainer
@@ -247,6 +275,36 @@ export default function ToiletMap() {
       {showEmpty && <EmptyState filtered={filterActive} />}
       <PinSheet />
       <AddToiletFlow />
+      {notice && (
+        <div
+          role="status"
+          className="absolute inset-x-0 top-2 z-1100 mx-auto w-full max-w-md px-2"
+        >
+          <div className="rounded-xl bg-white/95 p-3 text-sm shadow-lg ring-1 ring-black/10 dark:bg-zinc-900/95 dark:ring-white/10">
+            <p className="text-zinc-800 dark:text-zinc-100">
+              {noticeMessage(notice.kind, tm)}
+            </p>
+            <div className="mt-2 flex justify-end gap-2">
+              {notice.kind === "deepLinkMissing" && (
+                <button
+                  type="button"
+                  onClick={dismissNotice}
+                  className="inline-flex min-h-11 items-center rounded-lg bg-blue-600 px-3 text-sm font-semibold text-white hover:bg-blue-700"
+                >
+                  {tm("deepLinkMissingAction")}
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={dismissNotice}
+                className="inline-flex min-h-11 items-center rounded-lg px-3 text-sm font-medium text-zinc-600 hover:bg-zinc-100 dark:text-zinc-300 dark:hover:bg-zinc-800"
+              >
+                {tm("dismissNotice")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {error && (
         <div className="absolute left-4 top-20 z-1000 rounded-lg bg-red-500/90 px-3 py-2 text-sm text-white shadow">
           {tm("loadError", { message: error })}

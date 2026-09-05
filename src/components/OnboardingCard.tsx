@@ -45,6 +45,9 @@ export function OnboardingCard() {
       // Safari プライベートモード等
     }
     setLocalDismissed(true);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("loo-onboarding-dismissed"));
+    }
   }, []);
 
   if (dismissed) return null;
