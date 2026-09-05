@@ -102,7 +102,9 @@
   },
   "search": {
     "placeholder": "場所を検索 (例: 博多駅、天神、キャナルシティ)",
-    "clear": "クリア"
+    "clear": "クリア",
+    "noResults": "場所を見つけられませんでした",
+    "noResultsHint": "地名や駅名を変えて検索してください"
   },
   "list": {
     "noResults": "条件に合うトイレが近くにありません",
@@ -126,6 +128,10 @@
     "loadingBadge": "読み込み中",
     "locate": "現在地に移動",
     "locateDenied": "位置情報の許可がありません",
+    "locateDeniedBanner": "位置情報が使えないため、博多駅周辺を表示しています。検索から移動できます。",
+    "deepLinkMissing": "このトイレは見つかりません。削除されたか、リンクが無効です。",
+    "deepLinkMissingAction": "地図に戻る",
+    "dismissNotice": "閉じる",
     "northBadge": "北方位"
   },
   "tab": {

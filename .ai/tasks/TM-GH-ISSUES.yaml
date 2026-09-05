@@ -1,0 +1,186 @@
+task_id: TM-GH-ISSUES
+title: GitHub open bugs（距離仕様 #33 以外）
+
+intent:
+  actors: [end_user]
+  problem: |
+    QA 由来の open Issue が 10 件ある。地図・リスト・エリアLP・共有リンクで
+    行き止まり・誤誘導・無言失敗が残っている。
+  desired_outcome: |
+    再現するバグを直し、ユーザーが次の操作を選べる状態にする。
+    #33 は既存の距離トグル仕様を維持する（自動切替しない）。
+  unknowns: []
+
+desired_state: |
+  リスト/シート/SEO の表示名は、種別ラベルのみ（「(駅)」等）や HTTP エラー文
+  （「404 Not Found」等）を施設名として出さない。フォールバックは既存の
+  「名称未設定のトイレ」。括弧が壊れていても実名は落とさない。
+  推定ピンのシードは名前が無い/不正なら null を保存し、「(駅)」を作らない。
+  位置情報拒否時はスピナーを止め、博多表示である旨と検索へ誘導する案内を出す。
+  初回オンボーディング中は自動 GPS を出さず、閉じたあとに取る（二重ダイアログ回避）。
+  ピン詳細が開いている間、「トイレを追加」FAB は出さない。「評価する」が全面タップできる。
+  0件カードは検索バーを覆わず、検索入力できる。
+  エリアLPの「このエリアを地図で見る」は当該エリアの中心・ズームで地図が開く。
+  検索候補を確定したら開いていたピン詳細を閉じ、?id= を外す。
+  検索 0 件または失敗で Enter したとき、「場所を見つけられませんでした」が出る。
+  無効な ?id= 共有リンクは無言で消さず、見つからない旨と地図へ戻る導線を出す。
+
+constraints:
+  - toilet-map-beta を触らない
+  - Nominatim / bbox RPC / ピン色 / ACCESS_LEVELS を変えない
+  - 課金・認証・migration を触らない
+  - 新規依存を足さない
+  - 距離の既定を検索地点にしない（#33 / TM-DIST オーナー決定）
+  - --all-japan を流さない。本番 DB を書き換えない
+  - 公開表記ポリシー（本名・事業者メアド禁止）
+  - 新規 UI 文言は messages/{ja,en,ko,zh}.json 全部 + useTranslations()
+  - node は mise 経由
+  - コミットしない
+
+out_of_scope:
+  - #33 の自動「この地点から測る」
+  - 本番 toilets.name の物理 UPDATE/DELETE
+  - 徒歩時間・営業中ランキング
+  - Phase 2+ 未実装（Auth/AdSense/Stripe）
+
+acceptance_criteria:
+  - id: ac-27
+    statement: usableToiletName("(駅)") と usableToiletName("(ショッピングモール・百貨店)") と usableToiletName("404 Not Found") は null。usableToiletName("西鉄天神高速バスターミナル)") は元文字列。空/空白は null。
+    how_to_verify: src/lib/toiletName.test.ts
+  - id: ac-27b
+    statement: ToiletList / PinSheet / toiletDisplayName は usableToiletName 経由。不正名は unnamed キー。
+    how_to_verify: grep + toiletSeo テスト（404 名の OSM 未レビューは named ではない）
+  - id: ac-32
+    statement: osm の推定ピンは名前なし/不正なら name=null（「(label)」を埋め込まない）。amenity=toilets も usableToiletName を通す。
+    how_to_verify: src/lib/osm.ts の mapInferredElements / mapToiletElements を読む + toiletName テスト
+  - id: ac-28
+    statement: LocateControl は geolocation エラー/独自 8s 上限で busy=false。拒否時に map.locateDeniedBanner 相当の案内が見える。
+    how_to_verify: LocateControl の timeout + バナー。AutoLocate はオンボーディング未閉じなら GPS しない
+  - id: ac-29
+    statement: selectedId があるとき AddToiletFlow の FAB を描画しない。
+    how_to_verify: AddToiletFlow.tsx の条件
+  - id: ac-30
+    statement: EmptyState のヒット領域が SearchBar（top-16 + min-h-11）と重ならない。カード全体が検索タップを奪わない。
+    how_to_verify: EmptyState の top が検索下、pointer-events-auto を検索と重ねない
+  - id: ac-31
+    statement: areaMapView(sapporo) の中心は札幌 bbox 内。CTA href に lat/lng/zoom。地図はクエリで flyTo。博多(33.59,130.42)ではない。
+    how_to_verify: areas の純関数テスト + area page CTA + DeepLinkResolver/AutoLocate
+  - id: ac-34
+    statement: SearchBar.select は flyTo 前に select(null) する。
+    how_to_verify: SearchBar.tsx
+  - id: ac-35
+    statement: 候補 0 件の確定可能な入力で Enter すると noResults メッセージが出る（地図は動かない）。
+    how_to_verify: SearchBar の empty/error ドロップダウン + search キー
+  - id: ac-36
+    statement: ?id= の fetch が ok でない/toilet なしのとき案内を出し、ユーザー操作まで無言でトップ化しない。
+    how_to_verify: DeepLinkResolver + バナー。UUID 不正も同様
+  - id: ac-reg
+    statement: 既存テストが通る。pnpm verify が通る。
+    how_to_verify: pnpm verify
+
+exploration:
+  entrypoints:
+    - src/lib/osm.ts:130
+    - src/components/Map/ToiletList.tsx:139
+    - src/components/Map/PinSheet.tsx:79
+    - src/components/Map/LocateControl.tsx:16
+    - src/components/Map/AutoLocate.tsx:21
+    - src/components/OnboardingCard.tsx:41
+    - src/components/Map/AddToiletFlow.tsx:272
+    - src/components/Map/EmptyState.tsx:9
+    - src/app/[locale]/area/[region]/page.tsx:119
+    - src/components/Map/DeepLinkResolver.tsx:19
+    - src/components/Map/SearchBar.tsx:80
+    - src/lib/toiletSeo.ts:7
+  landmines:
+    - 距離原点を検索確定で search にしてはいけない（TM-DIST / #33）
+    - DeepLinkResolver は MapContainer 内。DOM バナーは ToiletMap 側（MapContainer の外）
+    - ピン色は ACCESS_LEVELS が真実。CSS で色を決め直さない
+    - area bbox は [southLat, westLng, northLat, eastLng]。API bbox は minLng,minLat,maxLng,maxLat。混ぜない
+    - AutoLocate は ?id= があるとき既にスキップ。lat/lng エリアリンクでもスキップすること
+    - 推定ピンの `(${cat.label})` をやめると既存 DB は残る。表示側 sanitizer 必須
+
+plan:
+  steps:
+    - src/lib/toiletName.ts に usableToiletName。種別ラベルのみの括弧名と HTTP/HTML エラー文を null。壊れた括弧の実名は残す
+    - toiletDisplayName / isToiletIndexable の NAMED / ToiletList / PinSheet が usableToiletName を使う
+    - osm.ts: pickName 結果を usableToiletName。inferred の ?? `(${cat.label})` を廃止して null
+    - areas.ts に areaMapView。area page の viewAreaOnMap だけ query 付き（backToMap は / のまま）
+    - src/lib/mapViewQuery.ts に parseMapViewQuery。DeepLinkResolver が id 優先、なければ lat/lng/zoom で flyTo
+    - AutoLocate: id または map view query またはオンボーディング未閉じなら GPS しない。閉じたら 1 回取得（custom event）
+    - LocateControl: try/catch + 8s 自己 timeout で setBusy(false)。拒否時は store notice
+    - ToiletMap 外に notice バナー（deepLinkMissing / locateDenied）。地図に戻るで id を消して notice を閉じる
+    - AddToiletFlow: selectedId なら FAB 非表示
+    - EmptyState: 検索バー下へ。内側 pointer-events-auto を検索と重ねない
+    - SearchBar.select: useMapStore.getState().select(null)
+    - SearchBar: 0件/エラー時も open。Enter で noResults 表示。成功時は消す
+    - messages 4 言語
+    - テストは tester 担当。実装エージェントは *.test.ts を新規作成しない
+  risks:
+    - エリアリンクと保存ビューの競合（flyTo で上書きすれば足りる）
+    - オンボーディング event 名の取りこぼし（STORAGE_KEY と一致させる）
+    - usableToiletName が正規の短い名前を落としすぎる（「駅」単体は残す。括弧+既知ラベルのみ落とす）
+
+assignment:
+  agent: implementer
+  lane: write-1
+  worktree: null
+
+owned_paths:
+  - src/lib/toiletName.ts
+  - src/lib/toiletSeo.ts
+  - src/lib/osm.ts
+  - src/lib/areas.ts
+  - src/lib/mapViewQuery.ts
+  - src/store/mapStore.ts
+  - src/components/Map/ToiletList.tsx
+  - src/components/Map/PinSheet.tsx
+  - src/components/Map/LocateControl.tsx
+  - src/components/Map/AutoLocate.tsx
+  - src/components/OnboardingCard.tsx
+  - src/components/Map/AddToiletFlow.tsx
+  - src/components/Map/EmptyState.tsx
+  - src/components/Map/SearchBar.tsx
+  - src/components/Map/DeepLinkResolver.tsx
+  - src/components/Map/ToiletMap.tsx
+  - src/app/[locale]/area/[region]/page.tsx
+  - messages/ja.json
+  - messages/en.json
+  - messages/ko.json
+  - messages/zh.json
+  - .ai/evidence/TM-GH-ISSUES-quality-gate.md
+
+tester_owned_paths:
+  - src/lib/toiletName.test.ts
+  - src/lib/mapViewQuery.test.ts
+  - src/lib/areas.test.ts
+  - src/lib/toiletSeo.test.ts
+
+required_evidence:
+  - unit test
+  - quality-gate
+  - browser or curl でエリア CTA / 無効 id / 検索 0 件が確認できること
+
+risk_tier: standard
+status: approved
+blocked_reason: null
+
+interfaces:
+  usableToiletName: |
+    export function usableToiletName(raw: string | null | undefined): string | null
+    // null/空白 → null
+    // 全体が (駅) or （駅）or (ショッピングモール・百貨店) 等 INFERRED_CATEGORIES.label → null
+    // /^\d{3}\b/ または /not found/i または /<html/i または /internal server error/i → null
+    // それ以外（括弧欠ける「西鉄天神高速バスターミナル)」含む）は trim して返す
+  areaMapView: |
+    export function areaMapView(area: Area): { lat: number; lng: number; zoom: number }
+    // lat/lng = bbox 中心。zoom = prefecture 9 / city 13
+  parseMapViewQuery: |
+    export function parseMapViewQuery(params: URLSearchParams): { lat: number; lng: number; zoom: number } | null
+    // lat/lng 必須・範囲内。zoom 省略時 13。不正は null
+  onboardingEvent: |
+    OnboardingCard dismiss 時 window.dispatchEvent(new Event("loo-onboarding-dismissed"))
+    STORAGE_KEY は既存 toilet-map.onboarding.dismissed
+  mapNotice: |
+    mapStore に notice: { kind: "deepLinkMissing" | "locateDenied" } | null と setNotice
+    ToiletMap が MapContainer の外で表示

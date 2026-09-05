@@ -68,9 +68,12 @@ export function SearchBar() {
         if (ac.signal.aborted) return;
         setResults(r);
         setResultsQuery(next.trim());
-        setOpen(r.length > 0);
+        setOpen(true);
       } catch {
-        // abort や network エラーは無視
+        if (ac.signal.aborted) return;
+        setResults([]);
+        setResultsQuery(next.trim());
+        setOpen(true);
       } finally {
         if (!ac.signal.aborted) setBusy(false);
       }
@@ -79,6 +82,8 @@ export function SearchBar() {
 
   const select = (r: NominatimResult) => {
     const origin = parseNominatimSearchOrigin(r);
+    // 開いていたピン詳細を閉じ、?id= を外す。距離原点は検索地点に自動切替しない(#33)。
+    useMapStore.getState().select(null);
     if (origin) {
       map.flyTo([origin.lat, origin.lng], 16, { duration: 0.7 });
       setSearchOrigin(origin);
@@ -99,8 +104,15 @@ export function SearchBar() {
     ) {
       const first = results[0];
       if (first) select(first);
+      return;
     }
+    if (isComposing) return;
+    if (!q.trim()) return;
+    // 0 件 / 失敗後の Enter は地図を動かさず「場所を見つけられませんでした」を出す。
+    setOpen(true);
   };
+
+  const showNoResults = open && results.length === 0 && q.trim().length > 0 && !busy;
 
   return (
     <div className="absolute left-1/2 top-16 z-1000 w-full max-w-md -translate-x-1/2 px-2">
@@ -119,7 +131,7 @@ export function SearchBar() {
             type="search"
             value={q}
             onChange={(e) => onInputChange(e.target.value)}
-            onFocus={() => results.length > 0 && setOpen(true)}
+            onFocus={() => (results.length > 0 || showNoResults) && setOpen(true)}
             onKeyDown={(e) => {
               if (e.key !== "Enter") return;
               const composing = e.nativeEvent.isComposing || e.keyCode === 229;
@@ -163,6 +175,17 @@ export function SearchBar() {
               </li>
             ))}
           </ul>
+        )}
+        {showNoResults && (
+          <div
+            role="status"
+            className="absolute inset-x-0 top-12 rounded-xl bg-white px-3 py-3 shadow-xl ring-1 ring-black/5 dark:bg-zinc-900 dark:ring-white/10"
+          >
+            <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+              {t("noResults")}
+            </p>
+            <p className="mt-0.5 text-[11px] text-zinc-500">{t("noResultsHint")}</p>
+          </div>
         )}
       </div>
     </div>

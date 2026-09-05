@@ -102,7 +102,9 @@
   },
   "search": {
     "placeholder": "장소 검색 (예: 하카타역, 텐진, 캐널시티)",
-    "clear": "지우기"
+    "clear": "지우기",
+    "noResults": "장소를 찾을 수 없습니다",
+    "noResultsHint": "지명이나 역 이름을 바꿔서 검색해 주세요"
   },
   "list": {
     "noResults": "조건에 맞는 화장실이 근처에 없습니다",
@@ -126,6 +128,10 @@
     "loadingBadge": "불러오는 중",
     "locate": "현재 위치로 이동",
     "locateDenied": "위치 권한이 없습니다",
+    "locateDeniedBanner": "위치 정보를 사용할 수 없어 하카타역 주변을 표시합니다. 검색으로 이동할 수 있습니다.",
+    "deepLinkMissing": "이 화장실을 찾을 수 없습니다. 삭제되었거나 링크가 유효하지 않습니다.",
+    "deepLinkMissingAction": "지도로 돌아가기",
+    "dismissNotice": "닫기",
     "northBadge": "북쪽"
   },
   "tab": {

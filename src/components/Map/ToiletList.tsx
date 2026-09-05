@@ -13,6 +13,7 @@ import {
 import { applyFilters, useMapStore } from "@/store/mapStore";
 import { bearingDeg, bearingIndex, formatDistance, haversineMeters } from "@/lib/geo";
 import { resolveListOrigin } from "@/lib/listOrigin";
+import { toiletDisplayName } from "@/lib/toiletSeo";
 import { FilterBar } from "./FilterBar";
 import { Stars } from "./Stars";
 
@@ -136,7 +137,7 @@ export function ToiletList() {
                     </span>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-semibold text-zinc-900 dark:text-zinc-50">
-                        {toilet.name ?? tp("unnamed")}
+                        {toiletDisplayName(toilet, tp("unnamed"))}
                       </p>
                       <p className="text-xs text-zinc-500">
                         {formatDistance(distance)} {dir}{tp("directionSuffix")}

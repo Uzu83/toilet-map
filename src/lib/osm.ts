@@ -11,6 +11,8 @@
 //     180 s — 都道府県全域クエリ(ISO3166-2 境界使用、広域のため大きめに設定)
 //   これらは経験的な推奨値であり、ミラーのキャパシティ次第で変わる可能性がある。
 
+import { usableToiletName } from "@/lib/toiletName";
+
 const OVERPASS_ENDPOINTS = [
   "https://overpass-api.de/api/interpreter",
   "https://overpass.kumi.systems/api/interpreter",
@@ -127,7 +129,8 @@ function mapInferredElements(
       osmId: osmIdPrefix(el.type) + el.id,
       lat: coords.lat,
       lng: coords.lng,
-      name: pickName(tags, cat.nameKeys) ?? `(${cat.label})`,
+      // 名前が無い/不正なら null。`(駅)` を埋め込まない(表示側 sanitizer と二重で防ぐ)。
+      name: pickName(tags, cat.nameKeys),
       hasWashlet: null,
       hasPaper: null,
       hasSoap: null,
@@ -178,7 +181,8 @@ async function postOverpass(query: string): Promise<{ elements: OverpassElement[
 
 function pickName(tags: Record<string, string>, keys: string[]): string | null {
   for (const k of keys) {
-    if (tags[k]) return tags[k]!;
+    const usable = usableToiletName(tags[k]);
+    if (usable) return usable;
   }
   return null;
 }

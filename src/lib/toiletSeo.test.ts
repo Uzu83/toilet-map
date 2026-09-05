@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Toilet } from "@/types/toilet";
-import { isToiletIndexable } from "@/lib/toiletSeo";
+import { isToiletIndexable, toiletDisplayName } from "@/lib/toiletSeo";
 
 // Toilet の全カラムを埋めたファクトリ。対象フィールド
 // (source / name / review_count / not_a_toilet_count) だけを overrides で上書きする。
@@ -65,6 +65,19 @@ describe("isToiletIndexable — canonical predicate (設計書 §5.1)", () => {
         ),
       ).toBe(true);
     });
+
+    it("N4: osm + invalid name (404 Not Found) + review=1 → true (reviewed branch unchanged)", () => {
+      expect(
+        isToiletIndexable(
+          makeToilet({
+            source: "osm",
+            name: "404 Not Found",
+            review_count: 1,
+            not_a_toilet_count: 0,
+          }),
+        ),
+      ).toBe(true);
+    });
   });
 
   describe("異常系", () => {
@@ -113,6 +126,32 @@ describe("isToiletIndexable — canonical predicate (設計書 §5.1)", () => {
           makeToilet({
             source: "osm",
             name: null,
+            review_count: 0,
+            not_a_toilet_count: 0,
+          }),
+        ),
+      ).toBe(false);
+    });
+
+    it("E5: osm + invalid name (404 Not Found) + review=0 → false (not NAMED due to unusable name)", () => {
+      expect(
+        isToiletIndexable(
+          makeToilet({
+            source: "osm",
+            name: "404 Not Found",
+            review_count: 0,
+            not_a_toilet_count: 0,
+          }),
+        ),
+      ).toBe(false);
+    });
+
+    it("E6: osm + invalid name (駅) + review=0 → false (not NAMED due to inferred category label)", () => {
+      expect(
+        isToiletIndexable(
+          makeToilet({
+            source: "osm",
+            name: "(駅)",
             review_count: 0,
             not_a_toilet_count: 0,
           }),
@@ -297,5 +336,34 @@ describe("isToiletIndexable — canonical predicate (設計書 §5.1)", () => {
         ),
       ).toBe(true);
     });
+  });
+});
+
+describe("toiletDisplayName", () => {
+  it("uses fallback when name is unusable (e.g., 404 Not Found)", () => {
+    expect(
+      toiletDisplayName(
+        makeToilet({ name: "404 Not Found" }),
+        "フォールバック名"
+      )
+    ).toBe("フォールバック名");
+  });
+
+  it("uses fallback when name is an inferred category label", () => {
+    expect(
+      toiletDisplayName(
+        makeToilet({ name: "(駅)" }),
+        "フォールバック名"
+      )
+    ).toBe("フォールバック名");
+  });
+
+  it("uses valid name when provided", () => {
+    expect(
+      toiletDisplayName(
+        makeToilet({ name: "博多駅前公衆トイレ" }),
+        "フォールバック名"
+      )
+    ).toBe("博多駅前公衆トイレ");
   });
 });

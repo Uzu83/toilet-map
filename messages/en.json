@@ -102,7 +102,9 @@
   },
   "search": {
     "placeholder": "Search a place (e.g. Hakata Station, Tenjin, Canal City)",
-    "clear": "Clear"
+    "clear": "Clear",
+    "noResults": "Could not find that place",
+    "noResultsHint": "Try a different place name or station"
   },
   "list": {
     "noResults": "No matching toilets nearby",
@@ -126,6 +128,10 @@
     "loadingBadge": "Loading",
     "locate": "Go to current location",
     "locateDenied": "Location permission not granted",
+    "locateDeniedBanner": "Location is unavailable, so the map shows the Hakata Station area. You can move using search.",
+    "deepLinkMissing": "This toilet could not be found. It may have been removed, or the link is invalid.",
+    "deepLinkMissingAction": "Back to map",
+    "dismissNotice": "Dismiss",
     "northBadge": "North"
   },
   "tab": {

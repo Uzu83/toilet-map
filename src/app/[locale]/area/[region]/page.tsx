@@ -7,7 +7,7 @@ import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { KoFiTip } from "@/components/KoFiTip";
 import { AreaJsonLd } from "@/components/seo/AreaJsonLd";
 import { AccessChip } from "@/components/seo/AccessChip";
-import { findArea, relatedAreas, areaLabel, type Area } from "@/lib/areas";
+import { findArea, relatedAreas, areaLabel, areaMapView, type Area } from "@/lib/areas";
 import { getRegionCount, getToiletsInRegion } from "@/lib/toilets";
 import { isToiletIndexable, toiletAccessKey, toiletDisplayName } from "@/lib/toiletSeo"; // ISR Writes 止血: non-indexable リンク除去(A+C)
 // #29: isToiletIndexable は loadArea が返す既取得の toilets に対して適用する。追加 DB 呼び出しなし。
@@ -101,6 +101,8 @@ export default async function AreaPage({
   const path = `/area/${area.slug}`;
   const heading = t("heading", { label });
   const related = relatedAreas(area);
+  const view = areaMapView(area);
+  const viewAreaHref = `/?lat=${view.lat}&lng=${view.lng}&zoom=${view.zoom}`;
 
   return (
     <article className="mx-auto max-w-2xl space-y-5 px-4 py-8 text-sm leading-7 text-zinc-700 dark:text-zinc-300">
@@ -117,7 +119,7 @@ export default async function AreaPage({
       <p className="text-zinc-500 dark:text-zinc-400">{t("countLine", { count })}</p>
       {/* WHY: h-10=40px → min-h-11=44px に変更。WCAG 2.5.5 44px 目安に合わせる */}
       <Link
-        href="/"
+        href={viewAreaHref}
         className="inline-flex min-h-11 items-center justify-center rounded-lg bg-blue-600 px-4 text-sm font-semibold text-white shadow hover:bg-blue-700"
       >
         {t("viewAreaOnMap")}
