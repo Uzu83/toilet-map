@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useMap } from "react-leaflet";
 import { useTranslations } from "next-intl";
 import { Loader2, Search, X } from "lucide-react";
-import { parseNominatimSearchOrigin } from "@/lib/listOrigin";
+import { distanceModeAfterSearchConfirm, parseNominatimSearchOrigin } from "@/lib/listOrigin";
 import { shouldConfirmFirstSuggestion } from "@/lib/searchConfirm";
 import { useMapStore } from "@/store/mapStore";
 
@@ -37,6 +37,7 @@ export function SearchBar() {
   const t = useTranslations("search");
   const map = useMap();
   const setSearchOrigin = useMapStore((s) => s.setSearchOrigin);
+  const setDistanceMode = useMapStore((s) => s.setDistanceMode);
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [results, setResults] = useState<NominatimResult[]>([]);
@@ -82,11 +83,12 @@ export function SearchBar() {
 
   const select = (r: NominatimResult) => {
     const origin = parseNominatimSearchOrigin(r);
-    // 開いていたピン詳細を閉じ、?id= を外す。距離原点は検索地点に自動切替しない(#33)。
+    // 開いていたピン詳細を閉じ、?id= を外す。距離は検索地点に切り替える（#33）。
     useMapStore.getState().select(null);
     if (origin) {
       map.flyTo([origin.lat, origin.lng], 16, { duration: 0.7 });
       setSearchOrigin(origin);
+      setDistanceMode(distanceModeAfterSearchConfirm());
     }
     setOpen(false);
     setQ(r.name ?? r.display_name.split(",")[0] ?? "");

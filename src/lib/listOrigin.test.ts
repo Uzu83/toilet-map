@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { HAKATA_STATION, haversineMeters } from "@/lib/geo";
 import {
+  distanceModeAfterSearchConfirm,
   parseNominatimSearchOrigin,
   resolveListOrigin,
   shouldFlyToGps,
@@ -47,6 +48,12 @@ describe("resolveListOrigin", () => {
     expect(
       resolveListOrigin({ distanceMode: "search", userPos: HAKATA, searchOrigin: null })
     ).toEqual(HAKATA);
+  });
+});
+
+describe("distanceModeAfterSearchConfirm", () => {
+  it("検索を確定したらリスト距離は検索地点（#33）", () => {
+    expect(distanceModeAfterSearchConfirm()).toBe("search");
   });
 });
 
