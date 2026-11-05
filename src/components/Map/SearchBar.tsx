@@ -5,7 +5,7 @@ import { useMap } from "react-leaflet";
 import { useTranslations } from "next-intl";
 import { Loader2, Search, X } from "lucide-react";
 import { parseNominatimSearchOrigin } from "@/lib/listOrigin";
-import { shouldConfirmFirstSuggestion } from "@/lib/searchConfirm";
+import { searchEnterAction } from "@/lib/searchConfirm";
 import { useMapStore } from "@/store/mapStore";
 
 type NominatimResult = {
@@ -44,41 +44,8 @@ export function SearchBar() {
   const [busy, setBusy] = useState(false);
   const abortRef = useRef<AbortController | null>(null);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  // 入力 onChange で debounce 検索(useEffect ではなくイベントハンドラで実行する)
-  const onInputChange = (next: string) => {
-    setQ(next);
-    if (timerRef.current) clearTimeout(timerRef.current);
-    // debounce 待ち中に旧 fetch が完了すると旧候補が復活する（GPT F001）
-    abortRef.current?.abort();
-    abortRef.current = null;
-    setResults([]);
-    setResultsQuery("");
-    setOpen(false);
-    if (!next.trim()) {
-      setBusy(false);
-      return;
-    }
-    timerRef.current = setTimeout(async () => {
-      const ac = new AbortController();
-      abortRef.current = ac;
-      setBusy(true);
-      try {
-        const r = await geocode(next, ac.signal);
-        if (ac.signal.aborted) return;
-        setResults(r);
-        setResultsQuery(next.trim());
-        setOpen(true);
-      } catch {
-        if (ac.signal.aborted) return;
-        setResults([]);
-        setResultsQuery(next.trim());
-        setOpen(true);
-      } finally {
-        if (!ac.signal.aborted) setBusy(false);
-      }
-    }, 350);
-  };
+  // 通信中に Enter したとき、戻った先頭候補へ進む。
+  const confirmWhenReadyRef = useRef(false);
 
   const select = (r: NominatimResult) => {
     const origin = parseNominatimSearchOrigin(r);
@@ -92,24 +59,91 @@ export function SearchBar() {
     setQ(r.name ?? r.display_name.split(",")[0] ?? "");
   };
 
+  const startGeocode = (query: string, confirmFirst: boolean) => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    abortRef.current?.abort();
+    const ac = new AbortController();
+    abortRef.current = ac;
+    confirmWhenReadyRef.current = false;
+    setBusy(true);
+    // 結果が返るまで空表示にしない。Enter 直後の「見つからない」を防ぐ。
+    setOpen(false);
+    void (async () => {
+      try {
+        const r = await geocode(query, ac.signal);
+        if (ac.signal.aborted) return;
+        const takeFirst = confirmFirst || confirmWhenReadyRef.current;
+        confirmWhenReadyRef.current = false;
+        setResults(r);
+        setResultsQuery(query.trim());
+        if (takeFirst && r[0]) {
+          select(r[0]);
+          return;
+        }
+        setOpen(true);
+      } catch {
+        if (ac.signal.aborted) return;
+        confirmWhenReadyRef.current = false;
+        setResults([]);
+        setResultsQuery(query.trim());
+        setOpen(true);
+      } finally {
+        if (!ac.signal.aborted) setBusy(false);
+      }
+    })();
+  };
+
+  // 入力 onChange で debounce 検索(useEffect ではなくイベントハンドラで実行する)
+  const onInputChange = (next: string) => {
+    setQ(next);
+    if (timerRef.current) clearTimeout(timerRef.current);
+    timerRef.current = null;
+    confirmWhenReadyRef.current = false;
+    // debounce 待ち中に旧 fetch が完了すると旧候補が復活する（GPT F001）
+    abortRef.current?.abort();
+    abortRef.current = null;
+    setResults([]);
+    setResultsQuery("");
+    setOpen(false);
+    if (!next.trim()) {
+      setBusy(false);
+      return;
+    }
+    timerRef.current = setTimeout(() => {
+      timerRef.current = null;
+      startGeocode(next, false);
+    }, 350);
+  };
+
   const onEnter = (isComposing: boolean) => {
-    if (
-      shouldConfirmFirstSuggestion({
-        isComposing,
-        open,
-        resultCount: results.length,
-        resultsQuery,
-        currentQuery: q,
-      })
-    ) {
+    const action = searchEnterAction({
+      isComposing,
+      currentQuery: q,
+      open,
+      resultCount: results.length,
+      resultsQuery,
+      busy,
+      pending: timerRef.current !== null,
+    });
+    if (action === "ignore") return;
+    if (action === "select-first") {
       const first = results[0];
       if (first) select(first);
       return;
     }
-    if (isComposing) return;
-    if (!q.trim()) return;
-    // 0 件 / 失敗後の Enter は地図を動かさず「場所を見つけられませんでした」を出す。
-    setOpen(true);
+    if (action === "show-no-results") {
+      // この語の検索が 0 件で終わったあとだけ空表示する。地図は動かさない。
+      setOpen(true);
+      return;
+    }
+    if (action === "wait-for-current") {
+      confirmWhenReadyRef.current = true;
+      return;
+    }
+    startGeocode(q, true);
   };
 
   const showNoResults = open && results.length === 0 && q.trim().length > 0 && !busy;
