@@ -18,7 +18,7 @@ vi.mock("react", async (importOriginal) => {
   };
 });
 
-import { getIndexableToiletIdsPage, getToiletById } from "@/lib/toilets";
+import { getIndexableToiletIdsPage, getRegionSnapshot, getToiletById } from "@/lib/toilets";
 
 // ページングに使う stub 行
 function makeRows(n: number, offset = 0) {
@@ -77,5 +77,75 @@ describe("getToiletById — UUID ガード (H3)", () => {
     const result = await getToiletById("");
     expect(result).toBeNull();
     expect(rpcMock).not.toHaveBeenCalled();
+  });
+});
+
+const TOKYO_23: [number, number, number, number] = [35.5, 139.55, 35.85, 139.92];
+
+function regionToiletRow(id: string) {
+  return {
+    id,
+    name: "西品川公園公衆便所",
+    lat: 35.6128412,
+    lng: 139.7309138,
+    source: "osm",
+    has_washlet: null,
+    has_diaper_table: null,
+    is_universal: true,
+    review_count: 0,
+    avg_rating: null,
+    dominant_access: null,
+    inferred_access: null,
+    opening_hours: null,
+    not_a_toilet_count: 0,
+  };
+}
+
+describe("getRegionSnapshot — 失敗を 0 件にしない", () => {
+  beforeEach(() => {
+    rpcMock.mockReset();
+  });
+
+  it("件数と一覧が返ればそのまま返す", async () => {
+    rpcMock
+      .mockResolvedValueOnce({ data: "7873", error: null })
+      .mockResolvedValueOnce({ data: [regionToiletRow("t-1")], error: null });
+    const result = await getRegionSnapshot(TOKYO_23, 180);
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.count).toBe(7873);
+    expect(result.toilets).toHaveLength(1);
+    expect(result.toilets[0]?.id).toBe("t-1");
+    expect(rpcMock.mock.calls[0]?.[0]).toBe("toilets_in_region_count");
+    expect(rpcMock.mock.calls[0]?.[1]).toMatchObject({
+      min_lng: 139.55,
+      min_lat: 35.5,
+      max_lng: 139.92,
+      max_lat: 35.85,
+    });
+    expect(rpcMock.mock.calls[1]?.[1]).toMatchObject({ result_limit: 180 });
+  });
+
+  it("本当に 0 件のときは 0 件の成功", async () => {
+    rpcMock
+      .mockResolvedValueOnce({ data: 0, error: null })
+      .mockResolvedValueOnce({ data: [], error: null });
+    await expect(getRegionSnapshot(TOKYO_23, 180)).resolves.toEqual({
+      ok: true,
+      count: 0,
+      toilets: [],
+    });
+  });
+
+  it("RPC エラーは 0 件にしない", async () => {
+    rpcMock
+      .mockResolvedValueOnce({ data: null, error: { message: "unavailable" } })
+      .mockResolvedValueOnce({ data: [regionToiletRow("t-1")], error: null });
+    await expect(getRegionSnapshot(TOKYO_23, 180)).resolves.toEqual({ ok: false });
+  });
+
+  it("通信例外は 0 件にしない", async () => {
+    rpcMock.mockRejectedValue(new Error("network"));
+    await expect(getRegionSnapshot(TOKYO_23, 180)).resolves.toEqual({ ok: false });
   });
 });
