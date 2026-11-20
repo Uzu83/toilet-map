@@ -89,6 +89,44 @@ export async function getRegionCount(bbox: Bbox): Promise<number> {
   }
 }
 
+// エリアページ用。失敗を 0 件の成功と混ぜない。
+// getRegionCount / getToiletsInRegion は失敗を 0 / [] に潰す(sitemap はエリアを除外するだけ)。
+// エリアページがその値を描くと、障害中の「0 toilets registered.」が revalidate(7日)のあいだ残る。
+export type RegionSnapshot =
+  | { ok: true; count: number; toilets: Toilet[] }
+  | { ok: false };
+
+function regionCountValue(data: unknown): number | null {
+  const raw = Array.isArray(data) ? data[0] : data;
+  if (typeof raw !== "number" && typeof raw !== "string") return null;
+  if (typeof raw === "string" && raw.trim() === "") return null;
+  const count = Number(raw);
+  if (!Number.isFinite(count) || count < 0) return null;
+  return count;
+}
+
+export async function getRegionSnapshot(bbox: Bbox, limit = 200): Promise<RegionSnapshot> {
+  const [south, west, north, east] = bbox;
+  const bounds = { min_lng: west, min_lat: south, max_lng: east, max_lat: north };
+  try {
+    const supabase = getServerSupabasePublishable();
+    const [countRes, listRes] = await Promise.all([
+      supabase.rpc("toilets_in_region_count", bounds),
+      supabase.rpc("toilets_in_region", { ...bounds, result_limit: limit }),
+    ]);
+    if (countRes.error || listRes.error || !Array.isArray(listRes.data)) return { ok: false };
+    const count = regionCountValue(countRes.data);
+    if (count == null) return { ok: false };
+    return {
+      ok: true,
+      count,
+      toilets: listRes.data.map((row) => toToilet(row as Record<string, unknown>)),
+    };
+  } catch {
+    return { ok: false };
+  }
+}
+
 // getToiletCount(toilet_count RPC)は削除済み。
 // 呼び出し元が存在しなかった(sitemap は *Indexable* バリアントのみを使う)ため dead code と判定。
 // 件数が必要になったら getIndexableToiletCount を参考に toilet_count RPC で再実装すること。
