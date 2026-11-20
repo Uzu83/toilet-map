@@ -14,6 +14,14 @@ export type ResolveListOriginInput = {
   searchOrigin: SearchOrigin | null;
 };
 
+/**
+ * 検索候補を確定したあとの距離モード。
+ * リストは検索地点から測る。ここを here のままにすると博多（または GPS）基準のまま残る（#33）。
+ */
+export function distanceModeAfterSearchConfirm(): "search" {
+  return "search";
+}
+
 /** リスト距離・ソート・方角の原点。search は mode=search かつ searchOrigin があるときだけ。 */
 export function resolveListOrigin(input: ResolveListOriginInput): { lat: number; lng: number } {
   const { distanceMode, userPos, searchOrigin } = input;
