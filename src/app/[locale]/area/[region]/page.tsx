@@ -8,7 +8,7 @@ import { KoFiTip } from "@/components/KoFiTip";
 import { AreaJsonLd } from "@/components/seo/AreaJsonLd";
 import { AccessChip } from "@/components/seo/AccessChip";
 import { findArea, relatedAreas, areaLabel, areaMapView, type Area } from "@/lib/areas";
-import { getRegionCount, getToiletsInRegion } from "@/lib/toilets";
+import { getRegionSnapshot } from "@/lib/toilets";
 import { isToiletIndexable, toiletAccessKey, toiletDisplayName } from "@/lib/toiletSeo"; // ISR Writes 止血: non-indexable リンク除去(A+C)
 // #29: isToiletIndexable は loadArea が返す既取得の toilets に対して適用する。追加 DB 呼び出しなし。
 import { absUrl, languageAlternates, inLanguageOf, baseOpenGraph } from "@/lib/urls";
@@ -29,17 +29,25 @@ const LIST_LIMIT = 180;
 //   cache() の per-request memo により同一リクエスト内の二重 DB ラウンドトリップを 1 回に削減する。
 //   出力は変わらない(同じ DB に同じ引数で問い合わせるので結果は同一)。
 //   ⚠️ cache() のスコープは「サーバーリクエスト単位」。Next の ISR キャッシュとは別物。
-const loadArea = cache(async function loadArea(
-  region: string
-): Promise<{ area: Area; count: number; toilets: Toilet[] } | null> {
+type AreaLoad =
+  | { area: Area; ok: true; count: number; toilets: Toilet[] }
+  | { area: Area; ok: false };
+
+const loadArea = cache(async function loadArea(region: string): Promise<AreaLoad | null> {
   const area = findArea(region);
   if (!area) return null;
-  const [count, toilets] = await Promise.all([
-    getRegionCount(area.bbox),
-    getToiletsInRegion(area.bbox, LIST_LIMIT),
-  ]);
-  return { area, count, toilets };
+  const snapshot = await getRegionSnapshot(area.bbox, LIST_LIMIT);
+  if (!snapshot.ok) return { area, ok: false };
+  return { area, ok: true, count: snapshot.count, toilets: snapshot.toilets };
 });
+
+type AreaReady = { area: Area; ok: true; count: number; toilets: Toilet[] };
+
+// RPC 失敗を 0 件の HTML にしない。200 で描くと revalidate(7日) の ISR に残る。
+function areaReady(data: AreaLoad): AreaReady {
+  if (data.ok) return data;
+  throw new Error("Area toilet data is temporarily unavailable");
+}
 
 export async function generateMetadata({
   params,
@@ -50,11 +58,12 @@ export async function generateMetadata({
   const data = await loadArea(region);
   const t = await getTranslations({ locale, namespace: "areaPage" });
   if (!data) return { title: "Not found", robots: { index: false, follow: false } };
+  const ready = areaReady(data);
   const tan = await getTranslations({ locale, namespace: "areaNames" });
-  const label = areaLabel(data.area, tan);
-  const path = `/area/${data.area.slug}`;
+  const label = areaLabel(ready.area, tan);
+  const path = `/area/${ready.area.slug}`;
   const title = t("heading", { label });
-  const description = t("metaDescription", { label, count: data.count });
+  const description = t("metaDescription", { label, count: ready.count });
   return {
     title,
     description,
@@ -79,7 +88,7 @@ export async function generateMetadata({
     //   sitemap の getIndexableToiletIdsPage 経由で引き続き独立して発見可能。
     //   また、このゲートはページが実際にクローラへ見せるリンク群と整合しているため、
     //   クローラの「リンクを辿って index → 辿れるリンクが 0 件」という矛盾を防げる。
-    robots: { index: data.toilets.some(isToiletIndexable), follow: true },
+    robots: { index: ready.toilets.some(isToiletIndexable), follow: true },
   };
 }
 
@@ -92,7 +101,7 @@ export default async function AreaPage({
   setRequestLocale(locale);
   const data = await loadArea(region);
   if (!data) notFound();
-  const { area, count, toilets } = data;
+  const { area, count, toilets } = areaReady(data);
 
   const t = await getTranslations("areaPage");
   const tn = await getTranslations("nav");
