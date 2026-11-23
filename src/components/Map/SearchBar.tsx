@@ -110,10 +110,10 @@ export function SearchBar() {
     setResults([]);
     setResultsQuery("");
     setOpen(false);
-    if (!next.trim()) {
-      setBusy(false);
-      return;
-    }
+    // abort した通信の finally は busy を下ろさない。残すとデバウンス中の
+    // Enter が、もう存在しないリクエストを待つ。
+    setBusy(false);
+    if (!next.trim()) return;
     timerRef.current = setTimeout(() => {
       timerRef.current = null;
       startGeocode(next, false);

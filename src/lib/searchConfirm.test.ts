@@ -48,6 +48,12 @@ describe("searchEnterAction", () => {
     expect(searchEnterAction({ ...base, pending: false, busy: true })).toBe("wait-for-current");
   });
 
+  it("入力し直した直後の Enter は、残った busy でもデバウンスを待たずに検索する", () => {
+    // 通信中にクエリを変えると前のリクエストは abort されるが、busy は true のまま
+    // 350ms のデバウンスが pending になる。ここを wait にすると確定フラグが消える。
+    expect(searchEnterAction({ ...base, busy: true, pending: true })).toBe("search-now");
+  });
+
   it("この語の検索が 0 件で終わった Enter は空表示", () => {
     expect(
       searchEnterAction({

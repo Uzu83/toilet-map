@@ -54,6 +54,9 @@ export function searchEnterAction(args: {
   if (args.resultCount > 0 && args.resultsQuery.trim() === query) {
     return "select-first";
   }
+  // デバウンス待ちは、abort 後に残った busy より先に見る。
+  // ここを wait にすると、350ms 後の startGeocode が確定フラグを消して地図が動かない。
+  if (args.pending) return "search-now";
   // 通信中に空表示すると、戻ってきた候補より先に「見つからない」が見える。
   if (args.busy) return "wait-for-current";
   if (!args.pending && args.resultsQuery.trim() === query && args.resultCount === 0) {
