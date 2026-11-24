@@ -9,6 +9,7 @@ import { AreaJsonLd } from "@/components/seo/AreaJsonLd";
 import { AccessChip } from "@/components/seo/AccessChip";
 import { findArea, relatedAreas, areaLabel, areaMapView, type Area } from "@/lib/areas";
 import { getRegionSnapshot } from "@/lib/toilets";
+import { TOKYO_23_FETCH_LIMIT, toiletsForAreaList } from "@/lib/tokyo23";
 import { isToiletIndexable, toiletAccessKey, toiletDisplayName } from "@/lib/toiletSeo"; // ISR Writes 止血: non-indexable リンク除去(A+C)
 // #29: isToiletIndexable は loadArea が返す既取得の toilets に対して適用する。追加 DB 呼び出しなし。
 import { absUrl, languageAlternates, inLanguageOf, baseOpenGraph } from "@/lib/urls";
@@ -36,9 +37,16 @@ type AreaLoad =
 const loadArea = cache(async function loadArea(region: string): Promise<AreaLoad | null> {
   const area = findArea(region);
   if (!area) return null;
-  const snapshot = await getRegionSnapshot(area.bbox, LIST_LIMIT);
+  // tokyo-23 の bbox は隣市を含む。多めに取ってから区界で落とす（件数表示は RPC の成功値のまま）。
+  const fetchLimit = area.slug === "tokyo-23" ? TOKYO_23_FETCH_LIMIT : LIST_LIMIT;
+  const snapshot = await getRegionSnapshot(area.bbox, fetchLimit);
   if (!snapshot.ok) return { area, ok: false };
-  return { area, ok: true, count: snapshot.count, toilets: snapshot.toilets };
+  return {
+    area,
+    ok: true,
+    count: snapshot.count,
+    toilets: toiletsForAreaList(area.slug, snapshot.toilets, LIST_LIMIT),
+  };
 });
 
 type AreaReady = { area: Area; ok: true; count: number; toilets: Toilet[] };
