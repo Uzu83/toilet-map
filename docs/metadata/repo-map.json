@@ -1,7 +1,7 @@
 {
-  "generated_at": "2026-07-09T14:41:12.431Z",
-  "git_head": "f2d113c1d9fe56c2a57a75a7d5928c0f85cc1292",
+  "generated_at": "2026-11-26T22:54:06.885Z",
+  "git_head": "863a3eaf9be0886a34379d9fa3caf0ffcef064bf",
   "generated_by": "scripts/generate-repo-map.mjs",
-  "file_count": 192,
-  "route_count": 21
+  "file_count": 251,
+  "route_count": 22
 }

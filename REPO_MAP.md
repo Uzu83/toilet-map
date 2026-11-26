@@ -16,13 +16,14 @@
 <!-- repo-map:auto:begin -->
 <!-- このブロックは scripts/generate-repo-map.mjs が再生成する。手で編集しない -->
 
-_最終生成: 2026-07-09T14:41:12.414Z / commit: f2d113c_
+_最終生成: 2026-11-26T22:54:06.877Z / commit: 863a3ea_
 
 ### トップレベル構成
 
 | Path | Files |
 |---|---:|
 | `.agents/` | 4 |
+| `.ai/` | 5 |
 | `.claude/` | 11 |
 | `.codex/` | 3 |
 | `.env.example` | 1 |
@@ -31,7 +32,7 @@ _最終生成: 2026-07-09T14:41:12.414Z / commit: f2d113c_
 | `.gitleaks.toml` | 1 |
 | `AGENTS.md` | 1 |
 | `CLAUDE.md` | 1 |
-| `docs/` | 13 |
+| `docs/` | 14 |
 | `eslint.config.mjs` | 1 |
 | `messages/` | 4 |
 | `mise.toml` | 1 |
@@ -42,12 +43,13 @@ _最終生成: 2026-07-09T14:41:12.414Z / commit: f2d113c_
 | `public/` | 8 |
 | `README.md` | 1 |
 | `REPO_MAP.md` | 1 |
-| `scripts/` | 3 |
+| `scripts/` | 4 |
 | `sentry.edge.config.ts` | 1 |
 | `sentry.server.config.ts` | 1 |
-| `src/` | 106 |
-| `supabase/` | 18 |
+| `src/` | 140 |
+| `supabase/` | 19 |
 | `tsconfig.json` | 1 |
+| `vendor/` | 17 |
 | `vercel.json` | 1 |
 | `vitest.config.ts` | 1 |
 
@@ -70,6 +72,7 @@ _最終生成: 2026-07-09T14:41:12.414Z / commit: f2d113c_
 - `src/app/api/admin/reviews/route.ts`
 - `src/app/api/admin/suggestions/[id]/route.ts`
 - `src/app/api/admin/toilets/[id]/route.ts`
+- `src/app/api/cron/osm-sync/route.ts`
 - `src/app/api/reviews/route.ts`
 - `src/app/api/submissions/route.ts`
 - `src/app/api/toilets/[id]/route.ts`
@@ -83,6 +86,7 @@ _最終生成: 2026-07-09T14:41:12.414Z / commit: f2d113c_
 - `pnpm lint` — `eslint`
 - `pnpm test` — `vitest run`
 - `pnpm seed` — `tsx scripts/seed-osm.ts`
+- `pnpm osm-sync` — `tsx scripts/osm-sync.ts`
 - `pnpm verify:skills` — `diff -ru .agents/skills .claude/skills`
 - `pnpm verify` — `pnpm verify:skills && pnpm lint && pnpm exec next typegen && pnpm exec tsc --noEmit && pnpm test && pnpm build`
 <!-- repo-map:auto:end -->
@@ -91,9 +95,9 @@ _最終生成: 2026-07-09T14:41:12.414Z / commit: f2d113c_
 
 <!-- 手書き: entrypoints / background jobs / migrations / 外部 API 呼び出し箇所 -->
 
-- entrypoints:
-- 外部 API:
-- cron / background:
+- entrypoints: `GET/POST /api/cron/osm-sync`（週次 OSM 同期。`CRON_SECRET`）
+- 外部 API: Overpass（`src/lib/osm.ts`。手動シードと週次同期）
+- cron / background: `vercel.json` の `crons` `0 18 * * 1` → `/api/cron/osm-sync`。状態 `osm_sync_state`、ログ `osm_sync_runs`（migration 019。本番適用はオーナー）
 
 ## Change hotspots（手書き・最重要）
 
@@ -104,12 +108,13 @@ _最終生成: 2026-07-09T14:41:12.414Z / commit: f2d113c_
 | 場所 | 何が壊れやすいか / 過去に何があったか |
 |---|---|
 | （例: `lib/auth/**`） | （例: セッション検証を middleware に寄せた経緯。route 側に再実装しない） |
+| `src/lib/osmSync/**`, `supabase/migrations/019_osm_sync.sql` | 週次同期は osm_id で upsert するが、`source=user` は触らない。OSM の null で上書きしない。`admin_edits.changed_fields` を優先。toilets の全件削除はしない。plpgsql は vitest では未実行（適用後にオーナーが smoke）。手動 `pnpm seed` はこの保護を通らない |
 
 ## Security-sensitive（手書き）
 
 <!-- ここに載っている領域に触れる変更は review-pre / review-post が必須 -->
 
-- 認証・認可:
-- 秘密情報の読み書き:
+- 認証・認可: `/api/cron/osm-sync` は `CRON_SECRET`（Bearer）。未設定は拒否
+- 秘密情報の読み書き: `CRON_SECRET` は server-only。ログ・レスポンス・migration に値を書かない
 - 課金:
-- データ削除・migration:
+- データ削除・migration: 019 は新規ファイル。`osm_sync_apply` は toilets を DELETE しない。本番適用は手動、この変更では未適用
