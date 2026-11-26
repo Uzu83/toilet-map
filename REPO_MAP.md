@@ -16,13 +16,14 @@
 <!-- repo-map:auto:begin -->
 <!-- このブロックは scripts/generate-repo-map.mjs が再生成する。手で編集しない -->
 
-_最終生成: 2026-07-09T14:41:12.414Z / commit: f2d113c_
+_最終生成: 2026-11-26T21:53:46.292Z / commit: 863a3ea_
 
 ### トップレベル構成
 
 | Path | Files |
 |---|---:|
 | `.agents/` | 4 |
+| `.ai/` | 5 |
 | `.claude/` | 11 |
 | `.codex/` | 3 |
 | `.env.example` | 1 |
@@ -31,7 +32,7 @@ _最終生成: 2026-07-09T14:41:12.414Z / commit: f2d113c_
 | `.gitleaks.toml` | 1 |
 | `AGENTS.md` | 1 |
 | `CLAUDE.md` | 1 |
-| `docs/` | 13 |
+| `docs/` | 14 |
 | `eslint.config.mjs` | 1 |
 | `messages/` | 4 |
 | `mise.toml` | 1 |
@@ -45,9 +46,10 @@ _最終生成: 2026-07-09T14:41:12.414Z / commit: f2d113c_
 | `scripts/` | 3 |
 | `sentry.edge.config.ts` | 1 |
 | `sentry.server.config.ts` | 1 |
-| `src/` | 106 |
-| `supabase/` | 18 |
+| `src/` | 129 |
+| `supabase/` | 19 |
 | `tsconfig.json` | 1 |
+| `vendor/` | 17 |
 | `vercel.json` | 1 |
 | `vitest.config.ts` | 1 |
 
@@ -65,9 +67,11 @@ _最終生成: 2026-07-09T14:41:12.414Z / commit: f2d113c_
 - `src/app/admin/login/page.tsx`
 - `src/app/admin/page.tsx`
 - `src/app/api/admin/analyze/route.ts`
+- `src/app/api/admin/facility-claims/[id]/route.ts`
 - `src/app/api/admin/login/route.ts`
 - `src/app/api/admin/logout/route.ts`
 - `src/app/api/admin/reviews/route.ts`
+- `src/app/api/admin/submissions/[id]/route.ts`
 - `src/app/api/admin/suggestions/[id]/route.ts`
 - `src/app/api/admin/toilets/[id]/route.ts`
 - `src/app/api/reviews/route.ts`

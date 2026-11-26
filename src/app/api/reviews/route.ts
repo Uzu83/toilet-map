@@ -3,6 +3,10 @@ import { getServerSupabaseSecret } from "@/lib/supabase/server";
 import { checkAndRecord, extractIp, hashIp } from "@/lib/rateLimit";
 import { ACCESS_SET } from "@/types/toilet";
 import { UUID_RE } from "@/lib/uuid";
+import {
+  ReviewFacilityValidationError,
+  parseReviewFacilities,
+} from "@/lib/reviewFacility";
 
 export const runtime = "nodejs";
 
@@ -11,6 +15,10 @@ type ReviewBody = {
   rating?: unknown;
   accessLevel?: unknown;
   hasWashlet?: unknown;
+  hasPaper?: unknown;
+  hasSoap?: unknown;
+  hasDiaperTable?: unknown;
+  openingHours?: unknown;
   comment?: unknown;
   notAToilet?: unknown;
 };
@@ -45,12 +53,6 @@ export async function POST(request: NextRequest) {
       : notAToilet
       ? "permission"
       : null;
-  const hasWashlet =
-    typeof body.hasWashlet === "boolean" ? body.hasWashlet : null;
-  const comment =
-    typeof body.comment === "string" && body.comment.trim() !== ""
-      ? body.comment.slice(0, 500)
-      : null;
 
   if (!rating || !accessLevel) {
     return NextResponse.json({ error: "toiletId, rating, accessLevel are required" }, { status: 400 });
@@ -61,6 +63,23 @@ export async function POST(request: NextRequest) {
   if (!ACCESS_SET.has(accessLevel as "open" | "ask" | "permission")) {
     return NextResponse.json({ error: "invalid accessLevel" }, { status: 400 });
   }
+
+  // 設備は任意。型が壊れているときだけ 400。未選択は null で、承認キューには積まない。
+  // rate limit より前に弾く(入力エラーで 1 時間枠を消費しない)。
+  let facilities;
+  try {
+    facilities = parseReviewFacilities(body, { notAToilet });
+  } catch (err) {
+    if (err instanceof ReviewFacilityValidationError) {
+      return NextResponse.json({ error: err.message }, { status: 400 });
+    }
+    throw err;
+  }
+
+  const comment =
+    typeof body.comment === "string" && body.comment.trim() !== ""
+      ? body.comment.slice(0, 500)
+      : null;
 
   const ipHash = hashIp(extractIp(request));
   const limit = checkAndRecord(ipHash, toiletId);
@@ -73,14 +92,20 @@ export async function POST(request: NextRequest) {
 
   try {
     const supabase = getServerSupabaseSecret();
-    const { error } = await supabase.from("reviews").insert({
-      toilet_id: toiletId,
-      rating,
-      access_level: accessLevel,
-      has_washlet: hasWashlet,
-      comment,
-      ip_hash: ipHash,
-      not_a_toilet: notAToilet,
+    // レビュー行と pending の設備キューを同一 RPC で書く。toilets 列はこの経路では更新しない
+    // (承認は /admin の admin_decide_facility_claim → admin_apply_edit)。
+    const { error } = await supabase.rpc("insert_review_with_claims", {
+      p_toilet_id: toiletId,
+      p_rating: rating,
+      p_access: accessLevel,
+      p_has_washlet: facilities.has_washlet,
+      p_has_paper: facilities.has_paper,
+      p_has_soap: facilities.has_soap,
+      p_has_diaper_table: facilities.has_diaper_table,
+      p_opening_hours: facilities.opening_hours,
+      p_comment: comment,
+      p_ip_hash: ipHash,
+      p_not_a_toilet: notAToilet,
     });
     if (error) {
       // #21 — raw DB error は外部に返さない(スキーマ情報が漏れる)。サーバーログに記録してジェネリック応答。

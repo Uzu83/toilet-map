@@ -21,6 +21,10 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
   const [rating, setRating] = useState(0);
   const [accessLevel, setAccessLevel] = useState<AccessLevel | null>(null);
   const [hasWashlet, setHasWashlet] = useState<boolean | null>(null);
+  const [hasPaper, setHasPaper] = useState<boolean | null>(null);
+  const [hasSoap, setHasSoap] = useState<boolean | null>(null);
+  const [hasDiaperTable, setHasDiaperTable] = useState<boolean | null>(null);
+  const [openingHours, setOpeningHours] = useState("");
   const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,7 +48,17 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
     setError(null);
     const payload = isReport
       ? { toiletId, notAToilet: true, comment }
-      : { toiletId, rating, accessLevel, hasWashlet, comment };
+      : {
+          toiletId,
+          rating,
+          accessLevel,
+          hasWashlet,
+          hasPaper,
+          hasSoap,
+          hasDiaperTable,
+          openingHours: openingHours.trim() === "" ? null : openingHours.trim(),
+          comment,
+        };
     const res = await fetch("/api/reviews", {
       method: "POST",
       headers: { "content-type": "application/json" },
@@ -66,7 +80,7 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
 
   return (
     <div className="fixed inset-0 z-2000 flex items-end justify-center bg-black/50 p-2 sm:items-center sm:p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-2xl dark:bg-zinc-900">
+      <div className="max-h-[min(90vh,40rem)] w-full max-w-md overflow-y-auto rounded-2xl bg-white p-5 shadow-2xl dark:bg-zinc-900">
         <div className="mb-3 flex items-start justify-between gap-3">
           <div>
             <h3 className="text-base font-bold text-zinc-900 dark:text-zinc-50">
@@ -175,29 +189,54 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
             </fieldset>
 
             <fieldset className="mb-4">
-              <legend className="mb-2 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
-                {t("washletQ")}
+              <legend className="mb-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+                {t("facilityLegend")}
               </legend>
-              <div className="flex gap-2">
-                {[
-                  { v: true, label: t("yes") },
-                  { v: false, label: t("no") },
-                  { v: null, label: t("unknown") },
-                ].map((o) => (
-                  <button
-                    key={String(o.v)}
-                    type="button"
-                    onClick={() => setHasWashlet(o.v)}
-                    className={`flex-1 rounded-lg border px-3 py-2 text-sm transition ${
-                      hasWashlet === o.v
-                        ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200"
-                        : "border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
-                    }`}
-                  >
-                    {o.label}
-                  </button>
-                ))}
+              <p className="mb-3 text-xs text-zinc-500 dark:text-zinc-400">{t("facilityHint")}</p>
+              <div className="space-y-2">
+                <TriChoice
+                  label={t("paperQ")}
+                  value={hasPaper}
+                  onChange={setHasPaper}
+                  yes={t("yes")}
+                  no={t("no")}
+                  unknown={t("unknown")}
+                />
+                <TriChoice
+                  label={t("washletQ")}
+                  value={hasWashlet}
+                  onChange={setHasWashlet}
+                  yes={t("yes")}
+                  no={t("no")}
+                  unknown={t("unknown")}
+                />
+                <TriChoice
+                  label={t("soapQ")}
+                  value={hasSoap}
+                  onChange={setHasSoap}
+                  yes={t("yes")}
+                  no={t("no")}
+                  unknown={t("unknown")}
+                />
+                <TriChoice
+                  label={t("diaperQ")}
+                  value={hasDiaperTable}
+                  onChange={setHasDiaperTable}
+                  yes={t("yes")}
+                  no={t("no")}
+                  unknown={t("unknown")}
+                />
               </div>
+              <label className="mt-3 block text-xs font-medium text-zinc-700 dark:text-zinc-300">
+                {t("hoursQ")}
+                <input
+                  value={openingHours}
+                  onChange={(e) => setOpeningHours(e.target.value.slice(0, 200))}
+                  maxLength={200}
+                  placeholder={t("hoursPlaceholder")}
+                  className="mt-1 w-full rounded-lg border border-zinc-200 px-2 py-2 text-sm font-normal dark:border-zinc-700 dark:bg-zinc-800"
+                />
+              </label>
             </fieldset>
 
             <fieldset className="mb-4">
@@ -226,6 +265,49 @@ export function ReviewForm({ toiletId, toiletName, mode, onClose }: Props) {
             <p className="mt-2 text-center text-xs text-zinc-500 dark:text-zinc-400">{t("rateLimit")}</p>
           </>
         )}
+      </div>
+    </div>
+  );
+}
+
+function TriChoice({
+  label,
+  value,
+  onChange,
+  yes,
+  no,
+  unknown,
+}: {
+  label: string;
+  value: boolean | null;
+  onChange: (v: boolean | null) => void;
+  yes: string;
+  no: string;
+  unknown: string;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <span className="w-24 shrink-0 text-xs font-medium text-zinc-700 dark:text-zinc-300">{label}</span>
+      <div className="flex flex-1 gap-1">
+        {[
+          { v: true as boolean | null, text: yes },
+          { v: false as boolean | null, text: no },
+          { v: null, text: unknown },
+        ].map((o) => (
+          <button
+            key={String(o.v)}
+            type="button"
+            aria-label={`${label}: ${o.text}`}
+            onClick={() => onChange(o.v)}
+            className={`min-h-10 flex-1 rounded-lg border px-1 py-1.5 text-xs transition ${
+              value === o.v
+                ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-200"
+                : "border-zinc-200 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+            }`}
+          >
+            {o.text}
+          </button>
+        ))}
       </div>
     </div>
   );

@@ -24,6 +24,8 @@ export type AdminToilet = {
   name: string | null;
   inferred_access: "open" | "ask" | "permission" | null;
   has_washlet: boolean | null;
+  has_paper: boolean | null;
+  has_soap: boolean | null;
   has_diaper_table: boolean | null;
   is_universal: boolean | null;
   opening_hours: string | null;
@@ -51,6 +53,36 @@ export type AdminSuggestion = {
   createdAt: string;
 };
 
+export type AdminPendingSubmission = {
+  id: string;
+  name: string | null;
+  accessLevel: string;
+  isOutdoor: boolean | null;
+  isUniversal: boolean | null;
+  comment: string | null;
+  confirmCount: number;
+  lat: number;
+  lng: number;
+  createdAt: string;
+};
+
+export type FacilityClaimField =
+  | "has_paper"
+  | "has_washlet"
+  | "has_soap"
+  | "has_diaper_table"
+  | "opening_hours";
+
+export type AdminFacilityClaim = {
+  id: string;
+  reviewId: string;
+  toiletId: string;
+  field: FacilityClaimField;
+  value: boolean | string | null;
+  comment: string | null;
+  createdAt: string;
+};
+
 const ACCESS_LABEL: Record<string, string> = {
   open: "声かけ不要(青)",
   ask: "一声かける(黄)",
@@ -64,6 +96,14 @@ const FIELD_LABEL: Record<EditableField, string> = {
   has_washlet: "ウォシュレット",
   has_diaper_table: "おむつ交換台",
   is_universal: "多目的トイレ",
+  opening_hours: "営業時間",
+};
+
+const FACILITY_LABEL: Record<FacilityClaimField, string> = {
+  has_paper: "紙",
+  has_washlet: "ウォシュレット",
+  has_soap: "石けん",
+  has_diaper_table: "おむつ交換台",
   opening_hours: "営業時間",
 };
 
@@ -103,11 +143,17 @@ export function AdminDashboard({
   toilets,
   edits,
   suggestions,
+  submissions,
+  facilityClaims,
+  queueWarning,
 }: {
   reviews: AdminReview[];
   toilets: Record<string, AdminToilet>;
   edits: AdminEditLog[];
   suggestions: AdminSuggestion[];
+  submissions: AdminPendingSubmission[];
+  facilityClaims: AdminFacilityClaim[];
+  queueWarning: string | null;
 }) {
   return (
     <main className="mx-auto max-w-3xl px-4 py-8">
@@ -119,8 +165,52 @@ export function AdminDashboard({
         </div>
       </header>
 
-      {/* AI 提案キュー(B1: 手動 approve/reject のみ・自動反映なし)。pending を上部に置き、運営が先に捌けるように。 */}
+      {queueWarning && (
+        <p className="mb-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+          {queueWarning}
+        </p>
+      )}
+
       <section>
+        <h2 className="mb-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          トイレ追加の承認キュー({submissions.length}件 / pending)
+        </h2>
+        <p className="mb-3 text-xs text-zinc-500">
+          承認すると source=user のトイレとして公開されます。却下は本番に載りません。
+          異なる IP の確認が 3 件たまった申請は、これまでどおり自動で公開されます。
+        </p>
+        {submissions.length === 0 ? (
+          <p className="text-sm text-zinc-500">未処理の追加申請はありません。</p>
+        ) : (
+          <ul className="space-y-3">
+            {submissions.map((s) => (
+              <SubmissionCard key={s.id} submission={s} />
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="mt-10">
+        <h2 className="mb-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
+          設備情報の承認キュー({facilityClaims.length}件 / pending)
+        </h2>
+        <p className="mb-3 text-xs text-zinc-500">
+          レビューで送られた紙・ウォシュレット・石けん・おむつ台・営業時間です。
+          承認するまでトイレの本番列は変わりません(OSM の行も同じ)。却下は反映しません。
+        </p>
+        {facilityClaims.length === 0 ? (
+          <p className="text-sm text-zinc-500">未処理の設備情報はありません。</p>
+        ) : (
+          <ul className="space-y-3">
+            {facilityClaims.map((c) => (
+              <FacilityClaimCard key={c.id} claim={c} toilet={toilets[c.toiletId]} />
+            ))}
+          </ul>
+        )}
+      </section>
+
+      {/* AI 提案キュー(B1: 手動 approve/reject のみ・自動反映なし)。 */}
+      <section className="mt-10">
         <h2 className="mb-1 text-sm font-semibold text-zinc-700 dark:text-zinc-300">
           AI提案キュー({suggestions.length}件 / pending)
         </h2>
@@ -389,6 +479,177 @@ function SuggestionCard({
         <p className="mt-1 text-xs text-amber-600">
           紐づくトイレが見つかりません(現在値を表示できません)。
         </p>
+      )}
+      <div className="mt-2.5 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => act("approve")}
+          disabled={busy}
+          className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white disabled:opacity-50"
+        >
+          {busy ? "処理中…" : "承認して反映"}
+        </button>
+        <button
+          type="button"
+          onClick={() => act("reject")}
+          disabled={busy}
+          className="rounded border border-zinc-300 px-2.5 py-1 text-xs text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+        >
+          却下
+        </button>
+        {status && <span className="text-xs text-zinc-600 dark:text-zinc-400">{status}</span>}
+      </div>
+    </li>
+  );
+}
+
+function SubmissionCard({ submission }: { submission: AdminPendingSubmission }) {
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+
+  async function act(action: "approve" | "reject") {
+    setStatus(null);
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/submissions/${submission.id}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ action }),
+      });
+      if (res.ok) {
+        const j = (await res.json()) as { result?: string };
+        setStatus(j.result === "rejected" ? "却下しました" : "公開しました");
+        setTimeout(() => window.location.reload(), 700);
+      } else {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        setStatus(
+          res.status === 409
+            ? j.error === "conflict: nearby toilet exists"
+              ? "近くに既存のトイレがあるため公開できません"
+              : "すでに処理済みです"
+            : `エラー: ${j.error ?? res.status}`,
+        );
+      }
+    } catch {
+      setStatus("通信に失敗しました");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <li className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="font-medium text-zinc-900 dark:text-zinc-100">
+          {submission.name ?? "(名称なし)"}
+        </span>
+        <span className="text-zinc-600 dark:text-zinc-400">
+          {ACCESS_LABEL[submission.accessLevel] ?? submission.accessLevel}
+        </span>
+        <span className="text-zinc-500">確認 {submission.confirmCount}/3</span>
+        <span className="ml-auto text-zinc-400">{fmtDate(submission.createdAt)}</span>
+      </div>
+      <p className="mt-1 text-xs text-zinc-500">
+        {submission.lat.toFixed(5)}, {submission.lng.toFixed(5)}
+        {submission.isUniversal === true ? " · 多目的" : ""}
+        {submission.isOutdoor === true ? " · 屋外" : ""}
+      </p>
+      {submission.comment && (
+        <p className="mt-1.5 whitespace-pre-wrap text-sm">{submission.comment}</p>
+      )}
+      <div className="mt-2.5 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => act("approve")}
+          disabled={busy}
+          className="rounded bg-blue-600 px-3 py-1 text-xs font-medium text-white disabled:opacity-50"
+        >
+          {busy ? "処理中…" : "承認して公開"}
+        </button>
+        <button
+          type="button"
+          onClick={() => act("reject")}
+          disabled={busy}
+          className="rounded border border-zinc-300 px-2.5 py-1 text-xs text-zinc-700 hover:bg-zinc-100 disabled:opacity-50 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
+        >
+          却下
+        </button>
+        {status && <span className="text-xs text-zinc-600 dark:text-zinc-400">{status}</span>}
+      </div>
+    </li>
+  );
+}
+
+function fmtFacilityValue(field: FacilityClaimField, value: unknown): string {
+  if (value === null || value === undefined || value === "") return "不明";
+  if (typeof value === "boolean") return value ? "あり" : "なし";
+  return String(value);
+}
+
+function FacilityClaimCard({
+  claim,
+  toilet,
+}: {
+  claim: AdminFacilityClaim;
+  toilet: AdminToilet | undefined;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState<string | null>(null);
+  const current = toilet ? toilet[claim.field] : undefined;
+
+  async function act(action: "approve" | "reject") {
+    setStatus(null);
+    setBusy(true);
+    try {
+      const res = await fetch(`/api/admin/facility-claims/${claim.id}`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ action }),
+      });
+      if (res.ok) {
+        const j = (await res.json()) as { applied?: boolean; status?: string };
+        if (action === "reject") setStatus("却下しました");
+        else setStatus(j.applied === false ? "変更不要でした(同値)" : "反映しました");
+        setTimeout(() => window.location.reload(), 700);
+      } else {
+        const j = (await res.json().catch(() => ({}))) as { error?: string };
+        setStatus(res.status === 409 ? "すでに処理済みです" : `エラー: ${j.error ?? res.status}`);
+      }
+    } catch {
+      setStatus("通信に失敗しました");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <li className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="rounded bg-sky-100 px-1.5 py-0.5 font-medium text-sky-800 dark:bg-sky-950 dark:text-sky-200">
+          {FACILITY_LABEL[claim.field]}
+        </span>
+        <span className="text-zinc-600 dark:text-zinc-400">
+          {fmtFacilityValue(claim.field, current)} →{" "}
+          <span className="font-medium text-zinc-900 dark:text-zinc-100">
+            {fmtFacilityValue(claim.field, claim.value)}
+          </span>
+        </span>
+        {toilet && (
+          <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-zinc-600 dark:bg-zinc-800 dark:text-zinc-300">
+            source: {toilet.source}
+          </span>
+        )}
+        <span className="ml-auto text-zinc-400">{fmtDate(claim.createdAt)}</span>
+      </div>
+      {claim.comment && (
+        <p className="mt-1.5 text-xs text-zinc-500">
+          レビュー: <span className="italic">「{claim.comment}」</span>
+        </p>
+      )}
+      {!toilet && (
+        <p className="mt-1 text-xs text-amber-600">紐づくトイレが見つかりません。</p>
       )}
       <div className="mt-2.5 flex items-center gap-2">
         <button
