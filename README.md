@@ -46,6 +46,8 @@ Supabase ダッシュボード **SQL Editor** で以下を順に貼り付けて 
 
 すべて IF NOT EXISTS / CREATE OR REPLACE で冪等。
 
+本番プロジェクトには、`supabase/migrations/20261127213301_review_facilities_and_submission_queue.sql`（旧名 `020_review_facilities_and_submission_queue.sql`）をバージョン `20261127213301` として 2026-11-27 に適用済みです。ファイル名のバージョンは本番のマイグレーション履歴に記録されたものと同じなので、`supabase db push` はこのファイルを再適用せず、まだ適用していない新しいファイルだけを適用します。先に `supabase db push --dry-run` で、適用されるのが新しいファイルだけであることを確かめてください。
+
 ### 3) 環境変数
 
 ```bash

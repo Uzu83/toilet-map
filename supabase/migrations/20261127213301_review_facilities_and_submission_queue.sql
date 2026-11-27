@@ -1,9 +1,9 @@
--- 020_review_facilities_and_submission_queue.sql — Issue #50
--- 番号: PR #55 が 019_osm_sync.sql を使うため 020。019 とは別のテーブル・関数だけを触るので、019 の適用有無に依存しない。
+-- 20261127213301_review_facilities_and_submission_queue.sql — Issue #50
+-- 旧番号 020: PR #55 が 019_osm_sync.sql を使うため、当時 020 とした。019 とは別のテーブル・関数だけを触るので、019 の適用有無に依存しない。
 -- 実行: Supabase ダッシュボード > SQL Editor で全文ペースト → Run(または supabase db push)。冪等。
--- ⚠️ このファイルをリポジトリに追加しただけでは本番 DB には入らない。デプロイ前に手動 apply が必要。
---    未適用のままレビュー API / 管理キューのコードが走ると RPC 不在で 500 になる。
---    適用順: 001–018(と 019 があれば 019)のあと本 020 → live smoke → コードを本番へ。
+-- 本番は 2026-11-27 にバージョン 20261127213301（名前 review_facilities_and_submission_queue）として適用済み。
+--    未適用の環境ではレビュー API / 管理キューのコードが走ると RPC 不在で 500 になる。
+--    適用順: 001–018(と 019 があれば 019)のあと本ファイル → live smoke → コードを本番へ。
 -- ⚠️ live smoke 必須: plpgsql の行ロック・30m 重複・承認時だけ toilets を書くことは vitest モックでは見えない。
 --
 -- やること:
