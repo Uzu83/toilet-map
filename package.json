@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "seed": "tsx scripts/seed-osm.ts",
+    "osm-sync": "tsx scripts/osm-sync.ts",
     "verify:skills": "diff -ru .agents/skills .claude/skills",
     "verify": "pnpm verify:skills && pnpm lint && pnpm exec next typegen && pnpm exec tsc --noEmit && pnpm test && pnpm build"
   },

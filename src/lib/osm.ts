@@ -1,5 +1,6 @@
 // OpenStreetMap Overpass API ラッパー
-// Overpass はパブリックインスタンスを利用、シードは1回だけ&ローカル CLI 想定
+// Overpass はパブリックインスタンスを利用。
+// 手動シード（scripts/seed-osm.ts）と週次同期（src/lib/osmSync）の両方が使う。
 // 公開ミラーを順番にフォールバック(レート制限・UA ブロック対策)
 //
 // #F6 — Overpass timeout の設定根拠:
@@ -153,7 +154,42 @@ function tagBool(tags: Record<string, string> | undefined, key: string): boolean
   return null;
 }
 
-async function postOverpass(query: string): Promise<{ elements: OverpassElement[] }> {
+export type OverpassQueryOptions = {
+  // Overpass サーバー側の [timeout:N]。省略時は呼び出し元の従来値。
+  timeoutSec?: number;
+  signal?: AbortSignal;
+  // [south, west, north, east]。都道府県エリアとの交差に使う。
+  bbox?: [number, number, number, number];
+};
+
+function clampOverpassTimeout(timeoutSec: number | undefined, fallback: number): number {
+  if (timeoutSec == null || !Number.isFinite(timeoutSec)) return fallback;
+  return Math.min(180, Math.max(5, Math.round(timeoutSec)));
+}
+
+function overpassBBox(bbox: [number, number, number, number] | undefined): string {
+  if (!bbox) return "";
+  const [south, west, north, east] = bbox;
+  if (![south, west, north, east].every((n) => Number.isFinite(n))) {
+    throw new Error("invalid bbox");
+  }
+  if (!(south < north) || !(west < east) || south < -90 || north > 90 || west < -180 || east > 180) {
+    throw new Error("invalid bbox");
+  }
+  const fmt = (n: number) => n.toFixed(6);
+  return `(${fmt(south)},${fmt(west)},${fmt(north)},${fmt(east)})`;
+}
+
+export function overpassRemarkError(remark: string | undefined): string | null {
+  if (!remark) return null;
+  if (/error|timed out|timeout/i.test(remark)) return remark;
+  return null;
+}
+
+async function postOverpass(
+  query: string,
+  signal?: AbortSignal,
+): Promise<{ elements: OverpassElement[] }> {
   const errors: string[] = [];
   for (const endpoint of OVERPASS_ENDPOINTS) {
     try {
@@ -165,14 +201,28 @@ async function postOverpass(query: string): Promise<{ elements: OverpassElement[
           "user-agent": USER_AGENT,
         },
         body: `data=${encodeURIComponent(query)}`,
+        signal,
       });
       if (!res.ok) {
         const text = await res.text();
         errors.push(`${endpoint} -> ${res.status}: ${text.slice(0, 200)}`);
         continue;
       }
-      return (await res.json()) as { elements: OverpassElement[] };
+      const json = (await res.json()) as { elements?: OverpassElement[]; remark?: string };
+      // 時間切れは HTTP 200 + remark で返ることがある。空の elements を成功扱いすると
+      // その県を「トイレ 0 件」として飛ばしてしまう。
+      const remarkError = overpassRemarkError(json.remark);
+      if (remarkError) {
+        errors.push(`${endpoint} -> ${remarkError.slice(0, 200)}`);
+        continue;
+      }
+      return { elements: json.elements ?? [] };
     } catch (err) {
+      const aborted = signal?.aborted || (err instanceof Error && err.name === "AbortError");
+      if (aborted) {
+        errors.push(`${endpoint} -> timeout`);
+        break;
+      }
       errors.push(`${endpoint} -> ${err instanceof Error ? err.message : String(err)}`);
     }
   }
@@ -244,16 +294,25 @@ out center;`;
 
 // ISO 3166-2:JP コード(例: "JP-13")の都道府県境界内の amenity=toilets を取得。
 // node / way / relation すべて対象、way/relation は center 座標で代表点を取る。
-export async function fetchToiletsInPrefecture(iso3166_2: string): Promise<OsmToiletNode[]> {
-  const query = `[out:json][timeout:180];
+export async function fetchToiletsInPrefecture(
+  iso3166_2: string,
+  options?: OverpassQueryOptions,
+): Promise<OsmToiletNode[]> {
+  // クエリ文字列へ埋める値は、県コードの形と数値化した bbox / timeout だけにする。
+  if (!/^JP-\d{2}$/.test(iso3166_2)) {
+    throw new Error("invalid prefecture code");
+  }
+  const timeout = clampOverpassTimeout(options?.timeoutSec, 180);
+  const box = overpassBBox(options?.bbox);
+  const query = `[out:json][timeout:${timeout}];
 area["ISO3166-2"="${iso3166_2}"]->.a;
 (
-  node["amenity"="toilets"](area.a);
-  way["amenity"="toilets"](area.a);
-  relation["amenity"="toilets"](area.a);
+  node["amenity"="toilets"](area.a)${box};
+  way["amenity"="toilets"](area.a)${box};
+  relation["amenity"="toilets"](area.a)${box};
 );
 out center;`;
-  const json = await postOverpass(query);
+  const json = await postOverpass(query, options?.signal);
   return mapToiletElements(json.elements);
 }
 

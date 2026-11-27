@@ -1,5 +1,9 @@
 // OSM (OpenStreetMap) のトイレデータを Supabase に投入するシードスクリプト
 //
+// 定期実行はしない。週次の自動更新は Vercel Cron → /api/cron/osm-sync
+// （src/lib/osmSync。同じ Overpass 取得を使い、ユーザー投稿と管理者編集を上書きしない）。
+// この手動スクリプトの upsert は従来どおり送った列をそのまま書く。
+//
 // 使い方(ローカル CLI):
 //   npm run seed                          # デフォルト = 福岡市の amenity=toilets
 //   npm run seed -- --region tokyo-23     # 市区プリセット指定

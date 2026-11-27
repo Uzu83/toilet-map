@@ -4,5 +4,11 @@
     "deploymentEnabled": {
       "main": true
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/osm-sync",
+      "schedule": "0 18 * * 1"
+    }
+  ]
 }
