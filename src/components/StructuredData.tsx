@@ -1,6 +1,7 @@
 import { getLocale, getTranslations } from "next-intl/server";
 import { siteUrl } from "@/lib/siteUrl";
 import { routing } from "@/i18n/routing";
+import { serializeJsonLd } from "@/components/seo/jsonLdHelpers";
 
 const SCHEMA_LANG: Record<string, string> = { ja: "ja", en: "en", ko: "ko", zh: "zh" };
 
@@ -66,7 +67,7 @@ export async function StructuredData() {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(data) }}
     />
   );
 }

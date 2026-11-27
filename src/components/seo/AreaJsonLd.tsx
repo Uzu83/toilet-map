@@ -1,4 +1,4 @@
-import { buildBreadcrumbList, type JsonLdCrumb } from "./jsonLdHelpers";
+import { buildBreadcrumbList, serializeJsonLd, type JsonLdCrumb } from "./jsonLdHelpers";
 
 // エリアランディングページの構造化データ。CollectionPage + BreadcrumbList。
 export function AreaJsonLd({
@@ -48,7 +48,7 @@ export function AreaJsonLd({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(data) }}
     />
   );
 }

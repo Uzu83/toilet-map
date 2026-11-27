@@ -1,5 +1,5 @@
 import type { Toilet } from "@/types/toilet";
-import { buildBreadcrumbList, type JsonLdCrumb } from "./jsonLdHelpers";
+import { buildBreadcrumbList, serializeJsonLd, type JsonLdCrumb } from "./jsonLdHelpers";
 
 // 個別トイレページの構造化データ。Place/PublicToilet + BreadcrumbList を @graph で注入。
 export function ToiletJsonLd({
@@ -68,7 +68,7 @@ export function ToiletJsonLd({
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(data) }}
     />
   );
 }
