@@ -9,6 +9,9 @@ import {
   type AdminToilet,
   type AdminEditLog,
   type AdminSuggestion,
+  type AdminPendingSubmission,
+  type AdminFacilityClaim,
+  type FacilityClaimField,
 } from "./Dashboard";
 
 // secret(SUPABASE_SECRET_KEY / ADMIN_SESSION_SECRET)を読むため Node ランタイム固定。
@@ -23,6 +26,8 @@ const MAX_EDIT_LOG = 30;
 //   B1 は「全件 pending に積んで人が全ループ内で観察」する段階なので、溜まりすぎたらここで打ち切り
 //   (それ以上は Supabase dashboard で確認 / B2 の自動反映で母数を減らす)。MAX_REVIEWS と同思想で 50。
 const MAX_SUGGESTIONS = 50;
+// 投稿キュー / 設備キュー。1 セッションで捌ける件数。それ以上は Supabase dashboard。
+const MAX_QUEUE = 50;
 
 // /admin ダッシュボード(Server Component)。
 // WHY サーバ側で直接 Supabase を引く(API を fetch しない): Server Component は同一プロセスで
@@ -46,6 +51,68 @@ export default async function AdminPage() {
     .neq("comment", "")
     .order("created_at", { ascending: false })
     .limit(ADMIN_MAX_REVIEWS);
+
+  // pending の新規トイレ申請。ip_hash は RPC が返さない。失敗(020 未適用)でも他セクションは出す。
+  const { data: submissionRows, error: submissionErr } = await supabase.rpc(
+    "admin_pending_submissions",
+    { p_limit: MAX_QUEUE },
+  );
+  if (submissionErr) {
+    console.error("[admin] pending submissions", submissionErr.code ?? submissionErr.message);
+  }
+  const submissions: AdminPendingSubmission[] = (
+    (submissionRows ?? []) as Array<Record<string, unknown>>
+  ).map((s) => ({
+    id: s.id as string,
+    name: (s.name as string | null) ?? null,
+    accessLevel: s.access_level as string,
+    isOutdoor: (s.is_outdoor as boolean | null) ?? null,
+    isUniversal: (s.is_universal as boolean | null) ?? null,
+    comment: (s.comment as string | null) ?? null,
+    confirmCount: (s.confirm_count as number) ?? 0,
+    lat: s.lat as number,
+    lng: s.lng as number,
+    createdAt: s.created_at as string,
+  }));
+
+  const { data: claimRows, error: claimErr } = await supabase
+    .from("review_facility_claims")
+    .select("id, review_id, toilet_id, field, value, created_at")
+    .eq("status", "pending")
+    .order("seq", { ascending: false })
+    .limit(MAX_QUEUE);
+  if (claimErr) {
+    console.error("[admin] facility claims", claimErr.code ?? claimErr.message);
+  }
+
+  const claimReviewIds = Array.from(
+    new Set((claimRows ?? []).map((c) => c.review_id as string)),
+  );
+  const claimComments: Record<string, string | null> = {};
+  if (claimReviewIds.length > 0) {
+    const { data: claimReviewRows } = await supabase
+      .from("reviews")
+      .select("id, comment")
+      .in("id", claimReviewIds);
+    for (const r of claimReviewRows ?? []) {
+      claimComments[r.id as string] = (r.comment as string | null) ?? null;
+    }
+  }
+
+  const facilityClaims: AdminFacilityClaim[] = (claimRows ?? []).map((c) => ({
+    id: c.id as string,
+    reviewId: c.review_id as string,
+    toiletId: c.toilet_id as string,
+    field: c.field as FacilityClaimField,
+    value: c.value as boolean | string,
+    comment: claimComments[c.review_id as string] ?? null,
+    createdAt: c.created_at as string,
+  }));
+
+  const queueWarning =
+    submissionErr || claimErr
+      ? "承認キューを読めません。migration 020 が未適用の可能性があります。"
+      : null;
 
   const reviews: AdminReview[] = (reviewRows ?? []).map((r) => ({
     id: r.id as string,
@@ -84,13 +151,17 @@ export default async function AdminPage() {
   //   レビュー由来トイレ + 提案由来トイレの両方を union して 1 回でまとめて引く(提案が参照するトイレが
   //   レビュー一覧に無いケースに備える)。
   const toiletIds = Array.from(
-    new Set([...reviews.map((r) => r.toiletId), ...suggestions.map((s) => s.toiletId)]),
+    new Set([
+      ...reviews.map((r) => r.toiletId),
+      ...suggestions.map((s) => s.toiletId),
+      ...facilityClaims.map((c) => c.toiletId),
+    ]),
   );
   const toilets: Record<string, AdminToilet> = {};
   if (toiletIds.length > 0) {
     const { data: toiletRows } = await supabase
       .from("toilets")
-      .select(`id, source, ${EDITABLE_FIELDS.join(", ")}`)
+      .select(`id, source, has_paper, has_soap, ${EDITABLE_FIELDS.join(", ")}`)
       .in("id", toiletIds);
     // supabase-js は動的 select 文字列を静的解析できず ParserError 型を推論するため、
     // unknown 経由で実行時に保証している shape へキャストする(列名は EDITABLE_FIELDS と一致)。
@@ -102,6 +173,8 @@ export default async function AdminPage() {
         name: (t.name as string | null) ?? null,
         inferred_access: (t.inferred_access as AdminToilet["inferred_access"]) ?? null,
         has_washlet: (t.has_washlet as boolean | null) ?? null,
+        has_paper: (t.has_paper as boolean | null) ?? null,
+        has_soap: (t.has_soap as boolean | null) ?? null,
         has_diaper_table: (t.has_diaper_table as boolean | null) ?? null,
         is_universal: (t.is_universal as boolean | null) ?? null,
         opening_hours: (t.opening_hours as string | null) ?? null,
@@ -133,6 +206,14 @@ export default async function AdminPage() {
   }));
 
   return (
-    <AdminDashboard reviews={reviews} toilets={toilets} edits={edits} suggestions={suggestions} />
+    <AdminDashboard
+      reviews={reviews}
+      toilets={toilets}
+      edits={edits}
+      suggestions={suggestions}
+      submissions={submissions}
+      facilityClaims={facilityClaims}
+      queueWarning={queueWarning}
+    />
   );
 }
