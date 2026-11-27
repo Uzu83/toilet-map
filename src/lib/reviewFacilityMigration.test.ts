@@ -1,10 +1,10 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-// 020 の SQL を文字列で見る。行ロックやデッドロック自体は live smoke でしか確かめられないので、
-// ここでは「書き換えない」「ロック順」「番号の重複なし」を固定する。
+// 20261127213301 の SQL を文字列で見る。行ロックやデッドロック自体は live smoke でしか確かめられないので、
+// ここでは「書き換えない」「ロック順」「ファイル名の重複なしと辞書順」を固定する。
 const DIR = "supabase/migrations";
-const FILE = "020_review_facilities_and_submission_queue.sql";
+const FILE = "20261127213301_review_facilities_and_submission_queue.sql";
 const sql = readFileSync(`${DIR}/${FILE}`, "utf8");
 
 function body(fn: string): string {
@@ -15,13 +15,21 @@ function body(fn: string): string {
 }
 
 describe(FILE, () => {
-  it("番号 020 は他の migration と重ならない(PR #55 は 019_osm_sync)", () => {
-    const prefixes = readdirSync(DIR)
+  it("ファイル名は一意で、001–018（と 019 があれば 019）より辞書順で後に並ぶ", () => {
+    const files = readdirSync(DIR)
       .filter((f) => f.endsWith(".sql"))
-      .map((f) => f.slice(0, 3));
-    expect(prefixes.filter((p) => p === "020")).toHaveLength(1);
-    expect(readdirSync(DIR)).not.toContain("019_review_facilities_and_submission_queue.sql");
-    expect(new Set(prefixes).size).toBe(prefixes.length);
+      .sort();
+    expect(files.filter((f) => f === FILE)).toHaveLength(1);
+    expect(files).not.toContain("020_review_facilities_and_submission_queue.sql");
+    expect(files).not.toContain("019_review_facilities_and_submission_queue.sql");
+    expect(new Set(files).size).toBe(files.length);
+    // supabase db push はファイル名の辞書順で適用する。
+    // 019_osm_sync.sql（PR #55）も "019_" < "2026..." なので本ファイルより先になる。
+    for (const f of files) {
+      if (/^0\d{2}_/.test(f)) {
+        expect(f < FILE, `${f} should sort before ${FILE}`).toBe(true);
+      }
+    }
   });
 
   it("pending の claim は値やレビューを書き換えず、新しい行にする", () => {
