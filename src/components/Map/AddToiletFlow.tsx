@@ -5,7 +5,7 @@ import { useTranslations } from "next-intl";
 import { Check, MapPin, Plus, X } from "lucide-react";
 import { ACCESS_COLORS, ACCESS_KEYS, type AccessLevel } from "@/types/toilet";
 import { useMapStore } from "@/store/mapStore";
-import { trackEvent } from "@/lib/analytics";
+import { submissionEventProps, trackEvent } from "@/lib/analytics";
 
 type SubmitResult = {
   result?: "pending" | "promoted" | "dup" | "throttled";
@@ -95,7 +95,8 @@ export function AddToiletFlow() {
         setError(j.error ?? t("errSubmit"));
         return;
       }
-      trackEvent("add_toilet_submit", { result: j.result ?? "pending" });
+      const submitted = submissionEventProps(j.result);
+      if (submitted) trackEvent("add_toilet_submit", submitted);
       setDoneMsg(j.result === "promoted" ? t("thanksPromoted") : t("thanksPending"));
       bumpData();
       setTimeout(() => setAddMode(false), 1600);
@@ -323,7 +324,8 @@ function ConfirmPendingModal({
         setError(j.error ?? t("errSubmit"));
         return;
       }
-      trackEvent("add_toilet_confirm", { result: j.result ?? "pending" });
+      const confirmed = submissionEventProps(j.result);
+      if (confirmed) trackEvent("add_toilet_confirm", confirmed);
       setDoneMsg(j.result === "promoted" ? t("thanksPromoted") : t("thanksPending"));
       onConfirmed();
       setTimeout(onClose, 1600);
