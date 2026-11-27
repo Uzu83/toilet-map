@@ -6,6 +6,7 @@
 // `label` フィールドは日本語の正規名(translator が無い場面でのフォールバック)。
 
 import { REGIONS, JP_PREFECTURES, type Region } from "@/lib/regions";
+import { isInTokyo23Wards } from "@/lib/tokyo23";
 
 export type AreaKind = "city" | "prefecture";
 
@@ -92,4 +93,14 @@ export function findContainingPrefecture(lat: number, lng: number): Area | undef
   return PREF_AREAS.find(
     (a) => lat >= a.bbox[0] && lat <= a.bbox[2] && lng >= a.bbox[1] && lng <= a.bbox[3]
   );
+}
+
+// 詳細ページのパンくず用。東京23区は区界ポリゴンで先に判定し、区内なら tokyo-23 を返す。
+// 都道府県 bbox は概算で重なるため、東側の23区が千葉県(JP-12)、北側が埼玉県(JP-11)の
+// 先頭一致になることがある。区外は従来どおり都道府県 bbox の先頭一致。
+export function findContainingArea(lat: number, lng: number): Area | undefined {
+  if (isInTokyo23Wards(lat, lng)) {
+    return findArea("tokyo-23");
+  }
+  return findContainingPrefecture(lat, lng);
 }

@@ -14,7 +14,7 @@ import {
   toiletAmenityKeys,
   toiletDisplayName,
 } from "@/lib/toiletSeo";
-import { findContainingPrefecture, areaLabel } from "@/lib/areas";
+import { findContainingArea, areaLabel } from "@/lib/areas";
 import { absUrl, languageAlternates, localePrefix, inLanguageOf, baseOpenGraph } from "@/lib/urls";
 import { formatDistance, haversineMeters } from "@/lib/geo";
 import type { Toilet } from "@/types/toilet";
@@ -79,7 +79,7 @@ export async function generateMetadata({
   const path = `/toilet/${toilet.id}`;
   const title = await buildTitle(locale, toilet);
   const access = toiletAccessKey(toilet);
-  const area = findContainingPrefecture(toilet.lat, toilet.lng);
+  const area = findContainingArea(toilet.lat, toilet.lng);
   const areaName = area ? areaLabel(area, tan) : null;
   const areaPart = areaName ? tt("metaAreaPart", { area: areaName }) : "";
   const accessPart = access ? tt("metaAccessPart", { access: ta(`${access}.label`) }) : "";
@@ -123,7 +123,7 @@ export default async function ToiletPage({
   const path = `/toilet/${toilet.id}`;
   const mapHref = `${localePrefix(locale)}/?id=${toilet.id}`;
   const gmapsHref = `https://www.google.com/maps/search/?api=1&query=${toilet.lat},${toilet.lng}`;
-  const area = findContainingPrefecture(toilet.lat, toilet.lng);
+  const area = findContainingArea(toilet.lat, toilet.lng);
   const areaName = area ? areaLabel(area, tan) : null;
 
   // [P0 軽量化 / 2026-06-25] non-indexable では近傍クエリ(getNearbyToilets → PostGIS の
