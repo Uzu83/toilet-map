@@ -1,7 +1,9 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import type { EditableField } from "@/lib/adminAuth";
+import { facilityClaimToiletLabel } from "@/lib/reviewFacility";
 
 // /admin ダッシュボードのクライアント部分(編集フォーム・取消ボタンのインタラクション)。
 // 認証・検証・DB 書き込みはすべてサーバ(page.tsx + API ルート)。ここは入力 UI とリフレッシュに徹する。
@@ -597,6 +599,7 @@ function FacilityClaimCard({
   const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState<string | null>(null);
   const current = toilet ? toilet[claim.field] : undefined;
+  const target = facilityClaimToiletLabel(claim.toiletId, toilet);
 
   async function act(action: "approve" | "reject") {
     setStatus(null);
@@ -626,6 +629,19 @@ function FacilityClaimCard({
 
   return (
     <li className="rounded-lg border border-zinc-200 bg-white p-3 dark:border-zinc-800 dark:bg-zinc-900">
+      {/* どのトイレへの承認かを先に出す。コメントは任意なので、名前・id・個別ページで区別する。 */}
+      <p className="mb-1.5 text-sm">
+        <span className="font-medium text-zinc-900 dark:text-zinc-100">{target.name}</span>{" "}
+        <span className="font-mono text-xs text-zinc-500">({target.shortId})</span>{" "}
+        <Link
+          href={target.href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-xs text-blue-600 underline dark:text-blue-400"
+        >
+          個別ページ
+        </Link>
+      </p>
       <div className="flex flex-wrap items-center gap-2 text-xs">
         <span className="rounded bg-sky-100 px-1.5 py-0.5 font-medium text-sky-800 dark:bg-sky-950 dark:text-sky-200">
           {FACILITY_LABEL[claim.field]}

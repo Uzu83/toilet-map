@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   ReviewFacilityValidationError,
+  facilityClaimToiletLabel,
   parseReviewFacilities,
 } from "./reviewFacility";
 
@@ -84,5 +85,25 @@ describe("parseReviewFacilities", () => {
     expect(parsed).not.toHaveProperty("email");
     expect(parsed).not.toHaveProperty("phone");
     expect(parsed).not.toHaveProperty("name");
+  });
+});
+
+describe("facilityClaimToiletLabel", () => {
+  const id = "0123abcd-4567-89ef-0123-456789abcdef";
+
+  it("トイレ名・id の先頭・個別ページを返す", () => {
+    expect(facilityClaimToiletLabel(id, { name: " 港区役所 " })).toEqual({
+      name: "港区役所",
+      shortId: "0123abcd",
+      href: `/toilet/${id}`,
+    });
+  });
+
+  it("名前が無くてもトイレ行が読めなくても id とリンクで区別できる", () => {
+    expect(facilityClaimToiletLabel(id, { name: null }).name).toBe("名称未設定");
+    expect(facilityClaimToiletLabel(id, { name: "  " }).name).toBe("名称未設定");
+    const missing = facilityClaimToiletLabel(id, undefined);
+    expect(missing.shortId).toBe("0123abcd");
+    expect(missing.href).toBe(`/toilet/${id}`);
   });
 });

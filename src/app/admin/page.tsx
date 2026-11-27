@@ -52,7 +52,7 @@ export default async function AdminPage() {
     .order("created_at", { ascending: false })
     .limit(ADMIN_MAX_REVIEWS);
 
-  // pending の新規トイレ申請。ip_hash は RPC が返さない。失敗(019 未適用)でも他セクションは出す。
+  // pending の新規トイレ申請。ip_hash は RPC が返さない。失敗(020 未適用)でも他セクションは出す。
   const { data: submissionRows, error: submissionErr } = await supabase.rpc(
     "admin_pending_submissions",
     { p_limit: MAX_QUEUE },
@@ -111,7 +111,7 @@ export default async function AdminPage() {
 
   const queueWarning =
     submissionErr || claimErr
-      ? "承認キューを読めません。migration 019 が未適用の可能性があります。"
+      ? "承認キューを読めません。migration 020 が未適用の可能性があります。"
       : null;
 
   const reviews: AdminReview[] = (reviewRows ?? []).map((r) => ({

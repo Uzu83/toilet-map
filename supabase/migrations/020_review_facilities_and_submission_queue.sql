@@ -1,8 +1,9 @@
--- 019_review_facilities_and_submission_queue.sql — Issue #50
+-- 020_review_facilities_and_submission_queue.sql — Issue #50
+-- 番号: PR #55 が 019_osm_sync.sql を使うため 020。019 とは別のテーブル・関数だけを触るので、019 の適用有無に依存しない。
 -- 実行: Supabase ダッシュボード > SQL Editor で全文ペースト → Run(または supabase db push)。冪等。
 -- ⚠️ このファイルをリポジトリに追加しただけでは本番 DB には入らない。デプロイ前に手動 apply が必要。
 --    未適用のままレビュー API / 管理キューのコードが走ると RPC 不在で 500 になる。
---    適用順: 001–018 のあと本 019 → live smoke → コードを本番へ。
+--    適用順: 001–018(と 019 があれば 019)のあと本 020 → live smoke → コードを本番へ。
 -- ⚠️ live smoke 必須: plpgsql の行ロック・30m 重複・承認時だけ toilets を書くことは vitest モックでは見えない。
 --
 -- やること:
@@ -44,9 +45,11 @@ end $$;
 -- (2) review_facility_claims — 承認キュー(監査原本ではない)
 -- ───────────────────────────────────────────────────────────────────
 -- 不変な監査は承認時の admin_edits に一本化する(ai_suggestions と同じ役割分担)。
--- status は pending → approved / rejected / no_op。物理削除しない。
--- 同一トイレ×同一列の pending は 1 件。後から違う値が来たらその pending の value だけ更新する
--- (黙って捨てると「紙あり」のあとの「紙なし」がキューに残らない)。
+-- status は pending → approved / rejected / no_op / superseded。物理削除しない。
+-- 同一トイレ×同一列の pending は 1 件。後から違う値が来たら、既存の pending を superseded にして
+-- 新しい id の行を pending で足す(黙って捨てると「紙あり」のあとの「紙なし」がキューに残らない)。
+-- 行の review_id / value は作成後に書き換えない。管理画面は claim id で承認するので、
+-- 画面に出した値と承認で反映する値が必ず一致する(古い id の承認は claim not pending = 409)。
 create table if not exists review_facility_claims (
   id uuid primary key default gen_random_uuid(),
   seq bigint generated always as identity,
@@ -57,7 +60,7 @@ create table if not exists review_facility_claims (
   )),
   value jsonb not null,
   status text not null default 'pending' check (status in (
-    'pending', 'approved', 'rejected', 'no_op'
+    'pending', 'approved', 'rejected', 'no_op', 'superseded'
   )),
   applied_edit_seq bigint,
   reviewed_by text,
@@ -374,6 +377,11 @@ declare
   v_soap boolean;
   v_diaper boolean;
   v_hours text;
+  v_field text;
+  v_value jsonb;
+  v_attempt integer;
+  v_pending_id uuid;
+  v_pending_value jsonb;
 begin
   if v_report then
     v_washlet := null;
@@ -406,45 +414,43 @@ begin
     return v_review_id;
   end if;
 
-  if v_paper is not null then
-    insert into review_facility_claims (review_id, toilet_id, field, value)
-    values (v_review_id, p_toilet_id, 'has_paper', to_jsonb(v_paper))
-    on conflict (toilet_id, field) where status = 'pending'
-    do update set review_id = excluded.review_id, value = excluded.value
-    where review_facility_claims.value is distinct from excluded.value;
-  end if;
+  -- 設備ごとに 1 行。ロック順はトイレ → claim(admin_decide_facility_claim と同じ)。
+  -- reviews の INSERT が外部キーでトイレ行に KEY SHARE を取った後に claim を触る。
+  foreach v_field in array array['has_paper', 'has_washlet', 'has_soap', 'has_diaper_table', 'opening_hours']
+  loop
+    v_value := case v_field
+      when 'has_paper' then to_jsonb(v_paper)
+      when 'has_washlet' then to_jsonb(v_washlet)
+      when 'has_soap' then to_jsonb(v_soap)
+      when 'has_diaper_table' then to_jsonb(v_diaper)
+      else to_jsonb(v_hours)
+    end;
+    if v_value is null or v_value = 'null'::jsonb then
+      continue;
+    end if;
 
-  if v_washlet is not null then
-    insert into review_facility_claims (review_id, toilet_id, field, value)
-    values (v_review_id, p_toilet_id, 'has_washlet', to_jsonb(v_washlet))
-    on conflict (toilet_id, field) where status = 'pending'
-    do update set review_id = excluded.review_id, value = excluded.value
-    where review_facility_claims.value is distinct from excluded.value;
-  end if;
+    -- 既存の pending は書き換えない。同値なら何もしない。違う値なら superseded にして新しい行を足す。
+    -- 同時に 2 件来て INSERT が衝突したら、相手の行を読み直してもう一度判定する。
+    for v_attempt in 1..3 loop
+      select id, value into v_pending_id, v_pending_value
+      from review_facility_claims
+      where toilet_id = p_toilet_id and field = v_field and status = 'pending'
+      for update;
 
-  if v_soap is not null then
-    insert into review_facility_claims (review_id, toilet_id, field, value)
-    values (v_review_id, p_toilet_id, 'has_soap', to_jsonb(v_soap))
-    on conflict (toilet_id, field) where status = 'pending'
-    do update set review_id = excluded.review_id, value = excluded.value
-    where review_facility_claims.value is distinct from excluded.value;
-  end if;
+      if found then
+        exit when v_pending_value = v_value;
+        update review_facility_claims set
+          status = 'superseded',
+          reviewed_at = now()
+        where id = v_pending_id;
+      end if;
 
-  if v_diaper is not null then
-    insert into review_facility_claims (review_id, toilet_id, field, value)
-    values (v_review_id, p_toilet_id, 'has_diaper_table', to_jsonb(v_diaper))
-    on conflict (toilet_id, field) where status = 'pending'
-    do update set review_id = excluded.review_id, value = excluded.value
-    where review_facility_claims.value is distinct from excluded.value;
-  end if;
-
-  if v_hours is not null then
-    insert into review_facility_claims (review_id, toilet_id, field, value)
-    values (v_review_id, p_toilet_id, 'opening_hours', to_jsonb(v_hours))
-    on conflict (toilet_id, field) where status = 'pending'
-    do update set review_id = excluded.review_id, value = excluded.value
-    where review_facility_claims.value is distinct from excluded.value;
-  end if;
+      insert into review_facility_claims (review_id, toilet_id, field, value)
+      values (v_review_id, p_toilet_id, v_field, v_value)
+      on conflict (toilet_id, field) where status = 'pending' do nothing;
+      exit when found;
+    end loop;
+  end loop;
 
   return v_review_id;
 end;
@@ -477,9 +483,26 @@ declare
   v_changed jsonb;
   v_status text;
   v_reason text := nullif(left(btrim(coalesce(p_reason, '')), 300), '');
+  v_toilet_id uuid;
 begin
   if p_action not in ('approve', 'reject') then
     raise exception 'admin_rpc: invalid action';
+  end if;
+
+  -- ロック順はトイレ → claim(insert_review_with_claims と同じ)。
+  -- 先に claim を握ってから admin_apply_edit でトイレを FOR UPDATE すると、
+  -- トイレに KEY SHARE を持ったまま claim を待つレビュー INSERT とデッドロックする。
+  -- toilet_id は作成後に変わらないので、ロック無しで読んでからトイレ → claim の順に握る。
+  select toilet_id into v_toilet_id from review_facility_claims where id = p_claim_id;
+  if not found then
+    raise exception 'admin_rpc: claim not found';
+  end if;
+
+  if p_action = 'approve' then
+    perform 1 from toilets where id = v_toilet_id for update;
+    if not found then
+      raise exception 'admin_rpc: toilet not found';
+    end if;
   end if;
 
   select * into v_claim from review_facility_claims where id = p_claim_id for update;

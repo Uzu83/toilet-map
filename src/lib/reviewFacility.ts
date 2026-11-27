@@ -91,3 +91,17 @@ export function parseReviewFacilities(
   }
   return out;
 }
+
+// 管理画面の設備承認カードに出す「どのトイレか」。
+// 名前が無い・トイレ行が読めないときも、id の先頭と個別ページのリンクで区別できるようにする。
+export function facilityClaimToiletLabel(
+  toiletId: string,
+  toilet: { name: string | null } | undefined,
+): { name: string; shortId: string; href: string } {
+  const name = toilet?.name?.trim();
+  return {
+    name: name ? name : "名称未設定",
+    shortId: toiletId.slice(0, 8),
+    href: `/toilet/${encodeURIComponent(toiletId)}`,
+  };
+}
