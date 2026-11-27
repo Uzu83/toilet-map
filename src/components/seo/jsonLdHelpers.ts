@@ -24,3 +24,24 @@ export function buildBreadcrumbList(crumbs: JsonLdCrumb[]): Record<string, unkno
     })),
   };
 }
+
+// JSON-LD を <script type="application/ld+json"> に埋め込むための直列化。
+//
+// WHY JSON.stringify のままでは足りないか:
+//   トイレ名などユーザー由来の文字列が `</script>` を含むと、HTML パーサが
+//   script 要素をそこで閉じてしまい、後続がページに挿入される。
+//   JSON.stringify は `<` `>` `&` をエスケープしない。
+//
+// WHY \u003c 等の JSON エスケープか:
+//   出力は JSON として同じ値にパースされる必要がある。HTML 実体参照にすると
+//   JSON.parse の結果が変わってしまう。
+//   `<` に加え `>` `&`、U+2028 / U+2029 も同様にエスケープする
+//   (`>` は対称性、`&` は実体参照の誤解釈防止、U+2028/U+2029 は JS 行区切り)。
+export function serializeJsonLd(data: unknown): string {
+  return JSON.stringify(data)
+    .replace(/</g, "\\u003c")
+    .replace(/>/g, "\\u003e")
+    .replace(/&/g, "\\u0026")
+    .replace(/\u2028/g, "\\u2028")
+    .replace(/\u2029/g, "\\u2029");
+}

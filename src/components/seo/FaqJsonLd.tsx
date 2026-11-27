@@ -1,3 +1,5 @@
+import { serializeJsonLd } from "./jsonLdHelpers";
+
 // /about ページの FAQPage 構造化データ(可視の Q/A と同じ文言を渡す)。
 export function FaqJsonLd({ items }: { items: { q: string; a: string }[] }) {
   const data = {
@@ -12,7 +14,7 @@ export function FaqJsonLd({ items }: { items: { q: string; a: string }[] }) {
   return (
     <script
       type="application/ld+json"
-      dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(data) }}
     />
   );
 }

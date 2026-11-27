@@ -4,7 +4,7 @@ import { Link } from "@/i18n/navigation";
 import { Breadcrumbs } from "@/components/seo/Breadcrumbs";
 import { KoFiTip } from "@/components/KoFiTip";
 import { FaqJsonLd } from "@/components/seo/FaqJsonLd";
-import { buildBreadcrumbList } from "@/components/seo/jsonLdHelpers";
+import { buildBreadcrumbList, serializeJsonLd } from "@/components/seo/jsonLdHelpers";
 import { absUrl, languageAlternates, baseOpenGraph } from "@/lib/urls";
 import { findArea, areaLabel, FEATURED_AREA_SLUGS } from "@/lib/areas";
 import { SITE_TEAM, CONTACT_FORM_URL } from "@/lib/contact";
@@ -135,7 +135,7 @@ export default async function AboutPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
+          __html: serializeJsonLd({
             "@context": "https://schema.org",
             "@graph": [
               buildBreadcrumbList([
