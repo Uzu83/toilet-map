@@ -48,6 +48,8 @@ Supabase ダッシュボード **SQL Editor** で以下を順に貼り付けて 
 
 本番プロジェクトには、`supabase/migrations/20261127213301_review_facilities_and_submission_queue.sql`（旧名 `020_review_facilities_and_submission_queue.sql`）をバージョン `20261127213301` として 2026-11-27 に適用済みです。ファイル名のバージョンは本番のマイグレーション履歴に記録されたものと同じなので、`supabase db push` はこのファイルを再適用せず、まだ適用していない新しいファイルだけを適用します。先に `supabase db push --dry-run` で、適用されるのが新しいファイルだけであることを確かめてください。
 
+本番プロジェクトには、`supabase/migrations/20261128071420_admin_passkeys.sql`（旧名 `20261128065514_admin_passkeys.sql`）をバージョン `20261128071420` として 2026-11-28 に適用済みです。ファイル名のバージョンは本番のマイグレーション履歴に記録されたものと同じなので、`supabase db push` はこのファイルを再適用せず、まだ適用していない新しいファイルだけを適用します。先に `supabase db push --dry-run` で、適用されるのが新しいファイルだけであることを確かめてください。
+
 ### 3) 環境変数
 
 ```bash
@@ -63,7 +65,7 @@ cp .env.example .env.local
 
 本番の手順:
 
-1. DB: `supabase/migrations/20261128065514_admin_passkeys.sql` を適用する(`supabase db push --dry-run` で、このファイルだけが適用されることを先に確認)。`admin_passkeys`(公開鍵)と `admin_webauthn_challenges`(5 分で切れる 1 回限りの challenge)の 2 表を作る。RLS 有効・anon / authenticated には grant なし。
+1. DB: 本番プロジェクトには、`supabase/migrations/20261128071420_admin_passkeys.sql`（旧名 `20261128065514_admin_passkeys.sql`）をバージョン `20261128071420` として 2026-11-28 に適用済みです。ファイル名のバージョンは本番のマイグレーション履歴に記録されたものと同じなので、`supabase db push` はこのファイルを再適用しません。先に `supabase db push --dry-run` で確かめてください。このマイグレーションは `admin_passkeys`(公開鍵)と `admin_webauthn_challenges`(5 分で切れる 1 回限りの challenge)の 2 表を作ります。RLS 有効・anon / authenticated には grant なし。
 2. 環境変数: `ADMIN_WEBAUTHN_RP_ID`(本番ドメイン。例 `example.com`)と `ADMIN_WEBAUTHN_ORIGIN`(例 `https://example.com`)を設定する。`ADMIN_SESSION_SECRET` はそのまま。
 3. 初回登録: いつものパスワードで `/admin` に入り、右上の「パスキーを登録」を押して端末で登録する。ログアウトして「パスキーでログイン」で入れることを確かめる。
 4. パスワードを止める: 環境変数から `ADMIN_PASSWORD` を消して再デプロイする。ログイン画面からパスワード欄が消え、`POST /api/admin/login` は 403 になる。

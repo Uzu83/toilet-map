@@ -1,8 +1,9 @@
--- 20261128065514_admin_passkeys.sql — Issue #61
+-- 20261128071420_admin_passkeys.sql — Issue #61
+-- 旧ファイル名 20261128065514_admin_passkeys.sql。
 -- /admin のログインをパスキー(WebAuthn)にするための保存先。冪等。
--- 実行: supabase db push(先に --dry-run で、このファイルだけが適用されることを確認)
---   または Supabase ダッシュボード > SQL Editor で全文ペースト → Run。
--- 未適用のままパスキーの API を呼ぶと 500 になる(パスワードログインは影響なし)。
+-- 実行: supabase db push(先に --dry-run で確認)または Supabase ダッシュボード > SQL Editor で全文ペースト → Run。
+-- 本番は 2026-11-28 にバージョン 20261128071420（名前 admin_passkeys）として適用済み。
+-- 未適用の環境でパスキーの API を呼ぶと 500 になる(パスワードログインは影響なし)。
 --
 -- やること:
 --   1. admin_passkeys: 登録済みパスキー(公開鍵)。管理者は社長 1 人なので user 列は持たない。
