@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import type { EditableField } from "@/lib/adminAuth";
 import { facilityClaimToiletLabel } from "@/lib/reviewFacility";
+import { PasskeyRegisterButton } from "./PasskeyRegisterButton";
 
 // /admin ダッシュボードのクライアント部分(編集フォーム・取消ボタンのインタラクション)。
 // 認証・検証・DB 書き込みはすべてサーバ(page.tsx + API ルート)。ここは入力 UI とリフレッシュに徹する。
@@ -163,6 +164,7 @@ export function AdminDashboard({
         <h1 className="text-xl font-semibold">管理ダッシュボード</h1>
         <div className="flex items-baseline gap-3">
           <span className="text-xs text-zinc-500">運営専用・日本語のみ</span>
+          <PasskeyRegisterButton />
           <LogoutButton />
         </div>
       </header>
