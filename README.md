@@ -53,8 +53,22 @@ Supabase ダッシュボード **SQL Editor** で以下を順に貼り付けて 
 ```bash
 cp .env.example .env.local
 # エディタで開いて必要なキーをペースト(必須は Supabase の 3 つ。
-# /admin を使うなら ADMIN_PASSWORD / ADMIN_SESSION_SECRET も設定)
+# /admin を使うなら ADMIN_SESSION_SECRET / ADMIN_WEBAUTHN_RP_ID / ADMIN_WEBAUTHN_ORIGIN も設定。
+# 初回のパスキー登録には ADMIN_PASSWORD も要る)
 ```
+
+#### /admin のパスキーログイン
+
+`/admin` は SimpleWebAuthn を使ったパスキー(WebAuthn)でログインする。管理者は 1 人で、登録はログイン済みの管理画面からだけできる。
+
+本番の手順:
+
+1. DB: `supabase/migrations/20261128065514_admin_passkeys.sql` を適用する(`supabase db push --dry-run` で、このファイルだけが適用されることを先に確認)。`admin_passkeys`(公開鍵)と `admin_webauthn_challenges`(5 分で切れる 1 回限りの challenge)の 2 表を作る。RLS 有効・anon / authenticated には grant なし。
+2. 環境変数: `ADMIN_WEBAUTHN_RP_ID`(本番ドメイン。例 `example.com`)と `ADMIN_WEBAUTHN_ORIGIN`(例 `https://example.com`)を設定する。`ADMIN_SESSION_SECRET` はそのまま。
+3. 初回登録: いつものパスワードで `/admin` に入り、右上の「パスキーを登録」を押して端末で登録する。ログアウトして「パスキーでログイン」で入れることを確かめる。
+4. パスワードを止める: 環境変数から `ADMIN_PASSWORD` を消して再デプロイする。ログイン画面からパスワード欄が消え、`POST /api/admin/login` は 403 になる。
+
+パスキーを失くしたら: `ADMIN_PASSWORD` を設定し直せばパスワードで入れる。不要になったパスキーは SQL Editor で `delete from admin_passkeys where credential_id = '…';` で消す。
 
 ### 4) シード(福岡市の OSM データを投入)
 

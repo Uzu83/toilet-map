@@ -27,8 +27,13 @@ export default async function proxy(request: NextRequest) {
     //    login API を例外から外すと「正しいパスワードを送っても 401 で弾かれて cookie が発行されない」状態になる。
     // WHY login API は method 不問で素通し: GET でアクセスされても 405 を route 側が返せばよく、
     //   proxy で method 判定まで持つと複雑になる。認証は各 route で再検証するので安全側は保たれる。
+    // パスキーログイン(Issue #61)の 2 つの API も同じ理由で例外にする。パスキーの「登録」API は例外にしない
+    //   (登録はログイン済みの admin だけ = 未ログインの人が自分のパスキーを足せない)。
     const isLoginPage = pathname === "/admin/login";
-    const isLoginApi = pathname === "/api/admin/login";
+    const isLoginApi =
+      pathname === "/api/admin/login" ||
+      pathname === "/api/admin/passkey/login/options" ||
+      pathname === "/api/admin/passkey/login/verify";
     if (isLoginPage || isLoginApi) {
       return NextResponse.next();
     }

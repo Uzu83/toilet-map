@@ -10,7 +10,12 @@
 // どちらも「認証のブートストラップ/クリーンアップ」なので汎用 session ガードが使えない/合わない。
 
 import { NextResponse, type NextRequest } from "next/server";
-import { isSameOrigin } from "@/lib/adminAuth";
+import {
+  ADMIN_COOKIE_NAME,
+  ADMIN_SESSION_TTL_SEC,
+  isSameOrigin,
+  signSession,
+} from "@/lib/adminAuth";
 import { getAdminSession } from "@/lib/adminSession";
 import { isUuid } from "@/lib/uuid";
 
@@ -24,6 +29,26 @@ import { isUuid } from "@/lib/uuid";
 export function noStore<T extends NextResponse>(res: T): T {
   res.headers.set("Cache-Control", "no-store, private");
   return res;
+}
+
+// ---------------------------------------------------------------------------
+// セッション cookie の発行(パスワード / パスキーの両ログインで共有)
+// ---------------------------------------------------------------------------
+// 短命(12h)の署名 cookie を res に付ける。旧 login/route.ts の発行処理をそのまま移したもの。
+// WHY 共有するか: 2 つのログイン経路で cookie の属性(httpOnly/secure/sameSite/maxAge)がズレないようにする。
+export function setAdminSessionCookie(res: NextResponse, secret: string): void {
+  const nowSec = Math.floor(Date.now() / 1000);
+  const cookieValue = signSession({ exp: nowSec + ADMIN_SESSION_TTL_SEC, role: "admin" }, secret);
+  res.cookies.set({
+    name: ADMIN_COOKIE_NAME,
+    value: cookieValue,
+    httpOnly: true, // JS から読めない(XSS でのトークン窃取を緩和)
+    // 本番のみ secure(HTTPS 必須)。開発の http://localhost で cookie が落ちないようにする。
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "lax", // CSRF 緩和。Lax なら通常ナビゲーションには付与され、クロスサイト POST には付かない
+    path: "/", // /admin と /api/admin の両方で送られるよう全パスに付与
+    maxAge: ADMIN_SESSION_TTL_SEC, // ブラウザ側の保持期限。署名内 exp と揃える
+  });
 }
 
 // ---------------------------------------------------------------------------
